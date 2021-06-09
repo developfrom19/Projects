@@ -1,0 +1,1530 @@
+CLASS zcl_nd_ess_leave_request DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+  PUBLIC SECTION.
+
+    INTERFACES /neptune/if_nad_server .
+
+    TYPES:
+      BEGIN OF ty_page_list,
+        count_all      TYPE int4,
+        count_approved TYPE int4,
+        count_rejected TYPE int4,
+        count_sent     TYPE int4,
+        count_posted   TYPE int4,
+        count_acc      TYPE int4,
+        wrk_begda      TYPE sy-datum,
+      END OF ty_page_list .
+
+    TYPES:
+      BEGIN OF ty_calendar,
+        date TYPE dats,
+        type TYPE string,
+      END OF ty_calendar .
+    TYPES:
+      BEGIN OF ty_calendar_team,
+        endday   TYPE string,
+        halfday  TYPE string,
+        name     TYPE string,
+        relevant TYPE string,
+        row      TYPE int4,
+        startday TYPE string,
+        type     TYPE string,
+        typename TYPE string,
+      END OF ty_calendar_team .
+    TYPES:
+      BEGIN OF ty_leave_list,
+        request_id    TYPE tim_req_id,
+        status        TYPE tim_req_status,
+        status_text   TYPE string,
+        status_state  TYPE string,
+        status_icon   TYPE string,
+        status_color  TYPE string,
+        subty         TYPE subty,
+        pernr         TYPE pernr_d,
+        endda         TYPE endda,
+        begda         TYPE begda,
+* University changed the type for begin and end time
+        begin_time    TYPE ptreq_customer_field,
+        end_time      TYPE ptreq_customer_field,
+* Old types
+*            begin_time     type begti,
+*            end_time       type endti,
+* University added hours field and customer10 for negative indicator
+        attabs_hours  TYPE abs_att_hours,
+        customer10    TYPE ptreq_customer_field,
+        endda_visible TYPE string,
+        curr_notice   TYPE string,
+        subtype_descr TYPE string,
+        update        TYPE string,
+        sync_state    TYPE string,
+        sync_text     TYPE string,
+        approver      TYPE string,
+        operation     TYPE string,
+        hidedeletebtn TYPE boolean,
+        enableeditbtn TYPE boolean,
+      END OF ty_leave_list .
+    TYPES:
+      tt_leave_list TYPE STANDARD TABLE OF ty_leave_list .
+
+    TYPES: BEGIN OF ty_account,
+             name         TYPE  hrqtext,
+             used         TYPE  hrptm_deduct,
+             planned      TYPE  hrptm_deduct,
+             balance      TYPE  hrptm_rest2,
+             useorlose    TYPE  hrptm_rest,
+             type         TYPE  abwko,
+             atype        TYPE  awart,
+             begda        TYPE  begda,
+             endda        TYPE  endda,
+             adjusted_bal TYPE  zess_dec_10_2,
+             adjusted     TYPE string,
+           END OF  ty_account.
+
+    TYPES: BEGIN OF ty_user_data,
+             pernr          TYPE pernr_d,
+             approver_pernr TYPE pa0000-pernr,
+             approver_name  TYPE pa0002-vorna,
+             persarea       TYPE pa0001-werks,
+           END OF ty_user_data.
+
+    DATA: gv_user_data TYPE ty_user_data.
+
+    DATA it_menu_info TYPE /neptune/menu_tt .
+*    DATA gv_page_start TYPE ty_page_start .
+    DATA gv_page_detail TYPE ty_leave_list .
+    DATA gv_approve_delete TYPE ty_leave_list.
+    DATA gv_page_list TYPE ty_page_list .
+    DATA:
+      it_calendar TYPE STANDARD TABLE OF ty_calendar .
+    DATA it_subtype TYPE ptarq_uia_attabs_tab .
+    DATA:
+      it_account TYPE STANDARD TABLE OF ty_account .
+    DATA:
+      wa_account LIKE LINE OF it_account .    "PTARQ_UIA_QUOTA_STATUS_ALL_TAB .
+    DATA:
+      it_outbox TYPE STANDARD TABLE OF ty_leave_list .
+    DATA it_list TYPE tt_leave_list .
+    DATA:
+      it_team_calendar TYPE STANDARD TABLE OF ty_calendar_team .
+    DATA it_status TYPE bapiret2_t .
+    DATA:
+      it_target TYPE STANDARD TABLE OF cats_hours_per_day .
+    DATA:
+      wa_target LIKE LINE OF it_target .
+    DATA:
+      it_holidays TYPE STANDARD TABLE OF iscal_day .
+    DATA wa_holidays TYPE iscal_day .
+    DATA g_pernr TYPE pernr_d.
+  PROTECTED SECTION.
+private section.
+
+  data IT_REQUESTS type PTARQ_UIA_REQLIST_TAB .
+  data WA_OUTBOX type TY_LEAVE_LIST .
+  data WA_REQUESTS type PTARQ_UIA_REQLIST_STRUC .
+  data WA_SUBTYPE type PTARQ_UIA_ATTABS .
+  data WA_CALENDAR type TY_CALENDAR .
+  data WA_LIST type TY_LEAVE_LIST .
+  data WA_TEAM_CALENDAR type TY_CALENDAR_TEAM .
+  data WA_STATUS type BAPIRET2 .
+
+  methods GET_EMPLOYEE_NUMBER .
+  methods USER_DEFAULT_DATA .
+  methods GET_CALENDAR
+    exporting
+      !ETB_LEAVE_LIST type TT_LEAVE_LIST .
+  methods GET_ACCOUNT .
+  methods GET_TARGET_HOURS .
+  methods SAVE .
+  methods DELETE
+    importing
+      !AJAX_VALUE type STRING
+      !IS_PAGE_DETAIL type TY_LEAVE_LIST .
+  methods FORMAT_STATUS .
+  methods REPLACE_SUBTYPES_DESC
+    importing
+      !IW_MOABW type MOABW default '01'
+    changing
+      !ITB_REQUEST type PTARQ_UIA_REQLIST_TAB .
+  methods GET_TILE_INFO
+    importing
+      !SERVER type ref to /NEPTUNE/CL_NAD_SERVER .
+*  methods CANCEL_POSTED .
+  methods VALIDATE_REQUEST
+    exporting
+      !EX_LT_MESSAGES type FPMGB_T_MESSAGES .
+  methods MAP_MESSAGES
+    importing
+      !IM_LT_T100_MESSAGES type FPMGB_T_MESSAGES
+    exporting
+      !EX_LT_BAPI_MESSAGES type PTARQ_UIA_MESSAGES_TAB .
+ENDCLASS.
+
+
+
+CLASS ZCL_ND_ESS_LEAVE_REQUEST IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ND_ESS_LEAVE_REQUEST->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_ajax.
+
+    CASE ajax_id.
+      WHEN 'SYNC'.
+        CALL METHOD me->get_calendar
+          IMPORTING
+            etb_leave_list = it_list.
+
+      WHEN 'USER_DEFAULT_DATA'  .
+        CALL METHOD user_default_data( ).
+        CALL METHOD get_account( ).
+
+      WHEN 'SAVE'.
+        MOVE-CORRESPONDING gv_page_detail TO wa_outbox.
+
+        CALL METHOD save( ).
+        CALL METHOD me->get_calendar
+          IMPORTING
+            etb_leave_list = it_list.
+
+
+*      WHEN 'MODIFY'.
+*        MOVE-CORRESPONDING gv_page_detail TO wa_outbox.
+*        CALL METHOD modify( ).
+*
+*        CALL METHOD me->get_calendar
+**          IMPORTING
+**            etb_leave_list = it_list.
+*
+*        CALL METHOD get_account( ).
+**      call method get_team_calendar( ).      " if you want to show only team members with approved requests
+*        CALL METHOD get_team_calendar_empty( ). " if you want to show all team members even without requests
+
+
+      WHEN 'DELETE'.
+        MOVE-CORRESPONDING gv_approve_delete TO gv_page_detail.  "Added 5/16/2017 to fix deletion issue
+        MOVE-CORRESPONDING gv_page_detail TO wa_outbox.
+
+*     D.Rempe - 2/9/2017 - Added parameter.
+        CALL METHOD delete(
+            ajax_value     = ajax_value
+            is_page_detail = gv_page_detail
+                             ).
+
+        CALL METHOD me->get_calendar
+          IMPORTING
+            etb_leave_list = it_list.
+
+
+
+      WHEN 'GET_ACCOUNT'.
+        CALL METHOD get_account( ).
+        CALL METHOD get_target_hours( ).
+
+*      WHEN 'CANCEL_POSTED'.
+*        MOVE-CORRESPONDING gv_page_detail TO wa_outbox.
+*        CALL METHOD cancel_posted( ).
+*
+*        CALL METHOD me->get_calendar
+*          IMPORTING
+*            etb_leave_list = it_list.
+*
+*        CALL METHOD get_account( ).
+**      call method get_team_calendar( ).      " if you want to show only team members with approved requests
+**        CALL METHOD get_team_calendar_empty( ). " if you want to show all team members even without requests
+*
+**      WHEN 'GET_TILE_INFO'.
+**        CALL METHOD me->get_tile_info
+**          EXPORTING
+**            server = server.
+
+      WHEN 'VALIDATE_REQUEST'.
+
+        DATA: it_messages      TYPE ptarq_uia_messages_tab.
+        DATA: lt_fpm_messages TYPE fpmgb_t_messages.
+
+        CALL METHOD me->validate_request
+          IMPORTING
+            ex_lt_messages = lt_fpm_messages.
+
+        IF it_status IS INITIAL.
+* Convert old FPM messages to new message structure
+          CALL METHOD me->map_messages
+            EXPORTING
+              im_lt_t100_messages = lt_fpm_messages
+            IMPORTING
+              ex_lt_bapi_messages = it_messages.
+
+          DELETE it_messages WHERE type NE 'E' AND type NE 'A'.
+*Process the errors the same as Neptune does in the Checks section.
+* Status Table
+          APPEND LINES OF it_messages TO it_status.
+          CALL METHOD format_status( ).
+
+        ENDIF.
+
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ND_ESS_LEAVE_REQUEST->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SUBMIT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] EVENT_ID                       TYPE        STRING
+* | [--->] EVENT_VALUE                    TYPE        STRING(optional)
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAV_TO                         TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_submit.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->DELETE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] IS_PAGE_DETAIL                 TYPE        TY_LEAVE_LIST
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD delete.
+
+    DATA: it_messages     TYPE ptarq_uia_messages_tab,
+          it_commands     TYPE ptarq_uia_command_tab,
+          ls_command      TYPE ptreq_uia_command_struc,
+          wa_messages     LIKE LINE OF it_messages,
+          lv_return       TYPE bapireturn1,
+          lv_reqnr        TYPE bapip2001-seqnr,
+          lv_request      TYPE ptarq_uia_request,
+          lv_actor        TYPE ptreq_actor_struc_flat,
+          lv_req_check    TYPE ptarq_uia_request,
+          lv_req_save     TYPE ptarq_uia_request,
+          lv_begda        TYPE sy-datum,
+          lv_endda        TYPE sy-datum,
+          lv_request_id   TYPE tim_req_id,
+          it_request_list TYPE ptarq_uia_reqlist_tab,
+          ls_request_list TYPE ptarq_uia_reqlist_struc.
+
+
+*--------------------------------------------------------------------*
+* Init
+*--------------------------------------------------------------------*
+* Get employee number
+    IF gv_user_data-pernr IS INITIAL.
+      CALL METHOD get_employee_number( ).
+      gv_user_data-pernr = g_pernr.
+    ENDIF.
+
+* Any Employee Number ?
+    CHECK gv_user_data-pernr IS NOT INITIAL.
+
+*--------------------------------------------------------------------*
+* Prepare
+*--------------------------------------------------------------------*
+
+    lv_request_id = ajax_value.
+
+*  lv_request_id = '6CAE8B6AD4481ED6ABB883627D4646F0'.
+
+* D.Rempe - 2/9/2017 - Reload leave request list into memory.
+    CALL FUNCTION 'PT_ARQ_REQLIST_GET'
+      EXPORTING
+        im_pernr        = gv_user_data-pernr
+        im_command      = 'SHOW_REQLIST'
+        im_modus        = 'R'
+      IMPORTING
+        ex_request_list = it_request_list
+      TABLES
+        ex_messages     = it_messages
+        ex_commands     = it_commands.
+
+    READ TABLE it_request_list INTO ls_request_list
+        WITH KEY subty = is_page_detail-subty
+                 begda = is_page_detail-begda
+                 endda = is_page_detail-endda
+                 attabs_hours = is_page_detail-attabs_hours
+                 status = is_page_detail-status.
+    IF sy-subrc = 0.
+      lv_request_id = ls_request_list-request_id.
+    ENDIF.
+
+    REFRESH: it_commands.
+    CALL FUNCTION 'PT_ARQ_REQUEST_PREPARE'
+      EXPORTING
+        im_request_id = lv_request_id
+        im_command    = 'PREPARE_DELETE'
+        im_pernr      = gv_user_data-pernr
+        im_modus      = 'R'
+      IMPORTING
+        ex_request    = lv_request
+      TABLES
+        ex_messages   = it_messages
+        ex_commands   = it_commands.
+
+    lv_request-curr_notice = wa_outbox-curr_notice.
+
+*--------------------------------------------------------------------*
+* Checks
+*--------------------------------------------------------------------*
+    CALL FUNCTION 'PT_ARQ_REQUEST_CHECK'
+      EXPORTING
+        im_request  = lv_request
+        im_command  = 'CHECK_DELETE'
+        im_pernr    = gv_user_data-pernr
+        im_modus    = 'R'
+      IMPORTING
+        ex_request  = lv_req_check
+      TABLES
+        ex_messages = it_messages
+        ex_commands = it_commands.
+
+*--------------------------------------------------------------------*
+* Execute
+*--------------------------------------------------------------------*
+*  clear it_messages.
+*  call function 'PT_ARQ_REQUEST_EXECUTE'
+*    exporting
+*      im_request_id  = lv_request-request_id
+*      im_command     = 'EXECUTE_DELETE'
+*      im_pernr       = gv_user_data-pernr
+*      im_modus       = 'R'
+*    importing
+*      ex_request     = lv_req_save
+*    tables
+*      ex_messages    = it_messages
+*      ex_commands    = it_commands.
+
+* D.Rempe - 2/10/2017 - Command to execute in the next
+*   function call should be conditional. If it requires
+*   approval, you need to use EXECUTE_SEND. Otherwise,
+*   EXECUTE_DELETE. The command you need is returned by
+*   the previous call to PT_ARQ_REQUEST_PREPARE.
+    READ TABLE it_commands INTO ls_command INDEX 1.
+    IF ls_command <> 'EXECUTE_SEND'
+        AND ls_command <> 'EXECUTE_DELETE'.
+*   TODO: Something is probably wrong in this case.
+    ENDIF.
+
+    REFRESH: it_messages,
+             it_commands.
+    CALL FUNCTION 'PT_ARQ_REQUEST_EXECUTE'
+      EXPORTING
+        im_request_id = lv_request-request_id
+        im_command    = ls_command-command
+        im_pernr      = gv_user_data-pernr
+        im_modus      = 'R'
+      IMPORTING
+        ex_request    = lv_req_save
+      TABLES
+        ex_messages   = it_messages
+        ex_commands   = it_commands.
+
+* Status Table
+    APPEND LINES OF it_messages TO it_status.
+    CALL METHOD format_status( ).
+
+    READ TABLE it_status INTO wa_status WITH KEY type = 'E'
+                                                  id = 'SWR'
+                                                  number = '280'.
+
+    IF sy-subrc EQ 0.
+      READ TABLE it_status INTO wa_status WITH KEY type = 'E'
+                                                id = 'WL'
+                                                number = '605'.
+
+      wa_status-type = 'E'.
+      wa_status-id = 'CUSTOM'.
+      wa_status-number = '000'.
+      wa_status-message = 'If delete fails, please try after a Minute'.
+      wa_status-parameter = 'None'.
+
+      APPEND wa_status TO it_status .
+      CLEAR wa_status.
+
+
+    ENDIF.
+
+
+
+* Any errors ?
+    DELETE it_messages WHERE type NE 'E' OR type NE 'A'.
+    CHECK it_messages IS INITIAL.
+
+* Commit
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->FORMAT_STATUS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD format_status.
+    DATA lv_message TYPE string.
+    LOOP AT it_status INTO wa_status.
+
+      CALL FUNCTION 'MESSAGE_TEXT_BUILD'
+        EXPORTING
+          msgid               = wa_status-id
+          msgnr               = wa_status-number
+          msgv1               = wa_status-message_v1
+          msgv2               = wa_status-message_v2
+          msgv3               = wa_status-message_v3
+          msgv4               = wa_status-message_v4
+        IMPORTING
+          message_text_output = lv_message.
+
+      wa_status-message = lv_message.
+      IF wa_status-type EQ 'E'.
+        wa_status-parameter = 'Error'.
+      ELSE.
+        wa_status-parameter = 'None'.
+      ENDIF.
+
+*    wa_status-parameter = wa_outbox-request_id.
+*      CONCATENATE '(' wa_status-type ') ' wa_status-message
+*             INTO wa_status-message.
+      MODIFY it_status FROM wa_status INDEX sy-tabix.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->GET_ACCOUNT
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_account.
+
+*    DATA: it_messages TYPE ptarq_uia_messages_tab,
+*          it_commands TYPE ptarq_uia_command_tab,
+*          wa_messages LIKE LINE OF it_messages,
+*          it_return   TYPE STANDARD TABLE OF bapiret2.
+
+    DATA: it_return        TYPE STANDARD TABLE OF bapiret2,
+          lt_account       TYPE TABLE OF zmss_absence_quotas,
+          ls_account       TYPE ty_account,
+          ls_leave_balance TYPE zmss_absence_quotas.
+
+
+*--------------------------------------------------------------------*
+* Init
+*--------------------------------------------------------------------*
+
+* Get employee number
+    CALL METHOD get_employee_number( ).
+
+* Any Employee Number ?
+    CHECK g_pernr IS NOT INITIAL.
+
+
+    CALL FUNCTION 'ZESS_ABSENCE_QUOTAS'
+      EXPORTING
+        pernr  = g_pernr
+      TABLES
+        quotas = lt_account
+        return = it_return.
+
+    LOOP AT lt_account INTO ls_leave_balance.
+      IF ls_leave_balance-balance EQ '0'.
+        DELETE lt_account INDEX sy-tabix.
+
+      ELSE.
+        MOVE-CORRESPONDING ls_leave_balance TO ls_account.
+        ls_account-adjusted = ls_leave_balance-adjusted_bal.
+        IF ls_leave_balance-atype EQ 'VAC' AND ls_leave_balance-adjusted_bal GT '280.00'.
+          ls_account-adjusted = '280.00*'.
+        ENDIF.
+
+        APPEND ls_account TO it_account.
+
+      ENDIF.
+
+
+    ENDLOOP.
+
+
+
+
+
+*    CALL FUNCTION 'ZESS_ABSENCE_QUOTAS'
+*      EXPORTING
+*        pernr  = g_pernr
+*      TABLES
+*        quotas = it_account
+*        return = it_return.
+*
+*    LOOP AT it_account INTO wa_account.
+*      IF wa_account-balance EQ '0'.
+*        DELETE it_account INDEX sy-tabix.
+*      ENDIF.
+*    ENDLOOP.
+
+
+**--------------------------------------------------------------------*
+** Get time accounts
+**--------------------------------------------------------------------*
+*  call function 'PT_ARQ_ACCOUNTS_GET'
+*    exporting
+*      im_pernr                  = g_pernr
+*      im_sel_pernr              = g_pernr
+*      im_modus                  = 'R'
+*      im_deactivate_check       = 'X'
+*    importing
+*      ex_accounts               = it_account
+*    tables
+*      ex_messages               = it_messages
+*      ex_commands               = it_commands.
+*
+*
+** Counter
+*  describe table it_account lines gv_page_list-count_acc.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->GET_CALENDAR
+* +-------------------------------------------------------------------------------------------------+
+* | [<---] ETB_LEAVE_LIST                 TYPE        TT_LEAVE_LIST
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_calendar.
+
+    DATA: it_messages      TYPE ptarq_uia_messages_tab,
+          it_request_list  TYPE ptarq_uia_reqlist_tab,
+          lwa_request_list TYPE ptarq_uia_reqlist_struc,
+          ls_deleted_req   TYPE ptarq_uia_reqlist_struc,
+          it_commands      TYPE ptarq_uia_command_tab,
+          lv_as_of_date    TYPE sy-datum,
+          lv_pernr_str     TYPE string.
+
+    DATA: l_approver_pernr TYPE pa0000-pernr,
+          l_approver_name  TYPE pa0002-vorna,
+          l_approver_fname TYPE pa0002-vorna,
+          l_approver_lname TYPE pa0002-nachn.
+
+    DATA:  lv_date_start TYPE sy-datum,
+           lv_date_end   TYPE sy-datum.
+    DATA: lv_date_increment TYPE sy-datum.
+
+    DATA: l_companycode TYPE pa0001-bukrs,
+          l_calendar_id TYPE scal-hcalid.
+
+    DATA: day      TYPE sy-datum,
+          yyyy(4)  TYPE c,
+          yyyy1(4) TYPE c,
+          fdate    TYPE sy-datum,
+          ldate    TYPE sy-datum,
+          lv_date  TYPE sy-datum.
+*--------------------------------------------------------------------*
+* Init
+*--------------------------------------------------------------------*
+
+* Get employee number
+    IF gv_user_data-pernr IS INITIAL.
+      CALL METHOD get_employee_number( ).
+      gv_user_data-pernr = g_pernr.
+    ENDIF.
+* Any Employee Number ?
+    CHECK gv_user_data-pernr IS NOT INITIAL.
+
+    CLEAR etb_leave_list.
+
+*--------------------------------------------------------------------*
+* Get Data
+*--------------------------------------------------------------------*
+
+* Get Requests List
+    CALL FUNCTION 'PT_ARQ_REQLIST_GET'
+      EXPORTING
+        im_pernr        = gv_user_data-pernr
+        im_command      = 'SHOW_REQLIST'
+        im_modus        = 'R'
+*       im_date         = '20170301'
+      IMPORTING
+        ex_request_list = it_request_list
+        ex_as_of_date   = lv_as_of_date
+      TABLES
+        ex_messages     = it_messages
+        ex_commands     = it_commands.
+
+    lv_date = sy-datum - 360.
+    DELETE it_request_list WHERE begda LE lv_date.
+
+    CALL METHOD me->replace_subtypes_desc
+      CHANGING
+        itb_request = it_request_list.
+
+    SORT it_request_list BY begda.
+
+*--------------------------------------------------------------------*
+* Build Data
+*--------------------------------------------------------------------*
+*  loop at it_header into wa_header.
+    LOOP AT it_request_list INTO lwa_request_list.
+
+      MOVE-CORRESPONDING lwa_request_list TO wa_list.
+* University move the start and end times to the correct fields
+      IF lwa_request_list-customer02 IS NOT INITIAL.
+        REPLACE ':' IN lwa_request_list-customer02 WITH ''.
+        CONCATENATE lwa_request_list-customer02 '00' INTO wa_list-begin_time.
+      ENDIF.
+
+      IF lwa_request_list-customer03 IS NOT INITIAL.
+        REPLACE ':' IN lwa_request_list-customer03 WITH ''.
+        CONCATENATE lwa_request_list-customer03 '00' INTO wa_list-end_time.
+      ENDIF.
+      wa_list-subtype_descr = lwa_request_list-subtype_description.
+
+      CASE wa_list-status.
+
+        WHEN 'APPROVED'.
+**       D.Rempe - 2/13/2017 - Check whether a deletion request exists.
+          READ TABLE it_request_list
+              WITH KEY operation = 'DEL'
+                       infotype  = lwa_request_list-infotype
+                       subty     = lwa_request_list-subty
+                       begda     = lwa_request_list-begda
+                       endda     = lwa_request_list-endda
+                       objps     = lwa_request_list-objps
+                       sprps     = lwa_request_list-sprps
+                       request_or_attabs = 'R'
+              TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            CONTINUE.
+          ENDIF.
+
+          wa_calendar-date            = wa_list-begda.
+          wa_calendar-type            = 'Type04'.
+          wa_list-status_state        = 'Success'.
+          wa_list-status_text         = 'Approved'.
+          wa_list-status_color        = 'green'.
+          wa_list-hidedeletebtn = 'X'.
+          gv_page_list-count_approved = gv_page_list-count_approved + 1.
+
+          wa_list-curr_notice         = lwa_request_list-curr_notice. " Comment history for approved
+*        replace first occurrence of '/n' in wa_list-curr_notice with ''.
+*        replace all occurrences of '/n' in wa_list-curr_notice with cl_abap_char_utilities=>cr_lf.
+
+          IF lwa_request_list-operation EQ 'DEL'.  " Approved Cancellation
+            wa_list-status_icon         = 'sap-icon://sys-cancel'.
+          ELSE.
+            wa_list-status_icon         = 'sap-icon://accept'.
+          ENDIF.
+
+        WHEN 'REJECTED'.
+*        wa_calendar-date            = wa_list-begda.
+*        wa_calendar-type            = 'Type07'.
+          wa_list-status_state        = 'Error'.
+          wa_list-status_text         = 'Rejected'.
+          wa_list-status_icon         = 'sap-icon://decline'.
+          wa_list-status_color        = 'red'.
+          wa_list-hidedeletebtn = ''.
+          gv_page_list-count_rejected = gv_page_list-count_rejected + 1.
+
+        WHEN 'SENT'.
+          READ TABLE it_request_list
+          WITH KEY operation = 'DEL'
+               infotype  = lwa_request_list-infotype
+               subty     = lwa_request_list-subty
+               begda     = lwa_request_list-begda
+               endda     = lwa_request_list-endda
+               objps     = lwa_request_list-objps
+               sprps     = lwa_request_list-sprps
+               request_or_attabs = 'R'
+               TRANSPORTING NO FIELDS.
+          IF sy-subrc = 0.
+            wa_calendar-date            = wa_list-begda.
+            wa_calendar-type            = 'Type07'.
+            wa_list-status_state        = 'Error'.
+            wa_list-status_text         = 'Sent'.
+            wa_list-status_icon         = 'sap-icon://decline'.
+            wa_list-status_color        = 'red'.
+            wa_list-hidedeletebtn = 'X'.
+*          CONTINUE.
+          ELSE.
+            wa_calendar-date            = wa_list-begda.
+            wa_calendar-type            = 'Type06'.
+            wa_list-status_state        = 'Warning'.
+            wa_list-status_text         = 'Sent'.
+            wa_list-status_color        = 'chocolate'.
+            wa_list-status_icon         = 'sap-icon://email'.
+            wa_list-hidedeletebtn = 'X'.
+            gv_page_list-count_sent     = gv_page_list-count_sent + 1.
+
+          ENDIF.
+        WHEN OTHERS.
+          wa_requests-customer01      = 'None'.
+      ENDCASE.
+
+*   Add Calendar
+      IF wa_calendar IS NOT INITIAL.
+        APPEND wa_calendar TO it_calendar.
+*        CLEAR wa_calendar.
+      ENDIF.
+      wa_list-enableeditbtn = 'true'.
+
+*Break down range of dates
+      IF wa_list-begda NE wa_list-endda .
+*        AND wa_list-endda IS NOT INITIAL.
+        lv_date_increment = wa_list-begda.
+        WHILE  lv_date_increment LT wa_list-endda.
+          wa_calendar-date =  lv_date_increment + 1.
+          lv_date_increment = wa_calendar-date.
+          APPEND wa_calendar TO it_calendar.
+*          CLEAR wa_calendar.
+        ENDWHILE.
+        CLEAR lv_date_increment.
+      ENDIF.
+      APPEND wa_list TO etb_leave_list.
+      CLEAR  wa_list.
+    ENDLOOP.
+
+* Get Holidays
+    SELECT SINGLE bukrs FROM pa0001
+      INTO l_companycode
+      WHERE pernr EQ gv_user_data-pernr
+      AND endda GE sy-datum.
+
+    CASE l_companycode.
+      WHEN '1000'.
+        l_calendar_id = 'ZT'.
+      WHEN '2000'.
+        l_calendar_id = 'ZC'.
+      WHEN OTHERS.
+        l_calendar_id = 'ZT'.
+    ENDCASE.
+
+    day = sy-datum. "*Get first and last date of the year
+    yyyy = day(4) - 1. "*Gets previous year of current year
+    yyyy1 = yyyy + 2. "*Gets further 2 years
+
+    CONDENSE yyyy1.
+    CONCATENATE yyyy '0101' INTO fdate.
+    CONCATENATE yyyy1 '1231' INTO ldate.
+
+
+    CALL FUNCTION 'HOLIDAY_GET'
+      EXPORTING
+        holiday_calendar           = l_calendar_id
+        factory_calendar           = l_calendar_id
+        date_from                  = fdate
+        date_to                    = ldate
+      TABLES
+        holidays                   = it_holidays
+      EXCEPTIONS
+        factory_calendar_not_found = 1
+        holiday_calendar_not_found = 2
+        date_has_invalid_format    = 3
+        date_inconsistency         = 4
+        OTHERS                     = 5.
+
+    DELETE it_holidays WHERE holiday IS INITIAL.
+    DELETE it_holidays WHERE txt_long CS 'Floating'.
+
+*Add Holidays to Calendar
+    LOOP AT it_holidays INTO wa_holidays.
+      wa_calendar-date            = wa_holidays-date.
+      wa_calendar-type            = 'Type00'.
+      APPEND wa_calendar TO it_calendar.
+      CLEAR wa_calendar.
+    ENDLOOP.
+
+    SORT it_calendar BY date DESCENDING.
+
+*Remove Working Hours From Holidays
+    CLEAR wa_target.
+    LOOP AT it_calendar INTO wa_calendar.
+      READ TABLE it_target INTO wa_target WITH KEY date = wa_calendar-date.
+      IF sy-subrc EQ 0.
+        wa_target-stdaz = 0.
+        MODIFY it_target FROM wa_target INDEX sy-tabix TRANSPORTING stdaz.
+      ENDIF.
+    ENDLOOP.
+
+* Sorting
+    SORT etb_leave_list BY begda DESCENDING.
+
+* Counter
+    DESCRIBE TABLE etb_leave_list LINES gv_page_list-count_all.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->GET_EMPLOYEE_NUMBER
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_employee_number.
+
+    CHECK g_pernr IS INITIAL.
+
+    SELECT SINGLE pernr
+           FROM pa0105
+           INTO g_pernr
+           WHERE usrty EQ '0001'
+             AND usrid EQ sy-uname
+             AND endda GE sy-datum
+             AND begda LE sy-datum.
+
+
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->GET_TARGET_HOURS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_target_hours.
+    DATA: lv_date_start TYPE sy-datum,
+          lv_date_end   TYPE sy-datum,
+          lv_hrs_2003   TYPE stdaz.
+
+*    *  Get target working hours
+    lv_date_start = sy-datum - 90.
+    lv_date_end   = sy-datum + 270.
+
+    CALL FUNCTION 'CATS_GET_TARGET_HOURS'
+      EXPORTING
+        pernr                    = g_pernr
+        begda                    = lv_date_start
+        endda                    = lv_date_end
+      TABLES
+        target_hours             = it_target
+      EXCEPTIONS
+        pernr_not_found          = 1
+        too_many_days            = 2
+        error_in_sap_enhancement = 3
+        OTHERS                   = 4.
+
+*    If PA2003 for employees exist replace this in target internal table
+    SELECT SINGLE stdaz FROM pa2003 INTO lv_hrs_2003
+      WHERE pernr EQ g_pernr
+      AND endda GE sy-datum.
+
+
+    IF sy-subrc EQ 0.
+      LOOP AT it_target INTO wa_target.
+        IF wa_target-stdaz IS NOT INITIAL.
+          wa_target-stdaz = lv_hrs_2003.
+          MODIFY it_target FROM wa_target INDEX sy-tabix
+                                          TRANSPORTING stdaz.
+        ENDIF.
+
+      ENDLOOP.
+*      REPLACE ALL OCCURRENCES OF stdaz IN TABLE it_target WITH lv_hrs_2003.
+    ENDIF.
+
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->GET_TILE_INFO
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_tile_info.
+
+    DATA: lit_leave_list TYPE tt_leave_list,
+          lv_tile_number TYPE string,
+          lv_tile_unit   TYPE string.
+
+
+    DATA: it_messages      TYPE ptarq_uia_messages_tab,
+          it_request_list  TYPE ptarq_uia_reqlist_tab,
+          wa_rl            LIKE LINE OF it_request_list,
+          lwa_request_list TYPE ptarq_uia_reqlist_struc,
+          it_commands      TYPE ptarq_uia_command_tab,
+          lv_as_of_date    TYPE sy-datum,
+          lv_pernr_str     TYPE string.
+    DATA lv TYPE string VALUE '0'.
+
+    CALL METHOD get_employee_number( ).
+
+    CALL FUNCTION 'PT_ARQ_REQLIST_GET'
+      EXPORTING
+        im_pernr        = g_pernr
+        im_command      = 'SHOW_REQLIST'
+        im_modus        = 'R'
+      IMPORTING
+        ex_request_list = it_request_list
+        ex_as_of_date   = lv_as_of_date
+      TABLES
+        ex_messages     = it_messages
+        ex_commands     = it_commands.
+
+
+    LOOP AT it_request_list INTO wa_rl WHERE status EQ 'SENT'.
+*  Count
+      lv = lv + 1.
+    ENDLOOP.
+
+
+    CALL METHOD server->api_tile_info
+      EXPORTING
+        number      = lv
+        number_unit = 'Requests Sent'
+*       info        =
+*       info_state  =
+*       title       =
+*       indicator   =
+        valuecolor  = 'Critical'
+*       value1      =
+*       value2      =
+*       value3      =
+*       color1      =
+*       color2      =
+*       color3      =
+*       title1      =
+*       title2      =
+*       title3      =
+*       content     =
+*       footer      =
+*       image       =
+      .
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->MAP_MESSAGES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_LT_T100_MESSAGES            TYPE        FPMGB_T_MESSAGES
+* | [<---] EX_LT_BAPI_MESSAGES            TYPE        PTARQ_UIA_MESSAGES_TAB
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD map_messages.
+    DATA: ls_messages_fpm TYPE fpmgb_s_t100_message,
+          ls_ex_message   TYPE bapiret2,
+          ls_bapiret2     TYPE bapiret2.
+
+    LOOP AT im_lt_t100_messages INTO ls_messages_fpm.
+      ls_ex_message-type       = ls_messages_fpm-severity.
+      ls_ex_message-id         = ls_messages_fpm-msgid.
+      ls_ex_message-number     = ls_messages_fpm-msgno.
+      ls_ex_message-message_v1 = ls_messages_fpm-parameter_1.
+      ls_ex_message-message_v2 = ls_messages_fpm-parameter_2.
+      ls_ex_message-message_v3 = ls_messages_fpm-parameter_3.
+      ls_ex_message-message_v4 = ls_messages_fpm-parameter_4.
+
+      IF ls_messages_fpm-plaintext IS INITIAL.
+        CONCATENATE ls_messages_fpm-parameter_1 ls_messages_fpm-parameter_2
+                    ls_messages_fpm-parameter_3 ls_messages_fpm-parameter_4
+               INTO ls_ex_message-message SEPARATED BY space.
+        IF ls_ex_message-message IS INITIAL.
+          IF ls_ex_message-type IS NOT INITIAL AND
+             ls_ex_message-id IS NOT INITIAL AND
+             ls_ex_message-number IS NOT INITIAL.
+            CALL FUNCTION 'BALW_BAPIRETURN_GET2'
+              EXPORTING
+                type   = ls_ex_message-type
+                cl     = ls_ex_message-id
+                number = ls_ex_message-number
+              IMPORTING
+                return = ls_bapiret2.
+            ls_ex_message-message = ls_bapiret2-message.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+      APPEND ls_ex_message TO ex_lt_bapi_messages.
+
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->REPLACE_SUBTYPES_DESC
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IW_MOABW                       TYPE        MOABW (default ='01')
+* | [<-->] ITB_REQUEST                    TYPE        PTARQ_UIA_REQLIST_TAB
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD replace_subtypes_desc.
+
+* Local table for fetching Subtype Texts
+    TYPES: BEGIN OF lty_subtype_desc,
+             awart TYPE t554t-awart,
+             atext TYPE t554t-atext,
+           END OF lty_subtype_desc,
+           ltt_subtype_desc TYPE STANDARD TABLE OF lty_subtype_desc.
+
+    DATA: lwa_request      TYPE ptarq_uia_reqlist_struc,
+          ltb_subtype_desc TYPE ltt_subtype_desc,
+          lwa_subtype_desc TYPE lty_subtype_desc,
+          lv_tabix         TYPE sy-tabix.
+
+    CHECK itb_request IS NOT INITIAL.
+
+    CLEAR ltb_subtype_desc. " Retrieve Subtype descriptions (langu)
+    SELECT awart atext FROM t554t
+      INTO TABLE ltb_subtype_desc
+      FOR ALL ENTRIES IN itb_request
+       WHERE sprsl EQ sy-langu
+         AND moabw EQ iw_moabw   " PS Grouping
+         AND awart EQ itb_request-subty.
+
+    CHECK sy-subrc IS INITIAL.
+    LOOP AT itb_request INTO lwa_request.
+      lv_tabix = sy-tabix.
+
+      CLEAR lwa_subtype_desc.
+      READ TABLE ltb_subtype_desc INTO lwa_subtype_desc WITH KEY awart = lwa_request-subty.
+      CHECK sy-subrc IS INITIAL.
+      lwa_request-subtype_description = lwa_subtype_desc-atext.
+
+      MODIFY itb_request FROM lwa_request INDEX lv_tabix.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->SAVE
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD save.
+
+    DATA: it_messages   TYPE ptarq_uia_messages_tab,
+          it_messages_a TYPE ptarq_uia_messages_tab,
+          it_commands   TYPE ptarq_uia_command_tab,
+          wa_messages   LIKE LINE OF it_messages,
+          lv_return     TYPE bapireturn1,
+          lv_reqnr      TYPE bapip2001-seqnr,
+          lv_request    TYPE ptarq_uia_request,
+          lv_actor      TYPE ptreq_actor_struc_flat,
+          lv_req_check  TYPE ptarq_uia_request,
+          lv_req_save   TYPE ptarq_uia_request,
+          lv_begda      TYPE sy-datum,
+          lv_endda      TYPE sy-datum.
+
+* Any Employee Number ?
+    CHECK gv_user_data-pernr IS NOT INITIAL.
+
+**--------------------------------------------------------------------*
+** Checks - University Custom Validations and checks and format time.
+**--------------------------------------------------------------------*
+    DATA: lt_fpm_messages TYPE fpmgb_t_messages.
+
+    CALL METHOD me->validate_request
+      IMPORTING
+        ex_lt_messages = lt_fpm_messages.
+
+    IF lt_fpm_messages IS NOT INITIAL.
+* Convert old FPM messages to new message structure
+      CALL METHOD me->map_messages
+        EXPORTING
+          im_lt_t100_messages = lt_fpm_messages
+        IMPORTING
+          ex_lt_bapi_messages = it_messages.
+
+* Process the errors the same as Neptune does in the Checks section.
+* Status Table
+      APPEND LINES OF it_messages TO it_status.
+      CALL METHOD format_status( ).
+
+* Any errors ?
+      CLEAR it_messages_a.
+      it_messages_a = it_messages.
+      DELETE it_messages_a WHERE type NE 'E' AND type NE 'A'.
+      CHECK it_messages_a IS INITIAL.
+    ENDIF.
+*--------------------------------------------------------------------*
+* Prepare
+*--------------------------------------------------------------------*
+    CALL FUNCTION 'PT_ARQ_REQUEST_PREPARE'
+      EXPORTING
+        im_request_id = wa_outbox-request_id
+        im_command    = 'CREATE'
+        im_pernr      = gv_user_data-pernr
+        im_modus      = 'R'
+      IMPORTING
+        ex_request    = lv_request
+      TABLES
+        ex_messages   = it_messages
+        ex_commands   = it_commands.
+
+*--------------------------------------------------------------------*
+* Add Data to Structure
+*--------------------------------------------------------------------*
+    lv_request-curr_notice         = wa_outbox-curr_notice.
+    lv_request-ins_item-operation  = 'INS'.
+    lv_request-ins_item-infotype   = '2001'.
+    lv_request-ins_item-subty      = wa_outbox-subty.
+    lv_request-ins_item-begda      = wa_outbox-begda.
+    lv_request-ins_item-endda      = wa_outbox-endda.
+* UN Changes we do not use the start time and end time since we
+* have varying lunch and work schedules. So the begin and end times are
+* are only used for workflow outlook calendar integration only and are NOT
+* and I repeat NOT saved in the HR Infotype 2001.
+* First comment the two lines from Neptune:
+*  lv_request-ins_item-begin_time = wa_outbox-begin_time.
+*  lv_request-ins_item-end_time   = wa_outbox-end_time.
+* then add our two lines:
+    lv_request-ins_item-customer02  = wa_outbox-begin_time.
+    lv_request-ins_item-customer03  = wa_outbox-end_time.
+* add line for negative indicator
+    lv_request-ins_item-customer10  = wa_outbox-customer10.
+* add hours since Neptune did not
+    lv_request-ins_item-attabs_hours = wa_outbox-attabs_hours.
+
+
+*--------------------------------------------------------------------*
+* Checks
+*--------------------------------------------------------------------*
+    CALL FUNCTION 'PT_ARQ_REQUEST_CHECK'
+      EXPORTING
+        im_request  = lv_request
+        im_command  = 'CHECK_CREATE'
+        im_pernr    = gv_user_data-pernr
+        im_modus    = 'R'
+      IMPORTING
+        ex_request  = lv_req_check
+      TABLES
+        ex_messages = it_messages
+        ex_commands = it_commands.
+
+    IF it_messages IS NOT INITIAL.
+* Status Table
+      APPEND LINES OF it_messages TO it_status.
+      CALL METHOD format_status( ).
+
+* Any errors ?
+      CLEAR it_messages_a.
+      it_messages_a = it_messages.
+      DELETE it_messages_a WHERE type NE 'E' AND type NE 'A'.
+      CHECK it_messages_a IS INITIAL.
+
+    ENDIF.
+*--------------------------------------------------------------------*
+* Execute
+*--------------------------------------------------------------------*
+    CALL FUNCTION 'PT_ARQ_REQUEST_EXECUTE'
+      EXPORTING
+        im_request_id = lv_request-request_id
+        im_command    = 'EXECUTE_SEND'
+        im_pernr      = gv_user_data-pernr
+        im_modus      = 'R'
+      IMPORTING
+        ex_request    = lv_req_save
+      TABLES
+        ex_messages   = it_messages
+        ex_commands   = it_commands.
+
+    IF it_messages IS  NOT INITIAL.
+* Status Table
+      APPEND LINES OF it_messages TO it_status.
+      CALL METHOD format_status( ).
+    ENDIF.
+* Any errors ?
+    CHECK it_messages IS INITIAL.
+
+* Commit
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->USER_DEFAULT_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD user_default_data.
+    DATA: l_approver_pernr TYPE pa0000-pernr,
+          l_approver_name  TYPE pa0002-vorna,
+          l_approver_fname TYPE pa0002-vorna,
+          l_approver_lname TYPE pa0002-nachn.
+
+    DATA:l_werks TYPE persa,
+          l_btrtl TYPE btrtl.
+
+    DATA:lt_subtytab TYPE TABLE OF ess_subtytab,
+         la_subtytab TYPE ess_subtytab,
+         la_subtype  LIKE LINE OF it_subtype.
+
+    CALL METHOD get_employee_number( ).
+
+    gv_user_data-pernr = g_pernr.
+
+    SHIFT gv_user_data-pernr LEFT DELETING LEADING '0'.
+
+
+*    Get Approver
+    CALL FUNCTION 'ZWF_CHECK_APPROVER_INFO'
+      EXPORTING
+        personnelnumber            = g_pernr
+*       USERIDCOORD                =
+        eval_path                  = 'AL02'
+*       EMPLOYEEPOSITION           =
+      IMPORTING
+        approverpernr              = l_approver_pernr
+      EXCEPTIONS
+        no_emp_userid_found        = 1
+        no_emp_email_found         = 2
+        no_approver_found          = 3
+        no_appr_userid_found       = 4
+        no_appr_email_found        = 5
+        empl_approver_same         = 6
+        no_coord_email_found       = 7
+        no_email_for_substitute    = 8
+        no_employee_for_substitute = 9
+        OTHERS                     = 10.
+
+*Get Approver full name
+    SELECT SINGLE vorna nachn FROM pa0002
+    INTO (l_approver_fname,l_approver_lname)
+    WHERE pernr EQ l_approver_pernr
+    AND endda GE sy-datum.
+
+    CONCATENATE l_approver_fname l_approver_lname INTO l_approver_name SEPARATED BY space.
+    gv_user_data-approver_pernr = l_approver_pernr.
+    gv_user_data-approver_name = l_approver_name.
+
+    CALL METHOD get_target_hours( ).
+
+* Get Absence Types
+    SELECT SINGLE werks btrtl FROM pa0001
+      INTO (l_werks, l_btrtl)
+      WHERE pernr EQ g_pernr
+      AND endda GE sy-datum.
+
+    gv_user_data-persarea = l_werks.
+
+    CALL FUNCTION 'HR_GET_ESS_SUBTYPES_WEB'
+      EXPORTING
+        pernr            = g_pernr
+        infty            = '2001'
+        molga            = '10'
+        personnelarea    = l_werks
+        perssubarea      = l_btrtl
+      TABLES
+        subtytab         = lt_subtytab
+      EXCEPTIONS
+        no_subty         = 1
+        no_personnelarea = 2
+        OTHERS           = 3.
+
+
+    DELETE lt_subtytab WHERE subty EQ 'AAAA'.
+
+    LOOP AT lt_subtytab INTO la_subtytab.
+      MOVE-CORRESPONDING la_subtytab TO la_subtype.
+      APPEND la_subtype TO it_subtype.
+      CLEAR la_subtytab.
+    ENDLOOP.
+    SORT it_subtype BY subtytext DESCENDING.
+*    ENDIF.
+
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ND_ESS_LEAVE_REQUEST->VALIDATE_REQUEST
+* +-------------------------------------------------------------------------------------------------+
+* | [<---] EX_LT_MESSAGES                 TYPE        FPMGB_T_MESSAGES
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD validate_request.
+    DATA: lo_leave_req     TYPE REF TO zcl_leave_request,
+          lt_returndate    TYPE STANDARD TABLE OF bapiret2 INITIAL SIZE 20,
+          l_returndate_wa  TYPE bapiret2,
+          lv_hours_changed TYPE char1,
+          lv_hrabatt_out   TYPE bapihrabsatt_out,
+          lv_result        TYPE fpm_event_result,
+          lv_dummy_char    TYPE char1,
+          lv_i             TYPE char1,
+          it_messages      TYPE ptarq_uia_messages_tab,
+          it_messages_a    TYPE ptarq_uia_messages_tab.
+
+    DATA: lv_target_hours TYPE stdtg.
+
+    IF g_pernr IS INITIAL.
+      CALL METHOD get_employee_number( ).
+    ENDIF.
+    MOVE-CORRESPONDING gv_page_detail TO wa_outbox.
+
+* fill the end date or start date automatically if one is filled out.
+    IF wa_outbox-begda IS NOT INITIAL AND wa_outbox-endda IS INITIAL.
+      MOVE wa_outbox-begda TO wa_outbox-endda.
+    ENDIF.
+* Now vice-versa
+    IF wa_outbox-begda IS INITIAL AND wa_outbox-endda IS NOT INITIAL.
+      MOVE wa_outbox-endda TO wa_outbox-begda.
+    ENDIF.
+
+    CREATE OBJECT lo_leave_req.
+
+** Perform security check!
+    CALL METHOD zcl_leave_request=>check_for_leave_role
+      IMPORTING
+        ev_result = lv_result.
+
+    IF lv_result = 'FAILED'.
+      MESSAGE e999(zw) WITH 'Authorization error. ECC ESS leave role missing.' INTO lv_dummy_char.
+      APPEND cl_hress_fpm_msg_services=>return_msg_fpm_sy( ) TO ex_lt_messages.
+      RETURN.
+    ENDIF.
+
+* Check if the dummy leave type AAAA for Select a valid abscense type has been selected.
+* This may mean the employee has forgotten to pick a leave type, we should remind them!
+    IF wa_outbox-subty = 'AAAA'.
+      MESSAGE e999(zw) WITH 'Select a valid absence type' INTO lv_dummy_char.
+      APPEND cl_hress_fpm_msg_services=>return_msg_fpm_sy( ) TO ex_lt_messages.
+*        lv_result = 'FAILED'.
+      RETURN.
+    ENDIF.
+
+* Check date fields if they fall on a public holiday
+
+    IF wa_outbox-begda IS NOT INITIAL AND
+       wa_outbox-endda IS NOT INITIAL.
+      REFRESH lt_returndate.
+      CLEAR   l_returndate_wa.
+
+*Indicator to skip holidays for UNMC
+      IF gv_user_data-persarea EQ '3000'.
+        lv_i = 'X'.
+      ENDIF.
+
+      CALL METHOD lo_leave_req->date_check
+        EXPORTING
+          startdate          = wa_outbox-begda
+          enddate            = wa_outbox-endda
+          skip_holiday_check = lv_i
+        IMPORTING
+          return             = lt_returndate.
+      LOOP AT lt_returndate INTO l_returndate_wa.
+        MESSAGE e999(zw) WITH l_returndate_wa-message_v1 l_returndate_wa-message_v2 INTO lv_dummy_char.
+        APPEND cl_hress_fpm_msg_services=>return_msg_fpm_sy( ) TO ex_lt_messages.
+      ENDLOOP.
+      READ TABLE ex_lt_messages TRANSPORTING NO FIELDS
+           WITH KEY severity = 'E'.
+      IF sy-subrc = 0.
+*           lv_result = 'FAILED'.
+        RETURN.
+      ENDIF.
+    ENDIF.
+*   end of check date fields for holiday
+
+*   Check various validations for a single day request and format start and endtimes.
+    IF wa_outbox-begda = wa_outbox-endda.
+      CALL METHOD zcl_leave_request=>check_single_day_request
+        EXPORTING
+          iv_startdate       = wa_outbox-begda
+          iv_enddate         = wa_outbox-endda
+          iv_pernr           = g_pernr
+        IMPORTING
+          ex_hours_changed   = lv_hours_changed
+          ex_target_hours    = lv_target_hours
+        CHANGING
+          iv_absencehours    = wa_outbox-attabs_hours
+          iv_starttime       = wa_outbox-begin_time
+          iv_endtime         = wa_outbox-end_time
+          ex_mt_messages_fpm = ex_lt_messages.
+
+      READ TABLE ex_lt_messages TRANSPORTING NO FIELDS
+      WITH KEY severity = 'E'.
+      IF sy-subrc = 0.
+*           lv_result = 'FAILED'.
+        RETURN.
+      ENDIF.
+
+      IF lv_target_hours LT wa_outbox-attabs_hours.
+        wa_status-type = 'E'.
+        wa_status-parameter = 'Error'.
+        wa_status-message = 'Entered hours exceed target hours'.
+        APPEND wa_status TO it_status.
+        CLEAR wa_status.
+        RETURN.
+      ENDIF.
+
+    ENDIF.
+
+* Now check for collisions.
+    CALL METHOD zcl_leave_request=>check_for_collisions
+      EXPORTING
+        iv_absence_type    = wa_outbox-subty
+        iv_pernr           = g_pernr
+      IMPORTING
+        ex_hrabatt_out     = lv_hrabatt_out
+      CHANGING
+        iv_startdate       = wa_outbox-begda
+        iv_enddate         = wa_outbox-endda
+        iv_absencehours    = wa_outbox-attabs_hours
+        iv_starttime       = wa_outbox-begin_time
+        iv_endtime         = wa_outbox-end_time
+        ex_mt_messages_fpm = ex_lt_messages.
+
+
+    READ TABLE ex_lt_messages TRANSPORTING NO FIELDS
+    WITH KEY severity = 'E'.
+    IF sy-subrc = 0.
+*      lv_result = 'FAILED'.
+      RETURN.
+    ENDIF.
+
+
+
+* Now check for quotas.
+    CALL METHOD zcl_leave_request=>check_for_quota_balances
+      EXPORTING
+        iv_startdate          = wa_outbox-begda
+        iv_enddate            = wa_outbox-endda
+        iv_absence_type       = wa_outbox-subty
+        iv_pernr              = g_pernr
+        iv_hrabsatt_out       = lv_hrabatt_out
+      IMPORTING
+        iv_negative_indicator = wa_outbox-customer10
+      CHANGING
+        iv_absencehours       = wa_outbox-attabs_hours
+        iv_starttime          = wa_outbox-begin_time
+        iv_endtime            = wa_outbox-end_time
+        ex_mt_messages_fpm    = ex_lt_messages.
+
+    READ TABLE ex_lt_messages TRANSPORTING NO FIELDS
+    WITH KEY severity = 'E'.
+    IF sy-subrc = 0.
+*       lv_result = 'FAILED'.
+      RETURN.
+    ENDIF.
+
+*    IF wa_outbox-attabs_hours NE gv_page_detail-attabs_hours.
+*      wa_status-type = 'E'.
+*      wa_status-parameter = 'Error'.
+*      wa_status-message = 'Hours entered are less/more than actual working hours'.
+*      APPEND wa_status TO it_status.
+*      CLEAR wa_status.
+*      RETURN.
+*    ENDIF.
+
+**Convert old FPM messages to new message structure
+*    CALL METHOD me->map_messages
+*      EXPORTING
+*        im_lt_t100_messages = ex_lt_messages
+*      IMPORTING
+*        ex_lt_bapi_messages = it_messages.
+*
+** Process the errors the same as Neptune does in the Checks section.
+** Status Table
+*    APPEND LINES OF it_messages TO it_status.
+*    CALL METHOD format_status( ).
+
+  ENDMETHOD.
+ENDCLASS.

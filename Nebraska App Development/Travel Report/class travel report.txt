@@ -1,0 +1,336 @@
+CLASS zcl_ess_travel_report DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    INTERFACES /neptune/if_nad_server .
+
+    TYPES: BEGIN OF ty_form,
+             pernr       TYPE pernr_d,
+             reinr       TYPE reinr,
+             begda       TYPE begda,
+             endda       TYPE endda,
+             zland       TYPE ptrv_head-zland,
+             wfdat       TYPE sy-datum,
+             wftim       TYPE sy-uzeit,
+             uname       TYPE ptrv_head-uname,
+             dates       TYPE ptrv_head-dates,
+             times       TYPE ptrv_head-times,
+             reinr1      TYPE reinr,
+             begda1      TYPE begda,
+             endda1      TYPE endda,
+             zland1      TYPE ptrv_head-zland,
+             wfdat1      TYPE sy-datum,
+             wftim1      TYPE sy-uzeit,
+             uname1      TYPE ptrv_head-uname,
+             dates1      TYPE ptrv_head-dates,
+             times1      TYPE ptrv_head-times,
+             actioned_by TYPE swwwihead-wi_aagent,
+             lv_r        TYPE boolean,
+             lv_e        TYPE boolean,
+             lv_nxt      TYPE boolean,
+           END OF ty_form.
+
+    TYPES: BEGIN OF ty_variant,
+             variant   TYPE varid-variant,
+             edat      TYPE varid-edat,
+             etime     TYPE varid-etime,
+             ename     TYPE varid-ename,
+             aedat     TYPE varid-aedat,
+             aename    TYPE varid-aename,
+             vtext     TYPE varit-vtext,
+             protected TYPE boolean,
+             type      TYPE string,
+             filter    TYPE string,
+           END OF ty_variant .
+
+    DATA: gv_form TYPE ty_form.
+    DATA t_infotab TYPE ztrav_info_tab.
+    DATA:it_countries TYPE STANDARD TABLE OF bapitr706o.
+    DATA: ra_multi       TYPE /neptune/range_tab,
+          ra_country     TYPE /neptune/range_tab,
+          ra_trips       TYPE /neptune/range_tab,
+          ra_dates_start TYPE /neptune/range_tab,
+          ra_dates_end   TYPE /neptune/range_tab,
+          ra_dates_wf    TYPE /neptune/range_tab,
+          ra_times       TYPE /neptune/range_tab.
+    DATA: it_trips TYPE STANDARD TABLE OF ptrv_head,
+          wa_ei    TYPE bapitrvemp.
+    DATA wa_variant TYPE ty_variant .
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+
+    METHODS get_data .
+    METHODS get_data_report .
+ENDCLASS.
+
+
+
+CLASS ZCL_ESS_TRAVEL_REPORT IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ESS_TRAVEL_REPORT->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_ajax.
+    CASE ajax_id.
+      WHEN 'GET_DATA'.
+        CALL METHOD get_data( ).
+      WHEN 'GET_DATA_REPORT'.
+        CALL METHOD get_data_report( ).
+*      WHEN OTHERS.
+    ENDCASE.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ESS_TRAVEL_REPORT->GET_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_data.
+
+
+    DATA: it_ei TYPE STANDARD TABLE OF bapitrvemp,
+          it_d  TYPE STANDARD TABLE OF bapitrvdef,
+          it_e  TYPE STANDARD TABLE OF bapitr706b.
+
+    DATA: lv_date  TYPE sy-datum,
+          gv_pernr TYPE pernr_d.
+
+
+
+    SELECT SINGLE pernr
+           FROM pa0105
+           INTO gv_pernr
+           WHERE usrty EQ '0001'
+             AND usrid EQ sy-uname
+             AND endda GE sy-datum
+             AND begda LE sy-datum.
+
+    CHECK gv_pernr IS NOT INITIAL.
+
+*Emp info and countries
+    CALL FUNCTION 'BAPI_TRIP_GET_OPTIONS'
+      EXPORTING
+        employeenumber = gv_pernr
+        date           = sy-datum
+        language       = sy-langu
+      TABLES
+        emp_info       = it_ei
+        defaults       = it_d
+        expense_types  = it_e
+        countries      = it_countries.
+
+
+
+    READ TABLE it_ei INTO wa_ei INDEX 1.
+
+*  Trips made by employee
+    lv_date = sy-datum - 365.
+
+    SELECT * FROM ptrv_head INTO TABLE it_trips
+      WHERE pernr EQ gv_pernr
+      AND datv1 GE lv_date.
+
+    SORT it_trips BY reinr DESCENDING.
+
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ESS_TRAVEL_REPORT->GET_DATA_REPORT
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_data_report.
+
+    DATA: lv_r(1) TYPE c,
+          lv_e(1) TYPE c,
+          date_s  TYPE sy-datum,
+          date_e  TYPE sy-datum.
+
+    DATA: e_pernr TYPE STANDARD TABLE OF selopt,
+          e_reinr TYPE STANDARD TABLE OF selopt,
+          e_begda TYPE STANDARD TABLE OF selopt,
+          e_endda TYPE STANDARD TABLE OF selopt,
+          e_zland TYPE STANDARD TABLE OF selopt,
+          e_wfdat TYPE STANDARD TABLE OF selopt,
+          e_wftim TYPE STANDARD TABLE OF selopt,
+          w_pernr TYPE selopt,
+          w_reinr TYPE selopt,
+          w_begda TYPE selopt,
+          w_endda TYPE selopt,
+          w_zland TYPE selopt,
+          w_wfdat TYPE selopt,
+          w_wftim TYPE selopt.
+
+    date_s = sy-datum - 365.
+    date_e = sy-datum.
+
+
+*PERNR
+    IF gv_form-pernr IS NOT INITIAL.
+      w_pernr-sign = 'I'.
+      w_pernr-option = 'EQ'.
+      w_pernr-low = gv_form-pernr.
+      APPEND w_pernr TO e_pernr.
+      CLEAR w_pernr.
+    ENDIF.
+
+*Travel Trips
+    IF gv_form-reinr IS NOT INITIAL.
+      w_reinr-sign = 'I'.
+      w_reinr-option = 'EQ'.
+      w_reinr-low = gv_form-reinr.
+      IF gv_form-reinr1 IS NOT INITIAL.
+        w_reinr-option = 'BT'.
+        w_reinr-high = gv_form-reinr1.
+      ENDIF.
+      APPEND w_reinr TO e_reinr.
+      CLEAR w_reinr.
+    ENDIF.
+    IF ra_trips IS NOT INITIAL.
+      APPEND LINES OF ra_trips TO e_reinr.
+    ENDIF.
+
+
+*Start Date
+    IF gv_form-begda IS NOT INITIAL.
+      w_begda-sign = 'I'.
+      w_begda-option = 'EQ'.
+      w_begda-low = gv_form-begda.
+      IF gv_form-begda1 IS NOT INITIAL.
+        w_begda-option = 'BT'.
+        w_begda-high = gv_form-begda1.
+      ENDIF.
+      APPEND w_begda TO e_begda.
+      CLEAR w_begda.
+    ELSE.
+** add 12 months range
+*      w_begda-sign = 'I'.
+*      w_begda-option = 'BT'.
+*      w_begda-low = date_s.
+*      w_begda-high = date_e.
+*      APPEND w_begda TO e_begda.
+*      CLEAR w_begda.
+    ENDIF.
+    IF ra_dates_start IS NOT INITIAL.
+      APPEND LINES OF ra_dates_start TO e_begda.
+    ENDIF.
+
+
+*End Dates
+    IF gv_form-endda IS NOT INITIAL.
+      w_endda-sign = 'I'.
+      w_endda-option = 'EQ'.
+      w_endda-low = gv_form-endda.
+      IF gv_form-endda1 IS NOT INITIAL.
+        w_endda-option = 'BT'.
+        w_endda-high = gv_form-endda1.
+      ENDIF.
+      APPEND w_endda TO e_endda.
+      CLEAR w_endda.
+    ELSE.
+**      * add 12 months range
+*      w_endda-sign = 'I'.
+*      w_endda-option = 'BT'.
+*      w_endda-low = date_s.
+*      w_endda-high = date_e.
+*      APPEND w_endda TO e_endda.
+*      CLEAR w_endda.
+    ENDIF.
+    IF ra_dates_end IS NOT INITIAL.
+      APPEND LINES OF ra_dates_end TO e_endda.
+    ENDIF.
+
+*Country
+    IF gv_form-zland IS NOT INITIAL.
+      w_zland-sign = 'I'.
+      w_zland-option = 'EQ'.
+      w_zland-low = gv_form-zland.
+      IF gv_form-zland1 IS NOT INITIAL.
+        w_zland-option = 'BT'.
+        w_zland-high = gv_form-zland1.
+      ENDIF.
+      APPEND w_zland TO e_zland.
+      CLEAR w_zland.
+    ENDIF.
+
+    IF ra_country IS NOT INITIAL.
+      APPEND LINES OF ra_country TO e_zland.
+    ENDIF.
+
+*Workflow Date
+    IF gv_form-wfdat IS NOT INITIAL.
+      w_wfdat-sign = 'I'.
+      w_wfdat-option = 'EQ'.
+      w_wfdat-low = gv_form-wfdat.
+      IF gv_form-wfdat1 IS NOT INITIAL.
+        w_wfdat-option = 'BT'.
+        w_wfdat-high = gv_form-wfdat1.
+      ENDIF.
+      APPEND w_wfdat TO e_wfdat.
+      CLEAR w_wfdat.
+    ELSE.
+**  add 12 months range
+*      w_wfdat-sign = 'I'.
+*      w_wfdat-option = 'BT'.
+*      w_wfdat-low = date_s.
+*      w_wfdat-high = date_e.
+*      APPEND w_wfdat TO e_wfdat.
+*      CLEAR w_wfdat.
+    ENDIF.
+
+    IF ra_dates_wf IS NOT INITIAL.
+      APPEND LINES OF ra_dates_wf TO e_wfdat.
+    ENDIF.
+
+*Wf Time
+    IF gv_form-wftim IS NOT INITIAL.
+      w_wftim-sign = 'I'.
+      w_wftim-option = 'EQ'.
+      w_wftim-low = gv_form-wftim.
+      IF gv_form-wftim1 IS NOT INITIAL.
+        w_wftim-option = 'BT'.
+        w_wftim-high = gv_form-wftim1.
+      ENDIF.
+      APPEND w_wftim TO e_wftim.
+      CLEAR w_wftim.
+    ENDIF.
+    IF ra_times IS NOT INITIAL.
+      APPEND LINES OF ra_times TO e_wftim.
+    ENDIF.
+
+*    DATA: lv_agent TYPE
+
+
+    CALL FUNCTION 'ZWF_TRAVEL_WORKFLOW_INFO'
+      EXPORTING
+        requests    = gv_form-lv_r
+        expenses    = gv_form-lv_e
+        agent       = gv_form-actioned_by
+*        status_code = '000'
+      TABLES
+        s_pernr     = e_pernr
+        s_reinr     = e_reinr
+        s_begda     = e_begda
+        s_endda     = e_endda
+        s_cntry     = e_zland
+        s_wfdat     = e_wfdat
+        s_wftim     = e_wftim
+        infotab     = t_infotab.
+
+
+
+  ENDMETHOD.
+ENDCLASS.
