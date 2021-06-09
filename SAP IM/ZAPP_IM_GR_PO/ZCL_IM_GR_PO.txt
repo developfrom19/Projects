@@ -1,0 +1,1042 @@
+CLASS zcl_im_gr_po DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+*"* public components of class ZCL_IM_GR_PO
+*"* do not include other source files here!!!
+
+    INTERFACES /neptune/if_nad_server .
+
+    TYPES:
+      BEGIN OF ty_po_search,
+                 ebeln TYPE ekko-ebeln,
+                 lifnr TYPE ekko-lifnr,
+                 cre_date1 TYPE sy-datum,
+                 cre_date2 TYPE sy-datum,
+                 matnr TYPE ekpo-matnr,
+                 werks TYPE ekpo-werks,
+                 delivery TYPE vbeln_vl,
+                 delivery_item TYPE char6,
+                 hunit TYPE exidv,
+                 reversal_state TYPE boolean,
+    END OF ty_po_search .
+    TYPES:
+      BEGIN OF ty_delivery_search,
+               ebeln TYPE ekko-ebeln,
+               vbeln TYPE lips-vbeln,
+               posnr TYPE lips-posnr,
+              matnr TYPE ekpo-matnr,
+          END OF ty_delivery_search .
+    TYPES:
+      BEGIN OF ty_po_details,
+            po_number TYPE ekko-ebeln,
+            vendor TYPE ekko-lifnr,
+*        eq_eindt TYPE ekko-eq_eindt, "Delivery Date
+            plant TYPE ekpo-werks,
+*        store_loc TYPE ekpo-lgort,
+            vend_name TYPE lfa1-name1,
+            budat TYPE ekbe-budat,
+            enable_print TYPE boolean,
+            ref_doc_no TYPE xblnr,
+            header_txt TYPE bktxt,
+          aufnr TYPE aufnr,
+          reversal TYPE boolean,
+          bsart TYPE ekko-bsart,
+        reswk TYPE ekko-reswk,
+       doc_date TYPE ekko-bedat, "Doc Date
+            END OF ty_po_details .
+    TYPES:
+      BEGIN OF ty_serials,
+        po_number TYPE ekko-ebeln,
+        po_item TYPE ekpo-ebelp,
+         material TYPE matnr,
+         matdoc_itm TYPE mblpo  ,
+         serialno TYPE   gernr,
+         uii      TYPE   uii_char72,
+       END OF ty_serials .
+    TYPES:
+      BEGIN OF ty_message,
+              mtype TYPE string,
+              message TYPE string,
+              END OF ty_message .
+    TYPES:
+      BEGIN OF ty_po_items,
+*             maktx TYPE makt-maktx,
+                   highlight TYPE string,
+                   en_qty(4) TYPE n,
+                   select TYPE boolean,
+                    serialno TYPE gernr,
+                   bat_visi TYPE boolean,
+                   ser_visi TYPE boolean,
+                   decimals TYPE andec,
+                    orderid TYPE aufnr.
+            INCLUDE TYPE zzpo_item.
+    TYPES:END OF ty_po_items .
+    TYPES:
+      BEGIN OF ty_po,
+          po_number TYPE ekko-ebeln,
+          created_on TYPE ekko-aedat,
+          vendor TYPE ekko-lifnr,
+          material TYPE matnr,
+        END OF ty_po .
+    TYPES:
+      BEGIN OF ty_mat_doc,
+        printer TYPE rspopname.
+       INCLUDE TYPE bapi2017_gm_head_02.
+    TYPES: END OF ty_mat_doc .
+    TYPES:
+      BEGIN OF ty_gm_items,
+            labelno TYPE i.
+            INCLUDE TYPE bapi2017_gm_item_show.
+    TYPES:END OF ty_gm_items .
+    TYPES:
+      BEGIN OF   ty_prod_item,
+         bat_visi TYPE boolean,
+         ser_visi TYPE boolean,
+         serialno TYPE gernr.
+            INCLUDE TYPE zafpo_item.
+    TYPES: END OF ty_prod_item .
+
+    DATA: attachment TYPE REF TO zcl_im_attachment,
+           gs_attachment TYPE attachment->ty_list_attachment,
+          gt_attachment TYPE STANDARD TABLE OF attachment->ty_list_attachment.
+
+
+    DATA:
+      gt_serials TYPE STANDARD TABLE OF ty_serials .
+    DATA wa_serials TYPE ty_serials .
+    DATA gv_mat_doc TYPE ty_mat_doc .
+    DATA:
+      gt_po TYPE STANDARD TABLE OF ty_po .
+    DATA:
+      gt_po_items TYPE STANDARD TABLE OF ty_po_items .
+    DATA gv_po_items TYPE ty_po_items .
+    DATA gv_po_search TYPE ty_po_search .
+    DATA gv_po_details TYPE ty_po_details .
+    DATA gv_delivery_search TYPE ty_delivery_search .
+    DATA:
+      gt_po_acc_assign TYPE STANDARD TABLE OF zbapiekkn .
+    DATA:
+      gt_message TYPE STANDARD TABLE OF ty_message .
+    DATA gv_message TYPE ty_message .
+    DATA gv_prod_item TYPE ty_prod_item .
+    DATA:
+      gt_gm_items TYPE STANDARD TABLE OF ty_gm_items .
+    DATA gv_gm_items TYPE ty_gm_items .
+  PROTECTED SECTION.
+*"* protected components of class ZCL_IM_GR_PO
+*"* do not include other source files here!!!
+  PRIVATE SECTION.
+*"* private components of class ZCL_IM_GR_PO
+*"* do not include other source files here!!!
+
+    METHODS user_parameters .
+    METHODS get_po_search .
+    METHODS get_po_items
+      IMPORTING
+        !purchaseorder TYPE ebeln OPTIONAL
+        !material TYPE matnr OPTIONAL
+        !in_hu TYPE exidv OPTIONAL
+        !in_delivery TYPE vbeln_vl OPTIONAL
+        !in_delivery_item TYPE char6 OPTIONAL
+        !reversal TYPE char1 OPTIONAL .
+    METHODS post
+      IMPORTING
+        !applid TYPE string OPTIONAL
+        !request TYPE /neptune/data_request OPTIONAL .
+    METHODS matdoc_details .
+    METHODS print .
+    METHODS get_prod_item
+      IMPORTING
+        !ajax_value TYPE string .
+ENDCLASS.
+
+
+
+CLASS ZCL_IM_GR_PO IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_IM_GR_PO->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_ajax.
+    DATA: lv_ebeln TYPE ebeln,
+
+      lv_hu TYPE    exidv,
+      lv_del TYPE vbeln_vl,
+      lv_del_itm TYPE char6,
+      lv_order TYPE string,
+      lv_reversal(1) TYPE c,
+      lv_flag_error TYPE char1.
+
+
+
+    CASE ajax_id.
+
+      WHEN 'USER_PARAMETERS'.
+        CALL METHOD user_parameters( ).
+
+      WHEN 'GET_PO_ITEMS'.
+        CASE applid.
+*Purchase Order and Orgin Acceptance
+          WHEN 'ZAPP_IM_GR_PO' OR 'ZAPP_IM_GR_OA'.
+            SPLIT ajax_value AT ',' INTO lv_ebeln lv_reversal.
+*            lv_ebeln = ajax_value.
+*Delivery
+          WHEN 'ZAPP_IM_GR_DEL'.
+            SPLIT ajax_value AT ',' INTO lv_del lv_del_itm.
+            CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+              EXPORTING
+                input  = lv_del
+              IMPORTING
+                output = lv_del.
+*Handling Unit
+          WHEN 'ZAPP_IM_GR_HU'.
+            lv_hu = ajax_value.
+            CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+              EXPORTING
+                input  = lv_hu
+              IMPORTING
+                output = lv_hu.
+
+          WHEN OTHERS.
+
+        ENDCASE.
+
+        CALL METHOD me->get_po_items
+          EXPORTING
+            purchaseorder    = lv_ebeln
+            in_hu            = lv_hu
+            in_delivery      = lv_del
+            in_delivery_item = lv_del_itm
+            reversal         = lv_reversal.
+
+      WHEN 'GET_PO_SEARCH'.
+        CALL METHOD get_po_search( ).
+
+      WHEN 'GET_PROD_ITEM'.
+        CALL METHOD get_prod_item( ajax_value ).
+
+      WHEN 'POST_DATA'.
+        CALL METHOD post( applid = applid request = request ).
+
+      WHEN 'MATDOC_DETAILS'.
+        CALL METHOD matdoc_details( ).
+
+        IF applid NE 'ZAPP_IM_GR_PRO'.
+*Refresh Items list
+          CALL METHOD me->get_po_items
+            EXPORTING
+              purchaseorder = gv_po_details-po_number.
+        ELSE.
+*Refresh Production order details
+          lv_order = gv_po_details-aufnr.
+          CALL METHOD me->get_prod_item
+            EXPORTING
+              ajax_value = lv_order.
+
+
+        ENDIF.
+
+      WHEN 'PRINT'.
+        CALL METHOD print( ).
+
+      WHEN 'UPLOAD_ATTACHMENTS'.
+        DATA: lv_mseg TYPE mseg.
+
+*Check newly created Material document exist in SAP
+        SELECT SINGLE * FROM mseg INTO lv_mseg
+           WHERE mblnr EQ gv_mat_doc-mat_doc.
+
+        IF sy-subrc EQ 0.
+          gs_attachment-document = gv_mat_doc-mat_doc && gv_mat_doc-doc_year.
+          CREATE OBJECT attachment.
+
+          CALL METHOD attachment->save_docs
+            EXPORTING
+              ls_list_attachment = gs_attachment
+            IMPORTING
+              flag_error         = lv_flag_error.
+        ENDIF.
+
+        IF lv_flag_error IS INITIAL AND
+           gv_mat_doc-mat_doc IS NOT INITIAL.
+*            Mark upload complete
+          gs_attachment-icon = 'sap-icon://accept'.
+*Clear base64 string because it is not required on front-end anymore
+          gs_attachment-content = ''.
+        ELSE.
+*           * material document not found or Error Flag
+          gs_attachment-icon = 'sap-icon://error'.
+
+        ENDIF.
+
+
+*Hide Busy indicator
+        gs_attachment-busy_ind = ''.
+
+    ENDCASE.
+
+
+
+
+  ENDMETHOD.                    "/neptune/if_nad_server~handle_on_ajax
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->GET_PO_ITEMS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] PURCHASEORDER                  TYPE        EBELN(optional)
+* | [--->] MATERIAL                       TYPE        MATNR(optional)
+* | [--->] IN_HU                          TYPE        EXIDV(optional)
+* | [--->] IN_DELIVERY                    TYPE        VBELN_VL(optional)
+* | [--->] IN_DELIVERY_ITEM               TYPE        CHAR6(optional)
+* | [--->] REVERSAL                       TYPE        CHAR1(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_po_items.
+
+
+    TYPES: BEGIN OF ty_t006,
+            msehi TYPE msehi,
+            andec TYPE andec,
+        END OF ty_t006.
+
+    DATA: it_t006 TYPE STANDARD TABLE OF ty_t006,
+          wa_t006 TYPE ty_t006.
+
+
+    DATA: lv_tdid TYPE thead-tdid,
+          lv_name TYPE thead-tdname,
+          it_lines TYPE STANDARD TABLE OF tline,
+          wa_lines TYPE tline.
+
+    DATA: it_zzpo_item TYPE STANDARD TABLE OF zzpo_item,
+          wa_zzpo_item TYPE zzpo_item,
+          wa_zzpo_item1 TYPE zzpo_item,
+          it_return TYPE STANDARD TABLE OF bapireturn,
+          wa_return TYPE bapireturn,
+          it_po_items TYPE STANDARD TABLE OF bapiekpo,
+          wa_po_items TYPE bapiekpo,
+          it_item_acc TYPE STANDARD TABLE OF bapiekkn,
+          wa_item_acc TYPE bapiekkn,
+          wa_po_acc_assign LIKE LINE OF gt_po_acc_assign,
+          lv_bapibatchkey TYPE bapibatchkey-batch.
+
+    REFRESH:gt_po_items,
+            it_zzpo_item,
+            gt_po_acc_assign,
+            it_return.
+
+
+    IF reversal EQ 'X'.
+      CALL FUNCTION 'BAPI_PO_GETDETAIL'
+        EXPORTING
+          purchaseorder              = purchaseorder
+          items                      = 'X'
+        TABLES
+          po_items                   = it_po_items
+          po_item_account_assignment = it_item_acc
+          return                     = it_return.
+
+
+      DELETE it_po_items WHERE ret_item NE space
+                            OR delete_ind > space
+                            OR gr_ind = space
+                            OR item_cat = '9'.
+
+      LOOP AT it_po_items INTO wa_po_items.
+        MOVE-CORRESPONDING wa_po_items TO wa_zzpo_item.
+        APPEND wa_zzpo_item TO it_zzpo_item.
+        CLEAR wa_zzpo_item.
+      ENDLOOP.
+
+      LOOP AT it_item_acc INTO wa_item_acc.
+        MOVE-CORRESPONDING wa_item_acc TO  wa_po_acc_assign.
+        APPEND  wa_po_acc_assign TO  gt_po_acc_assign.
+        CLEAR  wa_po_acc_assign.
+      ENDLOOP.
+    ELSE.
+      CALL FUNCTION 'Z_MM_WD_BAPI_PO_GETDETAIL'
+        EXPORTING
+          in_hu                      = in_hu
+          in_delivery                = in_delivery
+          in_delivery_item           = in_delivery_item
+          in_purchaseorder           = purchaseorder
+        TABLES
+*         zzpo_items                 =
+          zzpo_items_orig            = it_zzpo_item
+          po_item_account_assignment = gt_po_acc_assign
+*         T_MATERIAL_UNITS           =
+          return                     = it_return.
+    ENDIF.
+
+    IF it_zzpo_item IS NOT INITIAL.
+      SELECT msehi andec FROM t006 INTO TABLE it_t006
+        FOR ALL ENTRIES IN it_zzpo_item
+        WHERE msehi EQ it_zzpo_item-unit.
+    ENDIF.
+
+
+    SORT it_zzpo_item BY po_number.
+
+    LOOP AT it_zzpo_item INTO wa_zzpo_item.
+
+
+      wa_zzpo_item1 = wa_zzpo_item. "Passing into duplicate structure for AT NEW statement
+**Populate Details Page
+      AT NEW po_number.
+
+        MOVE-CORRESPONDING wa_zzpo_item1 TO gv_po_details.
+
+*PO Header Details
+        SELECT SINGLE
+                lifnr
+                bsart
+                reswk
+          FROM ekko
+          INTO (gv_po_details-vendor,
+                gv_po_details-bsart,
+                gv_po_details-reswk)
+           WHERE ebeln EQ wa_zzpo_item1-po_number.   "#EC CI_SEL_NESTED
+
+
+        gv_po_details-doc_date = sy-datum."Doc date for GR header should be today's date
+
+        IF  gv_po_details-vendor IS NOT INITIAL.
+
+          SELECT SINGLE name1 FROM lfa1              "#EC CI_SEL_NESTED
+            INTO gv_po_details-vend_name WHERE
+            lifnr EQ gv_po_details-vendor.
+
+        ELSEIF gv_po_details-bsart EQ 'UB'.
+
+          SELECT SINGLE name1 FROM t001w             "#EC CI_SEL_NESTED
+            INTO gv_po_details-vend_name WHERE
+            werks EQ gv_po_details-reswk.
+
+          CONCATENATE 'Plant' gv_po_details-reswk INTO
+           gv_po_details-vendor SEPARATED BY space .
+
+        ENDIF.
+
+*Posting Date
+        gv_po_details-budat = sy-datum.  "Default to today's date
+
+      ENDAT.
+
+**Populate Items page
+      MOVE-CORRESPONDING wa_zzpo_item TO gv_po_items.
+
+* BOC H189220 KR721064
+      CALL FUNCTION 'CONVERSION_EXIT_CUNIT_OUTPUT'
+        EXPORTING
+          input          = gv_po_items-unit
+          language       = sy-langu
+        IMPORTING
+          output         = gv_po_items-unit
+        EXCEPTIONS
+          unit_not_found = 1
+          OTHERS         = 2.
+      IF sy-subrc <> 0.
+      ENDIF.
+* EOC H189220 KR721064
+*Decimal Precision
+      READ TABLE it_t006 INTO wa_t006 WITH KEY msehi = gv_po_items-unit.
+      IF sy-subrc EQ 0.
+        gv_po_items-decimals = wa_t006-andec.
+      ENDIF.
+
+*Default entry qty to open quantity
+      gv_po_items-entry_qty = gv_po_items-open_del_qty.
+
+
+*Toggle Visibility of Batch and serial input fields
+      IF gv_po_items-serial_ind IS NOT INITIAL.
+        gv_po_items-ser_visi = 'X'.
+      ENDIF.
+      IF gv_po_items-batch_ind IS NOT INITIAL.
+        gv_po_items-bat_visi = 'X'.
+      ENDIF.
+
+*Auto Generate Batch Number
+      IF gv_po_items-batch_ind IS NOT INITIAL AND gv_po_items-batch IS INITIAL.
+        CALL FUNCTION 'NUMBER_GET_NEXT'
+          EXPORTING
+            nr_range_nr             = '01'
+            object                  = 'BATCH_CLT'
+            quantity                = '1'
+          IMPORTING
+            number                  = lv_bapibatchkey
+          EXCEPTIONS
+            interval_not_found      = 1
+            number_range_not_intern = 2
+            object_not_found        = 3
+            quantity_is_0           = 4
+            quantity_is_not_1       = 5
+            interval_overflow       = 6
+            buffer_overflow         = 7
+            OTHERS                  = 8.
+
+        gv_po_items-batch = lv_bapibatchkey .
+      ENDIF.
+
+*Display red highlight on Items table
+      IF gv_po_items-batch_ind IS NOT INITIAL OR
+         gv_po_items-serial_ind IS NOT INITIAL OR
+         gv_po_items-store_loc IS INITIAL.
+
+        gv_po_items-highlight = 'Error'.
+      ELSE.
+        gv_po_items-highlight = 'None'.
+      ENDIF.
+
+*By default mark items unselected
+      gv_po_items-select = ''.
+
+      APPEND gv_po_items TO gt_po_items.
+      CLEAR: wa_zzpo_item,
+             wa_zzpo_item1.
+    ENDLOOP.
+
+    SORT gt_po_items BY po_item ASCENDING.
+*Create Message
+    LOOP AT it_return INTO wa_return.
+      CASE wa_return-type.
+        WHEN 'E' .
+          gv_message-mtype = 'Error'.
+        WHEN 'W'.
+          gv_message-mtype = 'Warning'.
+        WHEN 'S'.
+          gv_message-mtype = 'Success'.
+        WHEN OTHERS.
+          gv_message-mtype = 'None'.
+      ENDCASE.
+
+      gv_message-message = wa_return-message.
+      APPEND gv_message TO gt_message.
+      CLEAR gv_message.
+      SORT gt_message BY mtype.
+    ENDLOOP.
+
+  ENDMETHOD.                    "get_po_items
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->GET_PO_SEARCH
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_po_search.
+
+    DATA: lv_start TYPE string,
+          lv_start1 TYPE sy-datum,
+          lv_end TYPE string,
+          lv_end1 TYPE sy-datum,
+          s_date_range TYPE RANGE OF ekko-aedat,
+          s_vend_range TYPE RANGE OF ekko-lifnr,
+          s_mat_range TYPE RANGE OF mara-matnr,
+          w_date_range LIKE LINE OF s_date_range,
+          w_vend_range LIKE LINE OF s_vend_range,
+          w_mat_range LIKE LINE OF s_mat_range.
+
+*Date ranges
+    IF gv_po_search-cre_date1 IS NOT INITIAL.
+      w_date_range-sign = 'I'.
+      w_date_range-option = 'BT'.
+      w_date_range-low = gv_po_search-cre_date1.
+      w_date_range-high = gv_po_search-cre_date2.
+      APPEND w_date_range TO s_date_range.
+      CLEAR w_date_range.
+    ENDIF.
+
+**Material
+*    IF  gv_po_search-matnr IS NOT INITIAL.
+*      CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'
+*        EXPORTING
+*          input        = gv_po_search-matnr
+*        IMPORTING
+*          output       = gv_po_search-matnr
+*        EXCEPTIONS
+*          length_error = 1
+*          OTHERS       = 2.
+*
+*      w_mat_range-sign = 'I'.
+*      w_mat_range-option = 'EQ'.
+*      w_mat_range-low = gv_po_search-matnr.
+*      APPEND w_mat_range TO s_mat_range.
+*      CLEAR w_mat_range.
+*    ENDIF.
+
+*Vendor
+    IF  gv_po_search-lifnr IS NOT INITIAL.
+
+      TRANSLATE gv_po_search-lifnr TO UPPER CASE.
+
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+        EXPORTING
+          input  = gv_po_search-lifnr
+        IMPORTING
+          output = gv_po_search-lifnr.
+
+      w_vend_range-sign = 'I'.
+      w_vend_range-option = 'EQ'.
+      w_vend_range-low = gv_po_search-lifnr.
+      APPEND w_vend_range TO s_vend_range.
+      CLEAR w_vend_range.
+    ENDIF.
+
+    SELECT a~ebeln a~aedat a~lifnr b~matnr FROM ekko AS a INNER JOIN ekpo AS b
+      ON a~ebeln = b~ebeln
+      INTO TABLE gt_po
+      WHERE a~aedat IN s_date_range
+      AND b~werks EQ gv_po_search-werks
+      AND a~lifnr IN s_vend_range
+      AND a~frgrl EQ space
+*      AND b~matnr IN s_mat_range
+      AND b~bstyp EQ 'F'
+      AND b~wepos EQ 'X'
+      AND b~loekz EQ space  "Deletion Indicator
+      AND b~elikz EQ space   "Delivery completed
+      AND b~erekz EQ space.  "Final Invoice
+
+    SORT gt_po BY po_number DESCENDING.
+    DELETE ADJACENT DUPLICATES FROM gt_po COMPARING po_number.
+
+**Get PO's from header
+*    SELECT ebeln FROM ekko
+*      INTO TABLE it_po
+*      WHERE aedat IN s_date_range
+*      AND lifnr IN s_vend_range.  "If vendor is provided...optional
+*
+*    IF it_po IS NOT INITIAL.
+** Filter PO' based on Other Selections
+*      SELECT ebeln FROM ekpo
+*             INTO TABLE it_po_item
+*             FOR ALL ENTRIES IN it_po
+*             WHERE ebeln EQ it_po-po_number
+*             AND werks EQ gv_po_search-werks  "Plant is complusory
+*             AND matnr IN s_mat_range. "If material is provided....optional
+*
+*      SORT it_po_item BY po_number.
+*      DELETE ADJACENT DUPLICATES FROM it_po_item COMPARING po_number.
+*    ENDIF.
+*ELSE.
+*
+*  lv_vendor = gv_po_search-lifnr.
+*  lv_material = gv_po_search-matnr.
+*  lv_plant = gv_po_search-werks.
+*
+*  CALL FUNCTION 'BAPI_PO_GETITEMS'
+*    EXPORTING
+*      vendor          = lv_vendor
+*      material        = lv_material
+*      plant           = lv_plant
+*      with_po_headers = 'X'
+*    TABLES
+*      po_headers      = it_po_header
+*      po_items        = it_po_items
+*      return          = it_return.
+*
+*ENDIF.
+  ENDMETHOD.                    "get_po_search
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->GET_PROD_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_prod_item.
+
+    DATA: w_afpo_item TYPE zafpo_item,
+          lv_aufnr TYPE aufnr,
+          it_return TYPE STANDARD TABLE OF bapireturn,
+          wa_return TYPE bapireturn.
+
+    lv_aufnr = ajax_value.
+
+    CALL FUNCTION 'Z_MM_WD_PROD_ORDER_INFO'
+      EXPORTING
+        in_aufnr      = lv_aufnr
+      IMPORTING
+        out_afpo_item = w_afpo_item
+      TABLES
+        return        = it_return.
+
+
+    IF it_return IS INITIAL.
+      MOVE-CORRESPONDING w_afpo_item TO gv_prod_item.
+      IF gv_prod_item-serial_ind IS NOT INITIAL.
+        gv_prod_item-ser_visi = 'X'."Set visibility true
+      ENDIF.
+    ENDIF.
+
+    LOOP AT it_return INTO wa_return.
+      CASE wa_return-type.
+        WHEN 'E' .
+          gv_message-mtype = 'Error'.
+        WHEN 'W'.
+          gv_message-mtype = 'Warning'.
+        WHEN 'S'.
+          gv_message-mtype = 'Success'.
+        WHEN OTHERS.
+          gv_message-mtype = 'None'.
+      ENDCASE.
+
+      gv_message-message = wa_return-message.
+      APPEND gv_message TO gt_message.
+      CLEAR gv_message.
+    ENDLOOP.
+
+    SORT gt_message BY mtype.
+
+
+  ENDMETHOD.                    "get_prod_item
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->MATDOC_DETAILS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD matdoc_details.
+
+    DATA:      wa_matdoc TYPE bapi2017_gm_head_ret-mat_doc,
+               wa_matdoc_yr TYPE bapi2017_gm_head_ret-doc_year,
+               it_return2 TYPE STANDARD TABLE OF bapiret2,
+               wa_gm_header TYPE bapi2017_gm_head_02,
+               it_gm_items TYPE STANDARD TABLE OF bapi2017_gm_item_show,
+               wa_gm_items TYPE bapi2017_gm_item_show,
+               wa_return TYPE bapiret2.
+
+
+    wa_matdoc = gv_mat_doc-mat_doc.
+    wa_matdoc_yr = gv_mat_doc-doc_year.
+
+    CHECK wa_matdoc IS NOT INITIAL.
+
+    CALL FUNCTION 'Z_MM_WD_BAPI_GOODSMVT_GETD'
+      EXPORTING
+        materialdocument = wa_matdoc
+        matdocumentyear  = wa_matdoc_yr
+      IMPORTING
+        goodsmvt_header  = wa_gm_header
+      TABLES
+        goodsmvt_items   = it_gm_items
+        return           = it_return2.
+
+    CLEAR gv_mat_doc.
+    MOVE-CORRESPONDING wa_gm_header TO gv_mat_doc.
+
+    GET PARAMETER ID 'Z_LABEL_PRINTER' FIELD gv_mat_doc-printer.
+
+    LOOP AT it_gm_items INTO wa_gm_items.
+      MOVE-CORRESPONDING wa_gm_items TO gv_gm_items.
+* BOC H189220 KR721064
+      CALL FUNCTION 'CONVERSION_EXIT_CUNIT_OUTPUT'
+        EXPORTING
+          input          = wa_gm_items-entry_uom
+          language       = sy-langu
+        IMPORTING
+          output         = gv_gm_items-entry_uom
+        EXCEPTIONS
+          unit_not_found = 1
+          OTHERS         = 2.
+      IF sy-subrc <> 0.
+        gv_gm_items-entry_uom = wa_gm_items-entry_uom.
+      ENDIF.
+* EOC H189220 KR721064
+      APPEND gv_gm_items TO gt_gm_items.
+      CLEAR gv_gm_items.
+    ENDLOOP.
+
+    LOOP AT it_return2 INTO wa_return.
+      CASE wa_return-type.
+        WHEN 'E' .
+          gv_message-mtype = 'Error'.
+        WHEN 'W'.
+          gv_message-mtype = 'Warning'.
+        WHEN 'S'.
+          gv_message-mtype = 'Success'.
+        WHEN OTHERS.
+          gv_message-mtype = 'None'.
+      ENDCASE.
+
+      gv_message-message = wa_return-message.
+      APPEND gv_message TO gt_message.
+      CLEAR gv_message.
+      SORT gt_message BY mtype.
+    ENDLOOP.
+
+
+
+
+*  gt_gm_items[] = it_gm_items[].
+
+  ENDMETHOD.                    "matdoc_details
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->POST
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING(optional)
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD post.
+    DATA:  wa_header TYPE bapi2017_gm_head_01,
+           wa_code TYPE bapi2017_gm_code,
+           it_gm_item TYPE STANDARD TABLE OF bapi2017_gm_item_create,
+           it_gm_serialnumber TYPE STANDARD TABLE OF bapi2017_gm_serialnumber,
+           it_return TYPE STANDARD TABLE OF bapiret2,
+           it_zsernr TYPE STANDARD TABLE OF zsernr,
+           wa_return TYPE bapiret2,
+           wa_gm_item TYPE bapi2017_gm_item_create,
+           wa_gm_serialnumber TYPE bapi2017_gm_serialnumber,
+           wa_mvt_header TYPE     bapi2017_gm_head_ret,
+           wa_matdoc TYPE bapi2017_gm_head_ret-mat_doc,
+           wa_matdoc_yr TYPE bapi2017_gm_head_ret-doc_year,
+           it_return2 TYPE STANDARD TABLE OF bapiret2,
+           wa_gm_header TYPE bapi2017_gm_head_02.
+
+
+    DATA: lv_mblnr TYPE mblnr,
+          lv_mblpo TYPE mblpo,
+          lv_mjahr TYPE mjahr,
+          lv_rspopname TYPE rspopname,
+          lv_i TYPE i.
+
+    DATA: lv_usage TYPE balhdr-subobject. "added for application tracking
+    CONSTANTS: c_mem_usage_id(20) VALUE 'SAPLZMWDBAPI_USAGE'. "added for application tracking
+
+    REFRESH: it_return,
+             it_gm_item,
+             it_gm_serialnumber,
+             it_zsernr.
+
+*--------------------------------------------------------------------*
+*Only applicable for GR- production order application
+    IF gv_po_details-aufnr IS NOT INITIAL.
+      MOVE-CORRESPONDING gv_prod_item TO gv_po_items.
+      gv_po_items-store_loc = gv_prod_item-lgort.
+      gv_po_items-select = 'X'.
+
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+        EXPORTING
+          input  = gv_po_details-aufnr
+        IMPORTING
+          output = gv_po_details-aufnr.
+
+
+
+      gv_po_items-orderid = gv_po_details-aufnr.
+
+
+      APPEND gv_po_items TO gt_po_items.
+    ENDIF.
+*End
+*--------------------------------------------------------------------*
+
+    LOOP AT gt_po_items INTO gv_po_items WHERE select IS NOT INITIAL.
+
+      CLEAR: wa_header,
+             wa_code.
+
+*header lvl
+*     wa_header-pstng_date = sy-datum.
+      wa_header-pstng_date = gv_po_details-budat.
+      wa_header-doc_date = gv_po_details-doc_date.
+      wa_header-header_txt = gv_po_details-header_txt.
+      wa_header-ref_doc_no = gv_po_details-ref_doc_no.
+      wa_header-ver_gr_gi_slipx = gv_po_details-enable_print.
+
+      wa_code-gm_code = '01'.
+
+*Item Level
+      MOVE-CORRESPONDING gv_po_items TO wa_gm_item.
+
+      wa_gm_item-entry_qnt = gv_po_items-entry_qty.
+      wa_gm_item-entry_uom = gv_po_items-unit.
+
+      IF applid NE 'ZAPP_IM_GR_OA'.  "If not an orgin acceptance application
+        wa_gm_item-move_type = '101'.
+      ELSE.
+        wa_gm_item-move_type = '109'.
+      ENDIF.
+
+*Change movement type to 102 or 109 based on application if reversal is enabled
+      IF gv_po_details-reversal EQ 'X'.
+        IF applid NE 'ZAPP_IM_GR_OA'.
+          wa_gm_item-move_type = '102'.
+        ELSE.
+          wa_gm_item-move_type = '110'.  "Different Mvt reversal code for Origin Acceptance
+        ENDIF.
+      ENDIF.
+
+
+      IF gv_po_items-orderid IS INITIAL.
+        wa_gm_item-mvt_ind = 'B'.   "Goods movement for purchase order
+      ELSE.
+        wa_gm_item-mvt_ind = 'F'.  "Goods Movement for production order
+      ENDIF.
+      wa_gm_item-stge_loc = gv_po_items-store_loc.
+      wa_gm_item-stge_bin = gv_po_items-bin.
+
+      APPEND wa_gm_item TO it_gm_item.
+
+
+*Serial Number
+      LOOP AT gt_serials INTO wa_serials WHERE po_item EQ wa_gm_item-po_item.
+        wa_gm_serialnumber-matdoc_itm = wa_serials-po_item.
+        wa_gm_serialnumber-serialno = wa_serials-serialno.
+
+        APPEND  wa_gm_serialnumber TO it_gm_serialnumber.
+        CLEAR wa_gm_serialnumber.
+      ENDLOOP.
+
+      CLEAR wa_gm_item.
+    ENDLOOP.
+
+
+    IF it_gm_item IS NOT INITIAL.
+
+      IF request-user_agent CS 'iPhone'.
+        lv_usage =  'IMMAPP'.
+      ELSE.
+        lv_usage =  'IMMWEB'.
+      ENDIF.
+
+      EXPORT c_mem_usage_id = lv_usage TO MEMORY ID 'IMM_USAGE'.
+*Goods Receipt
+      CALL FUNCTION 'Z_MM_WD_BAPI_GOODSMVT_CREATE'
+        EXPORTING
+          goodsmvt_header       = wa_header
+          goodsmvt_code         = wa_code
+        IMPORTING
+          goodsmvt_headret      = wa_mvt_header
+          materialdocument      = wa_matdoc
+          matdocumentyear       = wa_matdoc_yr
+        TABLES
+          goodsmvt_item         = it_gm_item
+          goodsmvt_serialnumber = it_gm_serialnumber
+          return                = it_return
+          zsernr                = it_zsernr.
+
+*Create Message
+
+      IF wa_matdoc IS NOT INITIAL AND
+         it_return IS INITIAL.
+        CLEAR gv_mat_doc.
+
+        gv_mat_doc-doc_year = wa_matdoc_yr.
+        gv_mat_doc-mat_doc = wa_matdoc.
+
+      ELSE.
+        LOOP AT it_return INTO wa_return.
+          CASE wa_return-type.
+            WHEN 'E' .
+              gv_message-mtype = 'Error'.
+            WHEN 'W'.
+              gv_message-mtype = 'Warning'.
+            WHEN 'S'.
+              gv_message-mtype = 'Success'.
+            WHEN OTHERS.
+              gv_message-mtype = 'None'.
+          ENDCASE.
+
+          gv_message-message = wa_return-message.
+          APPEND gv_message TO gt_message.
+          CLEAR gv_message.
+        ENDLOOP.
+
+        SORT gt_message BY mtype.
+      ENDIF.
+
+    ENDIF.
+
+
+  ENDMETHOD.                    "post
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->PRINT
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD print.
+
+    DATA: wa_gm_items LIKE LINE OF gt_gm_items.
+
+    LOOP AT gt_gm_items INTO wa_gm_items WHERE labelno GE 1.
+
+      CALL FUNCTION 'Z_PRINT_GR_LABELS'
+        EXPORTING
+          p_in_mblnr  = wa_gm_items-mat_doc
+          p_in_zeile  = wa_gm_items-matdoc_itm
+          p_in_mjahr  = wa_gm_items-doc_year
+          p_in_rqdest = gv_mat_doc-printer
+          p_in_qty    = wa_gm_items-labelno.
+
+    ENDLOOP.
+
+  ENDMETHOD.                    "print
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_GR_PO->USER_PARAMETERS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD user_parameters.
+
+    DATA: it_parameter TYPE STANDARD TABLE OF bapiparam,
+          it_return TYPE STANDARD TABLE OF bapiret2,
+          wa_parameter TYPE bapiparam,
+          wa_return TYPE bapiret2,
+          lv_username TYPE xubname.
+
+    lv_username = sy-uname.
+
+    CALL FUNCTION 'Z_MM_WD_BAPI_USER_GET_DETAIL'
+      EXPORTING
+        username  = lv_username
+      TABLES
+        parameter = it_parameter
+        return    = it_return.
+
+    READ TABLE it_parameter INTO wa_parameter WITH KEY parid = 'WRK'.
+
+    IF sy-subrc EQ 0.
+      gv_po_search-werks = wa_parameter-parva.
+    ENDIF.
+    gv_po_search-cre_date1 = sy-datum - 30.
+    gv_po_search-cre_date2 = sy-datum.
+
+
+
+*Create Message
+    LOOP AT it_return INTO wa_return.
+      CASE wa_return-type.
+        WHEN 'E' .
+          gv_message-mtype = 'Error'.
+        WHEN 'W'.
+          gv_message-mtype = 'Warning'.
+        WHEN 'S'.
+          gv_message-mtype = 'Success'.
+        WHEN OTHERS.
+          gv_message-mtype = 'None'.
+      ENDCASE.
+
+      gv_message-message = wa_return-message.
+      APPEND gv_message TO gt_message.
+      CLEAR gv_message.
+    ENDLOOP.
+
+    SORT gt_message BY mtype.
+
+  ENDMETHOD.                    "user_parameters
+ENDCLASS.

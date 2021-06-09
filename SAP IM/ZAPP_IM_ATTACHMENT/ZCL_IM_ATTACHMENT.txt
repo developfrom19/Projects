@@ -1,0 +1,297 @@
+class ZCL_IM_ATTACHMENT definition
+  public
+  final
+  create public .
+
+public section.
+*"* public components of class ZCL_IM_ATTACHMENT
+*"* do not include other source files here!!!
+
+  interfaces /NEPTUNE/IF_NAD_SERVER .
+
+  types:
+    BEGIN OF ty_list_attachment,
+           group_name TYPE string,
+           group_id(10) TYPE c,
+           group_index TYPE i,
+           file_name TYPE char255,
+           file_size(10) TYPE c,
+           file_type TYPE string,
+           creator TYPE sy-uname,
+           creatime TYPE sy-uzeit,
+           creadate TYPE sy-datum,
+           content TYPE string,
+           icon TYPE string,
+           highlight TYPE string,
+           count TYPE i,
+           document TYPE string,
+           busy_ind TYPE boolean,
+         END OF ty_list_attachment .
+  types:
+    BEGIN OF ty_ack,
+            group_id(10) TYPE c,
+            group_index TYPE i,
+            status TYPE string,
+          END OF ty_ack .
+
+  data:
+    gt_list_attachment TYPE STANDARD TABLE OF ty_list_attachment .
+  data GS_ACK type TY_ACK .
+
+  methods SAVE_DOCS
+    importing
+      !LS_LIST_ATTACHMENT type TY_LIST_ATTACHMENT
+    exporting
+      !FLAG_ERROR type CHAR1 .
+  PROTECTED SECTION.
+*"* protected components of class ZCL_IM_ATTACHMENT
+*"* do not include other source files here!!!
+private section.
+*"* private components of class ZCL_IM_ATTACHMENT
+*"* do not include other source files here!!!
+
+  methods INITIALIZE .
+ENDCLASS.
+
+
+
+CLASS ZCL_IM_ATTACHMENT IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_IM_ATTACHMENT->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_ajax.
+
+    DATA: lv TYPE string,
+          lv_w TYPE string,
+          lv_x TYPE xstring,
+          wa_attachment_list LIKE LINE OF gt_list_attachment,
+         len TYPE i,
+         lt_binary    TYPE TABLE OF tbl1024.
+
+    CASE ajax_id.
+      WHEN 'INITIALIZE'.
+        initialize( ).
+    ENDCASE.
+
+  ENDMETHOD.                    "/neptune/if_nad_server~handle_on_ajax
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_IM_ATTACHMENT->INITIALIZE
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD initialize.
+
+    TYPES:BEGIN OF ty_toaom,
+      ar_object TYPE toaom-ar_object,
+      archiv_id TYPE toaom-archiv_id,
+      objecttext TYPE toasp-objecttext,
+     END OF ty_toaom.
+    DATA: lt_toaom TYPE STANDARD TABLE OF ty_toaom,
+          ls_toaom TYPE ty_toaom,
+          wa_list_attachment LIKE LINE OF gt_list_attachment.
+
+    SELECT a~ar_object
+           a~archiv_id
+           b~objecttext
+           FROM toaom AS a INNER JOIN toasp AS b
+           ON a~ar_object EQ b~ar_object
+           INTO TABLE lt_toaom WHERE a~sap_object EQ 'BUS2017'
+                                  AND a~archiv_id EQ 'IM'.
+
+
+    LOOP AT lt_toaom INTO ls_toaom.
+      wa_list_attachment-group_name = ls_toaom-objecttext.
+      wa_list_attachment-group_id = ls_toaom-ar_object.
+      wa_list_attachment-count = 0.
+      APPEND wa_list_attachment TO gt_list_attachment.
+      CLEAR wa_list_attachment.
+    ENDLOOP.
+
+
+    SORT gt_list_attachment BY group_name.
+*    ls_list_attachment-group_name = 'Delivery Note'.
+*    ls_list_attachment-group_id = 'DN'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Bill of Lading '.
+*    ls_list_attachment-group_id = 'BOL'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Invoice'.
+*    ls_list_attachment-group_id = 'INV'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Safety Data Sheet '.
+*    ls_list_attachment-group_id = 'SDS'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Certificate of Compliance'.
+*    ls_list_attachment-group_id = 'CoC'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Import papers from Logistics'.
+*    ls_list_attachment-group_id = 'IMP'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+*
+*    ls_list_attachment-group_name = 'Other'.
+*    ls_list_attachment-group_id = 'OTH'.
+*    ls_list_attachment-count = 0.
+*    APPEND ls_list_attachment TO gt_list_attachment.
+*    CLEAR ls_list_attachment.
+
+  ENDMETHOD.                    "initialize
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_IM_ATTACHMENT->SAVE_DOCS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] LS_LIST_ATTACHMENT             TYPE        TY_LIST_ATTACHMENT
+* | [<---] FLAG_ERROR                     TYPE        CHAR1
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD save_docs.
+
+  DATA:
+  lv_fol_id    TYPE          soodk,
+  lv_folder_id TYPE soobjinfi1-object_id,
+  lv_xstring   TYPE          xstring,
+  lv_size      TYPE          i,
+  lt_binary    TYPE TABLE OF tbl1024, "solix,
+  ls_docdata   TYPE          sodocchgi1,
+  ls_docinfo   TYPE          sofolenti1,
+  ls_object_a  TYPE          sibflporb,
+  ls_object_b  TYPE          sibflporb,
+  oref         TYPE REF TO cx_root,
+  lv_err_text  TYPE string,
+  lv_a_length TYPE sapb-length.
+
+  DATA: lv_archiv_doc_id TYPE sapb-sapadokid,
+       lv_obj_id TYPE sapb-sapobjid,
+       it_bin_data TYPE STANDARD TABLE OF tbl1024,
+       lv_filename TYPE toaat-filename,
+       lv_descr TYPE toaat-descr,
+       iv_base64 TYPE string,
+       iv_descript TYPE  so_obj_des,
+       lv_s TYPE string,
+       lv_ar_object TYPE  toaom-ar_object,
+       lv_archiv_id TYPE   toaar-archiv_id,
+       lv_sap_object  TYPE  toaom-sap_object.
+
+  SPLIT ls_list_attachment-content AT ',' INTO lv_s iv_base64.
+
+  CHECK iv_base64 IS NOT INITIAL.
+
+  CALL FUNCTION 'SCMS_BASE64_DECODE_STR'
+    EXPORTING
+      input  = iv_base64
+    IMPORTING
+      output = lv_xstring
+    EXCEPTIONS
+      failed = 1
+      OTHERS = 2.
+
+* convert xstring to binary data
+  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer          = lv_xstring
+      append_to_table = 'X'
+    IMPORTING
+      output_length   = lv_size
+    TABLES
+      binary_tab      = lt_binary
+    EXCEPTIONS
+      OTHERS          = 8.
+
+  IF sy-subrc NE 0
+    OR lt_binary[] IS INITIAL.
+
+    flag_error = 'X'.
+    EXIT.
+  ENDIF.
+
+*IM - Attachment types
+*ZMM_BOL
+*ZMM_COC
+*ZMM_DELN
+*ZMM_GI
+*ZMM_IMP
+*ZMM_INVC
+*ZMM_OTHR
+*ZMM_SDS
+
+  lv_a_length = lv_size.
+
+  lv_archiv_id = 'IM'. "PD
+  lv_obj_id = ls_list_attachment-document.
+  lv_ar_object = ls_list_attachment-group_id.
+  lv_sap_object = 'BUS2017'.
+  lv_filename = ls_list_attachment-file_name  && '.pdf'.
+  lv_descr = ls_list_attachment-group_name.
+
+
+  CALL FUNCTION 'ARCHIVOBJECT_CREATE_TABLE'
+    EXPORTING
+      archiv_id                = lv_archiv_id
+      document_type            = 'PDF'
+      length                   = lv_a_length
+      signature                = space
+    IMPORTING
+      archiv_doc_id            = lv_archiv_doc_id
+    TABLES
+      binarchivobject          = lt_binary
+    EXCEPTIONS
+      error_archiv             = 1
+      error_communicationtable = 2
+      error_kernel             = 3
+      blocked_by_policy        = 4
+      OTHERS                   = 5.
+
+  IF sy-subrc <> 0.
+    flag_error = 'X'.
+  ENDIF.
+
+
+  CALL FUNCTION 'ARCHIV_CONNECTION_INSERT'
+    EXPORTING
+      archiv_id             = lv_archiv_id
+      arc_doc_id            = lv_archiv_doc_id
+      ar_object             = lv_ar_object
+      object_id             = lv_obj_id
+      sap_object            = lv_sap_object
+      doc_type              = 'PDF'
+      filename              = lv_filename
+      descr                 = lv_descr
+      creator               = sy-uname
+    EXCEPTIONS
+      error_connectiontable = 1
+      OTHERS                = 2.
+
+  IF sy-subrc <> 0.
+    flag_error = 'X'.
+  ENDIF.
+
+
+
+ENDMETHOD.
+ENDCLASS.
