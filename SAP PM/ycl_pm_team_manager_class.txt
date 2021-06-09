@@ -1,0 +1,1825 @@
+class ycl_pm_team_manager_class definition
+  public
+  final
+  create public .
+
+  public section.
+
+    interfaces /neptune/if_nad_server .
+
+    types:
+      begin of ty_work ,
+        arbpl    type arbpl,
+        cr_objty type cr_objty,
+        cr_objid type cr_objid,
+        werks    type crhd-werks,
+        cr_ktext type cr_ktext,
+        text     type string,
+        keyfield type string,
+      end of ty_work .
+    types:
+*Added Strutures for work center and date ranges
+      begin of ty_arbpl,
+        arbpl type arbpl,
+      end of ty_arbpl .
+    types:
+*   Structure for work orders
+      begin of ty_aufk,
+        aufnr               type aufk-aufnr,
+        objnr               type j_objnr,
+        auart               type aufart,
+        ktext               type aufk-ktext,
+        werks               type aufk-werks,
+        phas0               type aufk-phas0,
+        phas1               type aufk-phas1,
+        vaplz               type aufk-vaplz,
+        aufpl               type afko-aufpl,
+        fsavd               type dats,
+        fsedd               type dats,
+        phflg               type flag,
+        arbid               type kbed-arbid,
+        aplzl               type kbed-aplzl,
+        vornr               type kbed-vornr,
+        pernr               type kbed-pernr,
+        fssbd               type kbed-fssbd,
+        obsta               type kbed-obsta,
+        ltxa1               type afvc-ltxa1,
+        anzzl               type afvc-anzzl,
+        ssavd               type dats,
+        stort               type iloa-stort,
+        oroper              type char50, "field to concate order and opertion
+        status              type string,
+        text                type string,
+        icon                type string, "icon for status
+        fl_ind              type char1, " filter indication
+        fl_unsch            type char1, "Unscheduled order indicator
+        color               type string, "color of the status
+        qmnum               type afih-qmnum,
+        eqfnr               type iloa-eqfnr,
+        equnr               type afih-equnr,
+        eqktx               type ktx01,
+        pltxt               type iflotx-pltxt,
+        name1               type t001w-name1,
+        tidnr               type equz-tidnr,
+        qmartx              type tq80_t-qmartx,
+        tplnr               type tplnr,
+        beber               type beber,
+        beber_text          type string,
+        search              type string,
+        operation_long_text type string,
+        dauno               type afvv-dauno,
+        arbei               type afvv-arbei,
+        ismnw               type ismnw,
+        hrs                 type char1,
+        ass                 type char1,
+        list_hours          type string,
+        offline             type string,
+        offline_icon        type string,
+        offline_state       type string,
+        offline_text        type string,
+        has_schedules       type string,
+        posted_work         type string,
+      end of ty_aufk .
+    types:
+      begin of ty_time,
+        aufnr    type aufk-aufnr,
+        vornr    type afvc-vornr,
+        pernr    type afru-pernr,
+        ersda    type afru-ersda,
+        ismnw    type afru-ismnw,
+        ismne    type afru-ismne,
+        grund    type afru-grund,
+        aueru    type afru-aueru,
+        aufpl    type afru-aufpl,
+        aplzl    type afru-aplzl,
+        text     type string,
+        tabix    type sy-tabix,
+        seqnr(2) type c,
+        keyfield type string,
+        uuid     type string,
+        gendate  type string,
+        arbid    type objektid,
+      end of ty_time .
+    types:
+      begin of ty_afvv,
+        aufpl    type afvv-aufpl,
+        aplzl    type afvv-aplzl,
+        arbei    type afvv-arbei,
+        arbeh    type afvv-arbeh,
+        ismnw    type afvv-ismnw,
+        dauno    type afvv-dauno,
+        keyfield type string,
+      end of ty_afvv .
+    types:
+      begin of ty_iloa,
+        aufnr type aufk-aufnr,
+        equnr type afih-equnr,
+        iloan type afih-iloan,
+        qmnum type afih-qmnum,
+        tplnr type iloa-tplnr,
+        eqfnr type iloa-eqfnr,
+        stort type iloa-stort,
+        beber type beber,
+      end of ty_iloa .
+    types:
+      begin of ty_data,
+        key               type string,
+        parent            type string,
+        wk_center         type arbpl,
+        wk_center_display type string,
+        wk_center_text    type string,
+        pernr             type string,
+        pernr_display     type string,
+        pernrname         type string,
+        aufnr             type string,
+        aufnr_display     type string,
+        vornr             type string,
+        ismnw             type arbeit,
+        dauno             type arbeit,
+        visible           type boolean,
+        design            type string,
+        operation_text    type string,
+        start_date        type string,
+        finish_date       type string,
+        css_class         type string,
+      end of ty_data .
+    types:
+      begin of ty_kbed,
+        oroper type string,
+        aufnr  type aufk-aufnr,
+        vornr  type afvc-vornr,
+        pernr  type kbed-pernr,
+        ename  type pa0001-ename,
+        arbei  type afvv-arbei,
+        ismnw  type afru-ismnw,
+        aufpl  type afvc-aufpl,
+        aplzl  type afvc-aplzl,
+        canum  type canum,
+        chng   type char2,
+        uuid   type string,
+        date   type string,
+        dauno  type string,
+      end of ty_kbed .
+    types:
+      begin of ty_kbed_crew,
+        aufnr type aufk-aufnr,
+        vornr type afvc-vornr,
+        pernr type kbed-pernr,
+        aufpl type afvc-aufpl,
+        aplzl type afvc-aplzl,
+        arbei type afvv-arbei,
+        ename type emnam,
+        arbid type arbplatz,
+      end of ty_kbed_crew .
+    types:
+      begin of ty_messages,
+        message  type string,
+        mss_type type string,
+        keyfield type string,
+      end of ty_messages .
+    types:
+      begin of ty_order_sync,
+        oroper         type string,
+        notification   type qmnum,
+        display_number type string,
+        status_icon    type string,
+        status_state   type string,
+        has_messages   type string,
+        type_record    type string,
+      end of ty_order_sync .
+    types:
+      begin of ty_status,
+        estat type j_estat,
+        txt04 type j_txt04,
+        txt30 type j_txt30,
+      end of ty_status .
+
+    types: begin of ty_key_value,
+             key   type string,
+             value type string,
+           end of ty_key_value.
+
+    data:
+      gt_order_sync type table of ty_order_sync .
+    data:
+      gt_data type standard table of ty_data .
+    data gv_data type ty_data .
+    data:
+      gt_workcenter type table of ty_work .
+    data:
+      gt_aufk type table of ty_aufk .
+    data wa_aufk type ty_aufk .
+    data:
+      gt_time type table of ty_time .
+    data wa_time type ty_time .
+    data:
+      lt_arbpl    type table of ty_arbpl .
+    data lw_arbpl type ty_arbpl .
+    data:
+      gt_message type table of ty_messages .
+    data wa_message type ty_messages .
+    data:
+      ra_arbpl    type range of arbpl .
+    data:
+      rw_arbpl    like line of ra_arbpl .
+    data:
+      ra_date type range of kbed-fssbd .
+    data:
+      rw_date like line of ra_date .
+    data:
+      ra_arbid type range of afvc-arbid .
+    data:
+      rw_arbid like line of ra_arbid .
+    data:
+      ra_pernr type range of pa0105-pernr .
+    data:
+      rw_pernr like line of ra_pernr .
+    data:
+      gt_persons type table of object_person_assignment .
+    data:
+      gt_kbed     type standard table of ty_kbed,
+      gt_kbed_del type table of ty_kbed.
+    data wa_kbed type ty_kbed .
+    data:
+      gt_kbed_crew type standard table of ty_kbed_crew .
+    data wa_kbed_crew type ty_kbed_crew .
+    data:
+      begin of wa_default ,
+        wrk_center  type string,
+        arbpl       type string,
+        gt_range    type string,
+        status      type string,
+        estat       type string,
+        pernr       type string,
+        sys_cond    type string,
+        posted_work type string,
+      end of wa_default .
+    data:
+      gt_afvv type table of ty_afvv .
+    data wa_afvv type ty_afvv .
+    data:
+      gt_iloa type table of ty_iloa .
+    data wa_iloa type ty_iloa .
+    data:
+      gt_user_status type table of ty_status .
+    data wa_user_status type ty_status .
+
+    data: gt_sys_cond type table of ty_key_value.
+
+    methods get_workcenter
+      importing
+        !ajax_value type string .
+    methods get_crew .
+    methods get_workorders .
+    methods get_defaults .
+    methods save_data .
+    methods pushnotification .
+    methods get_workcenter_id .
+protected section.
+
+  methods GET_USER_STATUSES .
+  methods GET_SYSTEM_CONDITIONS .
+private section.
+ENDCLASS.
+
+
+
+CLASS YCL_PM_TEAM_MANAGER_CLASS IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method /neptune/if_nad_server~handle_on_ajax.
+    get_defaults( ).
+    case ajax_id.
+      when 'WORKCENTER'.
+        get_workcenter( ajax_value ).
+      when 'GET_WORKORDERS'.
+        get_workorders( ).
+      when 'GET_CREW'.
+        get_crew( ).
+      when 'SAVE'.
+        save_data( ).
+      when 'GET_WORKCENTER_ID'.
+        call method get_workcenter_id( ).
+        get_user_statuses( ).
+        get_system_conditions( ).
+    endcase.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_OUT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] LASTSYNCDATE                   TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method /neptune/if_nad_server~handle_on_sync_out.
+*data: lt_form_fields         type tihttpnvp,
+*        ls_form_field          type ihttpnvp,
+*        lv_appsync_info        type string,
+*        lt_appsync_split       type string_table,
+*        lv_appsync_split       type string,
+*        lt_info_fields         type hashed table of ihttpnvp
+*                                   with unique key name,
+*        ls_info_field          type ihttpnvp,
+*        lt_work_orders         type table of aufnr,
+*        lt_history_orders      type table of aufnr,
+*        lt_operations          type string_table,
+*        lv_operation           type string,
+*        lt_results             type match_result_tab,
+*        ls_result              type match_result.
+*field-symbols: <work_order> type aufnr.
+** Get information from request.
+*  server->api_get_form_fields( changing it_form_fields = lt_form_fields ).
+*  check not lt_form_fields[] is initial.
+*
+** AppSyncInfo is in the first form field of the request.
+*  read table lt_form_fields into ls_form_field index 1.
+*  find first occurrence of regex '"info":\{([^\}]+)\}' in ls_form_field-name
+*      submatches lv_appsync_info.
+*
+*  check not lv_appsync_info is initial.
+*
+** Matches name value pairs in which the value may be either a string or an array.
+*  find all occurrences of regex '[^:,]*:((?:\[[^\]]*\])|(?:[^,]*))' in lv_appsync_info
+*      results lt_results.
+*  loop at lt_results into ls_result.
+*    clear ls_info_field.
+*    lv_appsync_split = lv_appsync_info+ls_result-offset(ls_result-length).
+*    replace all occurrences of '"' in lv_appsync_split with ''.
+*    replace all occurrences of '[' in lv_appsync_split with ''.
+*    replace all occurrences of ']' in lv_appsync_split with ''.
+*    split lv_appsync_split at ':' into ls_info_field-name ls_info_field-value.
+*    insert ls_info_field into table lt_info_fields.
+*  endloop.
+*
+*  read table lt_info_fields into ls_info_field
+*      with key name = 'workOrders'.
+*  if sy-subrc = 0.
+*    split ls_info_field-value at ',' into table lt_work_orders.
+*    sort lt_work_orders.
+*    delete adjacent duplicates from lt_work_orders.
+*    loop at lt_work_orders assigning <work_order>.
+*      ycl_pm_npt_utilities=>conversion_in( changing cv_value = <work_order> ).
+*    endloop.
+*  endif.
+*
+*  read table lt_info_fields into ls_info_field
+*      with key name = 'operations'.
+*  if sy-subrc = 0.
+*    split ls_info_field-value at ',' into table lt_operations.
+*  endif.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->GET_CREW
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_crew.
+
+    data:
+          it_key1       type sorted table of ty_data
+                            with unique key wk_center,
+          it_key2       type sorted table of ty_data
+                            with unique key pernr parent,
+          it_key3       type sorted table of ty_data
+                            with unique key aufnr vornr pernr,
+          lt_kbed       type standard table of kbedp,
+          lw_kbed       type kbedp,
+          ra_aufnr      type range of aufk-aufnr,
+          rw_aufnr      like line of ra_aufnr,
+          lv_ismnw      type ismnw,
+          lv_arbpl      type crhd-arbpl,
+          wa_key1       type ty_data,
+          wa_key2       type ty_data,
+          wa_key3       type ty_data,
+          lv_date_c(10) type c,
+          lv_today      type flag,
+          lv_30d_ago    type dats,
+          lv_fname      type string,
+          lv_lname      type string,
+          lv_aufnr      type string,
+          lv_vornr      type string,
+          lv_start      type dats,
+          lv_end        type dats,
+          lvr_date      like line of ra_date.
+
+    field-symbols: <key1> type ty_data,
+                   <key2> type ty_data,
+                   <key3> type ty_data.
+
+    lv_30d_ago = sy-datum - 30.
+
+    read table ra_date into lvr_date index 1.
+    if sy-subrc = 0.
+      lv_start = lvr_date-low.
+      lv_end = lvr_date-high.
+      if lv_end is initial.
+        lv_end = lv_start.
+      endif.
+    endif.
+
+    if ra_arbid[] is not initial.
+*    3/9/2018 - D.Rempe - This program originally only showed records that were assigned out in the KBED table.
+*                         Now it will show records even if no splits are maintained.
+
+*    Get orders based on work center and employee
+      select  a~aufnr
+              a~auart
+              a~ktext
+              a~werks
+              a~phas0
+              a~phas1
+              a~vaplz
+              b~aufpl
+              afvv~fsavd
+              afvv~fsedd
+              d~phflg
+              d~arbid
+              d~aplzl
+              d~vornr
+              d~objnr as obsta
+              d~ltxa1
+              into corresponding fields of table gt_aufk from
+              aufk as a
+              inner join afko as b
+                  on a~aufnr = b~aufnr
+              inner join afvc as d
+                  on b~aufpl = d~aufpl
+              inner join afvv
+                  on d~aufpl = afvv~aufpl
+                 and d~aplzl = afvv~aplzl
+              where a~autyp = '30'
+                and ( a~phas0 = 'X' or
+                      a~phas1 = 'X' )
+                and d~loekz = space
+                and d~arbid in ra_arbid
+                and afvv~fsavd <= lv_end
+                and afvv~fsedd >= lv_start.
+
+      if sy-subrc eq 0.
+        sort gt_aufk by aufnr vornr pernr.
+        delete adjacent duplicates from gt_aufk comparing aufnr vornr pernr.
+
+*  Get hours scheduled for orders
+        loop at gt_aufk into wa_aufk.
+          rw_aufnr-sign = 'I'.
+          rw_aufnr-option = 'EQ'.
+          rw_aufnr-low = wa_aufk-aufnr.
+          append rw_aufnr to ra_aufnr.
+          clear : rw_aufnr.
+        endloop.
+        sort ra_aufnr.
+        delete adjacent duplicates from ra_aufnr comparing all fields.
+        loop at ra_aufnr into rw_aufnr.
+          refresh : lt_kbed.
+          call function 'CO_EXT_ORDER_RESET'.
+          call function 'PM_ORDER_DATA_READ'
+            exporting
+              order_number    = rw_aufnr-low
+            tables
+              kbedp_tab       = lt_kbed
+            exceptions
+              order_not_found = 1
+              others          = 2.
+          if sy-subrc eq 0.
+            loop at lt_kbed into lw_kbed where pernr ne space.
+              wa_kbed_crew-aufnr = rw_aufnr-low.
+              wa_kbed_crew-vornr = lw_kbed-vornr.
+              wa_kbed_crew-pernr = lw_kbed-pernr.
+              wa_kbed_crew-aufpl = lw_kbed-aufpl.
+              wa_kbed_crew-aplzl = lw_kbed-aplzl.
+              wa_kbed_crew-arbei = lw_kbed-arbei.
+              wa_kbed_crew-ename = lw_kbed-ename.
+              wa_kbed_crew-arbid = lw_kbed-arbid.
+              append wa_kbed_crew to gt_kbed_crew.
+            endloop.
+          endif.
+        endloop.
+
+        select aufpl aplzl arbei arbeh ismnw dauno
+         from afvv
+         into table gt_afvv for all entries in gt_aufk
+              where aufpl = gt_aufk-aufpl
+                and aplzl = gt_aufk-aplzl.
+        if sy-subrc eq 0.
+          sort gt_afvv by aufpl aplzl.
+        endif.
+
+* Get hours charged for all orders
+* 5/21/2018 - Eastman requested removal of this functionality.
+*        select aufnr
+*               vornr
+*               ersda
+*               pernr
+*               ismnw
+*               ismne
+*               grund
+*               aueru
+*               aufpl
+*               aplzl
+*               arbid into corresponding fields of table gt_time
+*              from afru for all entries in gt_aufk
+*                        where aufnr = gt_aufk-aufnr
+*                          and vornr = gt_aufk-vornr
+*                          and pernr in ra_pernr.
+*        if sy-subrc eq 0.
+*          sort gt_time by aufnr vornr pernr.
+*        endif.
+        sort gt_aufk by aufnr vornr arbid pernr.
+
+      endif.
+
+*     Remove final-confirmed operations which were not
+*     confirmed today.
+      loop at gt_aufk into wa_aufk where phflg = 'X'.
+        read table gt_time with key ersda = sy-datum
+            transporting no fields.
+        if sy-subrc <> 0.
+          delete gt_aufk.
+          continue.
+        endif.
+      endloop.
+
+      loop at gt_aufk into wa_aufk.
+        read table it_key1 with key wk_center = wa_aufk-arbid
+            assigning <key1>.
+        if sy-subrc <> 0.
+          clear wa_key1.
+          wa_key1-key       = wa_aufk-arbid.
+          wa_key1-wk_center = wa_aufk-arbid.
+          wa_key1-visible   = 'X'.
+          wa_key1-design    = 'Bold'.
+          insert wa_key1 into table it_key1 assigning <key1>.
+        endif.
+
+        loop at gt_kbed_crew into wa_kbed_crew
+            where aufnr = wa_aufk-aufnr
+              and vornr = wa_aufk-vornr.
+          read table it_key2 with key pernr = wa_kbed_crew-pernr
+              assigning <key2>.
+          if sy-subrc <> 0.
+            clear wa_key2.
+            wa_key2-key       = wa_kbed_crew-pernr.
+            wa_key2-pernr     = wa_kbed_crew-pernr.
+            wa_key2-parent    = wa_kbed_crew-arbid.
+            insert wa_key2 into table it_key2 assigning <key2>.
+          endif.
+
+          read table it_key3 with key aufnr = wa_aufk-aufnr
+                                      vornr = wa_aufk-vornr
+                                      pernr = wa_kbed-pernr
+              assigning <key3>.
+
+          if sy-subrc <> 0.
+            clear wa_key3.
+            wa_key3-vornr = wa_aufk-vornr.
+            shift wa_key3-vornr left deleting leading '0'.
+            wa_key3-key            = wa_aufk-aufnr && ' - ' && wa_key3-vornr.
+            wa_key3-parent         = wa_kbed_crew-pernr.
+            wa_key3-aufnr          = wa_aufk-aufnr.
+            wa_key3-vornr          = wa_aufk-vornr.
+            wa_key3-pernr          = <key2>-pernr.
+            wa_key3-operation_text = wa_aufk-ltxa1.
+
+            if not wa_aufk-fsavd is initial.
+              write wa_aufk-fsavd to lv_date_c.
+              wa_key3-start_date = lv_date_c.
+            endif.
+
+            if not wa_aufk-fsedd is initial.
+              write wa_aufk-fsedd to lv_date_c.
+              wa_key3-finish_date = lv_date_c.
+            endif.
+
+            insert wa_key3 into table it_key3 assigning <key3>.
+          endif.
+
+          <key3>-dauno = <key3>-dauno + wa_kbed_crew-arbei.
+          <key2>-dauno = <key2>-dauno + wa_kbed_crew-arbei.
+          <key1>-dauno = <key1>-dauno + wa_kbed_crew-arbei.
+        endloop.
+
+        loop at gt_time into wa_time where aufnr = wa_aufk-aufnr
+                                       and vornr = wa_aufk-vornr.
+
+          read table it_key2 with key pernr = wa_time-pernr
+              assigning <key2>.
+          if sy-subrc <> 0.
+            clear wa_key2.
+            wa_key2-key       = wa_time-pernr.
+            wa_key2-pernr     = wa_time-pernr.
+            wa_key2-parent    = wa_time-arbid.
+            insert wa_key2 into table it_key2 assigning <key2>.
+          endif.
+
+          read table it_key3 with key aufnr = wa_aufk-aufnr
+                                      vornr = wa_aufk-vornr
+                                      pernr = wa_kbed-pernr
+              assigning <key3>.
+
+          if sy-subrc <> 0.
+            clear wa_key3.
+            wa_key3-vornr = wa_aufk-vornr.
+            shift wa_key3-vornr left deleting leading '0'.
+            wa_key3-key            = wa_aufk-aufnr && ' - ' && wa_key3-vornr.
+            wa_key3-parent         = <key2>-pernr.
+            wa_key3-aufnr          = wa_aufk-aufnr.
+            wa_key3-vornr          = wa_aufk-vornr.
+            wa_key3-pernr          = <key2>-pernr.
+            wa_key3-operation_text = wa_aufk-ltxa1.
+
+            if not wa_aufk-fsavd is initial.
+              write wa_aufk-fsavd to lv_date_c.
+              wa_key3-start_date = lv_date_c.
+            endif.
+
+            insert wa_key3 into table it_key3 assigning <key3>.
+          endif.
+
+          <key3>-ismnw = <key3>-ismnw + wa_time-ismnw.
+          <key2>-ismnw = <key2>-ismnw + wa_time-ismnw.
+          <key1>-ismnw = <key1>-ismnw + wa_time-ismnw.
+        endloop.
+      endloop.
+
+*     Format everything for output
+      loop at it_key1 assigning <key1>.
+*       Get work center text.
+        select single crhd~arbpl crtx~ktext
+            into (<key1>-wk_center_display,<key1>-wk_center_text)
+            from crhd
+            inner join crtx on crhd~objty = crtx~objty
+                           and crhd~objid = crtx~objid
+            where crhd~objty = 'A'
+              and crhd~objid = <key1>-key
+              and crtx~spras = 'E'.
+      endloop.
+
+      loop at it_key2 assigning <key2>.
+*       Get personnel name.
+        select single vorna nachn into (lv_fname,lv_lname)
+            from pa0002
+            where pernr = <key2>-key
+              and objps = ' '
+              and sprps = ' '
+              and endda >= sy-datum.
+        <key2>-pernrname = lv_fname && ` ` && lv_lname.
+        <key2>-pernr_display = <key2>-key.
+      endloop.
+
+      loop at it_key3 assigning <key3>.
+*       Format colors and work order information.
+        lv_aufnr = <key3>-aufnr.
+        lv_vornr = <key3>-vornr.
+        shift lv_aufnr left deleting leading '0'.
+        shift lv_vornr left deleting leading '0'.
+        <key3>-aufnr_display = lv_aufnr && '-' && lv_vornr.
+
+*       Line coloration based on early start date
+*       5/21/2018 - Eastman requested removal of this functionality.
+*        read table gt_aufk into wa_aufk with key aufnr = <key3>-aufnr
+*                                                 vornr = <key3>-vornr.
+*        if sy-subrc = 0.
+*          if wa_aufk-fsavd > sy-datum.
+*            <key3>-css_class = 'green-text'.
+*          elseif wa_aufk-fsedd < lv_30d_ago.
+*            <key3>-css_class = 'red-text'.
+*          elseif wa_aufk-fsedd < sy-datum and wa_key3-ismnw <> wa_key3-dauno.
+*            <key3>-css_class = 'yellow-text'.
+*          else.
+*            <key3>-css_class = space.
+*          endif.
+*        endif.
+      endloop.
+
+* Program was rewritten on 3/9/2018. Original code follows.
+*--------------------------------------------------------------------*
+** Build Key1
+*      loop at gt_aufk into wa_aufk.
+*        wa_key1-key = wa_aufk-arbid."vaplz.
+*        wa_key1-wk_center = wa_aufk-arbid.
+*        wa_key1-visible = 'X'.
+*        wa_key1-design  = 'Bold'.
+*
+*        collect wa_key1 into it_key1.
+*        clear wa_key1.
+*      endloop.
+*
+*      clear  wa_aufk.
+**Build Key 2
+*      loop at it_key1 into wa_key1.
+*        loop at gt_aufk into wa_aufk where arbid eq wa_key1-key.
+*          wa_key2-key = wa_aufk-pernr.
+*          wa_key2-parent = wa_aufk-arbid.
+*          wa_key2-pernr = wa_aufk-pernr.
+*          read table gt_kbed_crew into wa_kbed_crew with key pernr = wa_aufk-pernr.
+*          wa_key2-pernrname = wa_kbed_crew-ename.
+*
+*          collect wa_key2 into it_key2.
+*          clear wa_key2.
+*        endloop.
+*      endloop.
+*
+**Build key 3
+*      loop at it_key2 into wa_key2.
+*        loop at gt_aufk into wa_aufk where pernr eq wa_key2-pernr.
+*          shift wa_aufk-vornr left deleting leading '0'.
+*          wa_key3-key = wa_aufk-aufnr && ' - ' && wa_aufk-vornr.
+*          wa_key3-parent = wa_key2-pernr.
+*          wa_key3-aufnr = wa_aufk-aufnr && ' - ' && wa_aufk-vornr.
+*          wa_key3-operation_text = wa_aufk-ltxa1.
+*
+*          if not wa_aufk-fsavd is initial.
+*            write wa_aufk-fsavd to lv_date_c.
+*            wa_key3-start_date = lv_date_c.
+*          endif.
+*
+*          read table gt_kbed_crew into wa_kbed_crew with key aufpl = wa_aufk-aufpl
+*                                                             aplzl = wa_aufk-aplzl
+*                                                             pernr = wa_aufk-pernr.
+*          if sy-subrc eq 0.
+*            wa_key3-dauno = wa_kbed_crew-arbei.
+**            wa_key3-ismnw = wa_afvv-ismnw.
+*          endif.
+*
+*          loop at gt_time into wa_time where  aufpl = wa_aufk-aufpl
+*                                          and aplzl = wa_aufk-aplzl
+*                                          and pernr = wa_aufk-pernr.
+*            lv_ismnw = lv_ismnw + wa_time-ismnw.
+*          endloop.
+*          wa_key3-ismnw = lv_ismnw.
+*
+**         Line coloration based on early start date
+*          if not wa_aufk-aufnr is initial and not wa_aufk-vornr is initial.
+*            if wa_aufk-fsavd > sy-datum.
+*              wa_key3-css_class = 'green-text'.
+*            elseif wa_aufk-fsedd < lv_30d_ago.
+*              wa_key3-css_class = 'red-text'.
+*            elseif wa_aufk-fsedd < sy-datum and wa_key3-ismnw <> wa_key3-dauno.
+*              wa_key3-css_class = 'yellow-text'.
+*            else.
+*              wa_key3-css_class = space.
+*            endif.
+*          endif.
+*
+*          clear : lv_ismnw.
+*          collect wa_key3 into it_key3.
+*          clear wa_key3.
+*        endloop.
+*      endloop.
+
+
+** REDO THIS SECTION!!!
+** Hours Total
+*      data: lv1 type string,
+*            lv2 type string.
+*
+*      loop at it_key2 into wa_key2.
+*        loop at it_key3 into wa_key3 where parent eq wa_key2-pernr.
+*          lv1 = lv1 + wa_key3-dauno.
+*          lv2 = lv2 + wa_key3-ismnw.
+*        endloop.
+*        wa_key2-dauno = lv1.
+*        wa_key2-ismnw = lv2.
+*        modify it_key2 from wa_key2 transporting dauno ismnw.
+*      endloop.
+*
+*      clear: lv1, lv2.
+*
+*      loop at it_key1 into wa_key1.
+**        select single arbpl from crhd into lv_arbpl where objid = wa_key1-key.
+*        select single crhd~arbpl crtx~ktext
+*            into (lv_arbpl,wa_key1-wk_center_text)
+*            from crhd
+*            inner join crtx on crhd~objty = crtx~objty
+*                           and crhd~objid = crtx~objid
+*            where crhd~objty = 'A'
+*              and crhd~objid = wa_key1-key
+*              and crtx~spras = 'E'.
+*
+*        loop at it_key2 into wa_key2 where parent eq wa_key1-wk_center.
+*          lv1 = lv1 + wa_key2-dauno.
+*          lv2 = lv2 + wa_key2-ismnw.
+*          wa_key2-parent = lv_arbpl.
+*          modify it_key2 from wa_key2.
+*        endloop.
+*        wa_key1-dauno = lv1.
+*        wa_key1-ismnw = lv2.
+*
+*
+*        wa_key1-key = lv_arbpl.
+*        wa_key1-wk_center = lv_arbpl.
+*        modify it_key1 from wa_key1 ."transporting key dauno ismnw.
+*      endloop.
+
+
+*
+*      sort it_key3 by parent.
+*
+*      loop at it_key3 into wa_key3.
+*        lv = lv + wa_key3-dauno.
+*
+*        at end of parent.
+*          wa_key2-dauno = lv.
+*          clear lv.
+*        endat.
+*
+*
+*      endloop.
+
+*      loop at gt_aufk into wa_aufk.
+*        wa_key2-key = wa_aufk-pernr.
+*        wa_key2-parent = wa_aufk-aufnr.
+*        wa_key2-pernr = wa_aufk-pernr.
+*        collect wa_key2 into it_key2.
+*        clear wa_key2.
+*      endloop.
+
+
+      append lines of it_key1 to gt_data.
+      append lines of it_key2 to gt_data.
+      append lines of it_key3 to gt_data.
+
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->GET_DEFAULTS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_defaults.
+    types: begin of ty_pernr,
+             pernr type pa0105-pernr,
+           end of ty_pernr.
+    data : lv_low     type char20,
+           lv_high    type char20,
+           lt_persons type table of object_person_assignment,
+           ls_person  type object_person_assignment,
+           lv_plant   type t001w-werks,
+           lw_pernr   type ty_pernr,
+           lt_pernr   type table of ty_pernr.
+
+*     Get workcenter from front end
+*    wa_default-arbpl = 'MMECH'.
+    split wa_default-arbpl at ',' into table lt_arbpl.
+    loop at lt_arbpl into lw_arbpl.
+      rw_arbpl-low = lw_arbpl-arbpl.
+      rw_arbpl-sign = 'I'.
+      rw_arbpl-option = 'EQ'.
+      append rw_arbpl to ra_arbpl.
+    endloop.
+
+* Get selected date from frontend
+    if wa_default-gt_range is not initial.
+      split wa_default-gt_range at '-' into lv_low lv_high.
+      condense: lv_low,
+                lv_high.
+
+*      Convert  dates into SAP format
+      call function 'CONVERT_DATE_TO_INTERNAL'
+        exporting
+          date_external            = lv_low
+        importing
+          date_internal            = rw_date-low
+        exceptions
+          date_external_is_invalid = 1
+          others                   = 2.
+      if sy-subrc eq 0.
+
+      endif.
+      call function 'CONVERT_DATE_TO_INTERNAL'
+        exporting
+          date_external            = lv_high
+        importing
+          date_internal            = rw_date-high
+        exceptions
+          date_external_is_invalid = 1
+          others                   = 2.
+      if sy-subrc eq 0.
+
+      endif.
+      rw_date-option = 'BT'.
+      rw_date-sign   = 'I'.
+      append rw_date to ra_date.
+    else.
+*      rw_date-low = sy-datum - 90.
+*      rw_date-option = 'GE'.
+    endif.
+
+
+* Get Employees from workcenters
+    get parameter id 'IWK' field lv_plant.
+
+    loop at lt_arbpl into lw_arbpl.
+      refresh : lt_persons.
+      call function 'CR_PERSONS_OF_WORKCENTER'
+        exporting
+          arbpl                       = lw_arbpl-arbpl
+          werks                       = lv_plant
+        tables
+          out_persons                 = lt_persons
+        exceptions
+          invalid_object              = 1
+          invalid_hr_planning_variant = 2
+          other_error                 = 3
+          others                      = 4.
+      loop at lt_persons into ls_person.
+        append ls_person to gt_persons.
+*        Get work center Id's
+        rw_arbid-sign = 'I'.
+        rw_arbid-option = 'EQ'.
+        rw_arbid-low = ls_person-arbid.
+        append rw_arbid to ra_arbid.
+        clear : rw_arbid.
+* Get Personal Numbers
+        if wa_default-pernr is initial.
+          rw_pernr-sign = 'I'.
+          rw_pernr-option = 'EQ'.
+          rw_pernr-low = ls_person-pernr.
+          append rw_pernr to ra_pernr.
+          clear : rw_pernr.
+        endif.
+      endloop.
+    endloop.
+    sort ra_arbid.
+    sort gt_persons.
+    sort ra_pernr.
+    delete adjacent duplicates from ra_arbid comparing all fields.
+    delete adjacent duplicates from gt_persons comparing all fields.
+    delete adjacent duplicates from ra_pernr comparing all fields.
+
+    split wa_default-pernr at ',' into table lt_pernr.
+    loop at lt_pernr into lw_pernr.
+      rw_pernr-low = lw_pernr-pernr.
+      rw_pernr-sign = 'I'.
+      rw_pernr-option = 'EQ'.
+      append rw_pernr to ra_pernr.
+      clear : rw_pernr.
+    endloop.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_TEAM_MANAGER_CLASS->GET_SYSTEM_CONDITIONS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_SYSTEM_CONDITIONS.
+  field-symbols: <sys_cond> type ty_key_value.
+
+  refresh gt_sys_cond.
+
+  select anlzu anlzux into table gt_sys_cond
+      from t357m_t
+      where spras = sy-langu
+      order by anlzu.
+
+  loop at gt_sys_cond assigning <sys_cond>.
+    <sys_cond>-value = <sys_cond>-key && ` ` && <sys_cond>-value.
+  endloop.
+
+  insert initial line into gt_sys_cond index 1.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_TEAM_MANAGER_CLASS->GET_USER_STATUSES
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_USER_STATUSES.
+  refresh gt_user_status.
+
+  select estat txt04 txt30 into table gt_user_status
+      from tj30t
+      where stsma = 'PMOPER'
+        and spras = sy-langu.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->GET_WORKCENTER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_workcenter.
+  data: lv_param_value type xuvalue,
+          lv_plant       type werks_d,
+          lw_work        type ty_work.
+    data: lv_search_string(100) type c,
+          lv_string             type string.
+
+    refresh gt_workcenter.
+
+* Get maintenance planning plant parameter for this user.
+    select single parva into lv_param_value from usr05
+        where bname = sy-uname
+          and parid = 'IWK'.
+*    wa_default-arbpl = 'MMECH'.
+*    wa_default-wrk_center = '10003849'.
+    if sy-subrc = 0 and not lv_param_value is initial.
+      lv_plant = lv_param_value.
+*   Get Default work center
+      clear : lv_param_value.
+      select single parva into lv_param_value from usr05
+                                where bname = sy-uname
+                                  and parid = 'AGR'.
+      if sy-subrc eq 0 and not lv_param_value is initial.
+        wa_default-arbpl = lv_param_value.
+        select single objid from crhd into  wa_default-wrk_center
+                                where arbpl = wa_default-arbpl
+                                  and werks = lv_plant.
+        if sy-subrc ne 0.
+          clear : wa_default-arbpl,
+                  wa_default-wrk_center.
+        endif.
+      endif.
+
+      check not ajax_value is initial.
+      check strlen( ajax_value ) >= 3.
+      lv_string = ajax_value.
+      replace '*' in lv_string with ''.
+      replace '%' in lv_string with ''.
+      lv_search_string = `%` && lv_string && `%`.
+      translate lv_search_string to upper case.
+
+      select crhd~arbpl
+             crhd~objty
+             crhd~objid
+             crhd~werks
+             crtx~ktext into table gt_workcenter
+          from crtx
+          inner join crhd on crtx~objty = crhd~objty
+                         and crtx~objid = crhd~objid
+          where crtx~spras = sy-langu
+            and crhd~werks = lv_plant
+            and ( crtx~ktext_up like lv_search_string
+               or crhd~arbpl like lv_search_string )
+          order by crhd~arbpl.
+
+      if sy-subrc eq 0.
+        loop at gt_workcenter into lw_work.
+          concatenate lw_work-cr_objid
+                      lw_work-cr_ktext into lw_work-text separated by space.
+          modify gt_workcenter from lw_work transporting text.
+        endloop.
+      endif.
+    endif.
+
+    sort gt_workcenter by arbpl cr_ktext.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->GET_WORKCENTER_ID
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method GET_WORKCENTER_ID.
+    data: lv_param_value type xuvalue,
+          lv_plant       type werks_d,
+          lw_work        type ty_work.
+* Get maintenance planning plant parameter for this user.
+    select single parva into lv_param_value from usr05
+        where bname = sy-uname
+          and parid = 'IWK'.
+
+
+    lv_plant = lv_param_value.
+    clear lv_param_value.
+    select single parva into lv_param_value from usr05
+                          where bname = sy-uname
+                            and parid = 'AGR'.
+
+    if sy-subrc eq 0 and not lv_param_value is initial.
+      wa_default-arbpl = lv_param_value.
+      select single objid from crhd into  wa_default-wrk_center
+                              where arbpl = wa_default-arbpl
+                                and werks = lv_plant.
+      if sy-subrc ne 0.
+        clear : wa_default-arbpl,
+                wa_default-wrk_center.
+      endif.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->GET_WORKORDERS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method get_workorders.
+  types: begin of s_oper_stat,
+           objnr  type j_objnr,
+           status type j_estat,
+           txt04  type j_txt04,
+         end of s_oper_stat.
+
+  data : lv_work   type ismnw,
+         lv_time   type ty_time,
+         lv_arbei  type afvv-arbei,
+         ls_person type object_person_assignment.
+
+  data : lt_kbed             type table of kbedp,
+         ls_kbed             type kbedp,
+         lt_oper_status      type sorted table of s_oper_stat
+             with non-unique key objnr,
+         lt_header_status    type hashed table of s_oper_stat
+             with unique key objnr,
+         lt_txt04            type table of j_txt04,
+         ls_txt04            type j_txt04,
+         ltr_status          type range of j_txt04,
+         lsr_status          like line of ltr_status,
+         lv_anlzu_sel(80)    type c,
+         lv_list_hours       type i,
+         lv_list_hours_c(10) type c.
+
+  field-symbols: <aufk> type ty_aufk.
+
+  refresh : gt_aufk,
+            gt_kbed.
+
+  if not wa_default-sys_cond is initial.
+    lv_anlzu_sel = `d~anlzu = '` && wa_default-sys_cond && `'`.
+  endif.
+
+  if ra_arbpl[] is not initial.
+    select  a~aufnr
+            a~objnr
+            a~auart
+            a~ktext
+            a~werks
+            a~phas0
+            a~phas1
+            d~aufpl
+            d~aplzl
+            d~vornr
+            d~objnr as obsta
+            d~ltxa1
+            d~anzzl
+            afvv~ssavd
+            into corresponding fields of table gt_aufk
+            from aufk as a
+            inner join afko as b
+                on a~aufnr = b~aufnr
+            inner join afvc as d
+                on b~aufpl = d~aufpl
+            inner join afvv
+                on d~aufpl = afvv~aufpl
+               and d~aplzl = afvv~aplzl
+            where a~autyp = '30'
+              and ( a~phas0 = 'X' or
+                    a~phas1 = 'X' )
+*              and a~vaplz in ra_arbpl
+              and a~erdat in ra_date
+              and d~loekz = space
+              and d~phflg = space
+              and ( d~steus = 'PM01' or d~steus = 'PM10' )
+              and d~arbid in ra_arbid
+*              and d~arbid <> space
+              and (lv_anlzu_sel).
+
+    sort gt_aufk by aufnr vornr.
+
+    if not gt_aufk[] is initial.
+      if wa_default-posted_work = 'true'.
+*       Indicate that operations with user status RSCH should be found.
+*        wa_default-status = 'RSCH'. "commented code to skip the RSCH status
+
+*       Get header DSEX statuses for the order set.
+        select objnr stat into table lt_header_status
+            from jest
+            for all entries in gt_aufk
+            where objnr = gt_aufk-objnr
+              and stat = 'I0029'
+              and inact = space.
+
+        loop at gt_aufk assigning <aufk>.
+          read table lt_header_status
+              with key objnr = <aufk>-objnr
+              transporting no fields.
+          if sy-subrc = 0.
+            <aufk>-posted_work = 'X'.
+          endif.
+        endloop.
+      endif.
+
+      if not wa_default-status is initial.
+*       Populate selected user statuses into a range.
+        condense wa_default-status.
+        split wa_default-status at space
+            into table lt_txt04.
+
+        loop at lt_txt04 into ls_txt04.
+          clear lsr_status.
+          lsr_status-sign   = 'I'.
+          lsr_status-option = 'EQ'.
+          lsr_status-low    = ls_txt04.
+          append lsr_status to ltr_status.
+        endloop.
+
+*       Get user statuses for all operations.
+        select jest~objnr jest~stat tj30t~txt04 into table lt_oper_status
+            from jest
+            inner join tj30t
+                on jest~stat = tj30t~estat
+            for all entries in gt_aufk
+            where jest~objnr = gt_aufk-obsta
+              and jest~inact = space
+              and tj30t~stsma = 'PMOPER'
+              and tj30t~spras = 'E'
+              and tj30t~txt04 in ltr_status.
+
+*       Filter order list by user status.
+        loop at gt_aufk assigning <aufk>.
+          read table lt_oper_status
+              with key objnr = <aufk>-obsta
+              transporting no fields.
+          if sy-subrc <> 0.
+            if wa_default-posted_work <> 'true'.
+              delete gt_aufk.
+              continue.
+            endif.
+          else.
+            <aufk>-posted_work = 'X'.
+          endif.
+        endloop.
+      endif.
+
+      if wa_default-posted_work = 'true'.
+        delete gt_aufk where posted_work is initial.
+      endif.
+
+    endif.
+  endif.
+
+  check not gt_aufk[] is initial.
+
+* Get hours scheduled for orders
+  select aufpl aplzl arbei arbeh ismnw dauno
+   from afvv
+   into table gt_afvv for all entries in gt_aufk
+        where aufpl = gt_aufk-aufpl
+          and aplzl = gt_aufk-aplzl.
+  if sy-subrc eq 0.
+    sort gt_afvv by aufpl aplzl.
+  endif.
+
+* Get hours charged for all orders
+  select aufnr
+         vornr
+         ersda
+         pernr
+         ismnw
+         ismne
+         grund
+         aueru
+         aufpl
+         aplzl into corresponding fields of table gt_time
+        from afru for all entries in gt_aufk
+*                  where aufpl = gt_aufk-aufpl
+*                    and aplzl = gt_aufk-aplzl.
+                   where aufnr = gt_aufk-aufnr
+                     and vornr = gt_aufk-vornr.
+  if sy-subrc eq 0.
+    sort gt_time by aufnr vornr pernr.
+  endif.
+*  Get function Location and equipment details
+  select  a~aufnr
+          a~equnr
+          a~iloan
+          a~qmnum
+          b~tplnr
+          b~eqfnr
+          b~stort
+          b~beber into table gt_iloa
+          from afih as a inner join iloa as b
+          on a~iloan = b~iloan
+          for all entries in gt_aufk
+           where a~aufnr = gt_aufk-aufnr.
+  if sy-subrc eq 0.
+    sort gt_iloa by aufnr.
+  endif.
+  loop at gt_aufk into wa_aufk.
+*  get buliding and sort fields
+    read table gt_iloa into wa_iloa with key aufnr = wa_aufk-aufnr.
+    if sy-subrc eq 0.
+      wa_aufk-stort = wa_iloa-stort.
+      wa_aufk-eqfnr = wa_iloa-eqfnr.
+      wa_aufk-qmnum = wa_iloa-qmnum.
+      wa_aufk-equnr = wa_iloa-equnr.
+      wa_aufk-tplnr = wa_iloa-tplnr.
+      wa_aufk-beber = wa_iloa-beber.
+*   Get Equipment description
+      select single eqktx from eqkt into wa_aufk-eqktx
+                        where equnr = wa_aufk-equnr
+                          and spras = sy-langu.
+*    get function location description
+      select single pltxt into wa_aufk-pltxt from iflotx
+                          where tplnr = wa_iloa-tplnr
+                            and spras = sy-langu.
+      if sy-subrc eq 0.
+
+      endif.
+* Get Tech id
+      select single tidnr from equz into wa_aufk-tidnr
+                         where equnr = wa_iloa-equnr.
+      if sy-subrc eq 0.
+
+      endif.
+      call function 'CONVERSION_EXIT_TPLNR_OUTPUT'
+        exporting
+          input  = wa_aufk-tplnr
+        importing
+          output = wa_aufk-tplnr.
+    endif.
+*Get hours scheduled
+    read table gt_afvv into wa_afvv
+                       with key aufpl = wa_aufk-aufpl
+                                aplzl = wa_aufk-aplzl.
+    if sy-subrc eq 0.
+      wa_aufk-dauno = wa_afvv-dauno.
+    endif.
+*Get Hours charged
+    clear : lv_work.
+    loop at gt_time into wa_time where aufnr = wa_aufk-aufnr
+                                   and vornr = wa_aufk-vornr.
+      lv_time = wa_time.
+      lv_work = lv_work + wa_time-ismnw.
+    endloop.
+    wa_aufk-ismnw = lv_work.
+    concatenate wa_aufk-aufnr wa_aufk-vornr into wa_aufk-oroper separated by ' - '.
+*clear the order data in buffer
+    refresh : lt_kbed.
+    call function 'CO_EXT_ORDER_RESET'.
+    call function 'PM_ORDER_DATA_READ'
+      exporting
+        order_number    = wa_aufk-aufnr
+      tables
+        kbedp_tab       = lt_kbed
+      exceptions
+        order_not_found = 1
+        others          = 2.
+
+    if sy-subrc eq 0.
+      clear : lv_arbei.
+      loop at lt_kbed into ls_kbed where aufpl = wa_aufk-aufpl
+                                     and aplzl = wa_aufk-aplzl
+                                     and pernr ne space.
+        lv_arbei = lv_arbei + ls_kbed-arbei.
+        wa_kbed-arbei = ls_kbed-arbei. "Hours Scheduled
+        wa_kbed-pernr = ls_kbed-pernr. "Personal Number
+        wa_kbed-ename = ls_kbed-ename. "Personal Number name
+        wa_kbed-canum = ls_kbed-canum. "Counter for requriment
+        wa_kbed-aufnr = wa_aufk-aufnr. "Order Number
+        wa_kbed-vornr = wa_aufk-vornr. "Operation item Number
+        wa_kbed-aufpl = wa_aufk-aufpl. "Operation number
+        wa_kbed-aplzl = wa_aufk-aplzl. "Operation item
+        wa_kbed-date = ls_kbed-fssbd. "Split Date
+*        Hours Charged for peronal.
+        clear : wa_time,
+                lv_work.
+        loop at gt_time into wa_time where aufpl = ls_kbed-aufpl
+                                       and aplzl = ls_kbed-aplzl
+                                       and pernr = ls_kbed-pernr.
+          lv_work = lv_work + wa_time-ismnw.
+        endloop.
+        wa_kbed-ismnw  = lv_work. "Hours Charged
+        wa_kbed-date   = ls_kbed-sstad.
+        wa_kbed-oroper = wa_aufk-oroper. "Order and operation
+        append wa_kbed to gt_kbed.
+      endloop.
+    endif.
+    wa_aufk-arbei = lv_arbei.
+
+    if not lt_kbed[] is initial.
+      wa_aufk-has_schedules = 'true'.
+    else.
+      wa_aufk-has_schedules = 'false'.
+    endif.
+
+    if wa_aufk-arbei = wa_aufk-ismnw.
+      wa_aufk-color = 'Success'.
+    else.
+      wa_aufk-color = 'None'.
+    endif.
+
+*   List requirement hours - charged hours.
+    lv_list_hours = ( wa_aufk-dauno * wa_aufk-anzzl ) - wa_aufk-ismnw.
+    if lv_list_hours < 0.
+      lv_list_hours = 0.
+    endif.
+
+    write lv_list_hours to lv_list_hours_c left-justified.
+    wa_aufk-list_hours = lv_list_hours.
+
+    modify gt_aufk from wa_aufk.
+    clear : wa_aufk.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->PUSHNOTIFICATION
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method pushnotification.
+*    call function '/NEPTUNE/PUSH_PUSHWOOSH'
+*      exporting
+*        message           = 'This is test message'
+*        badge             = lv_badge
+*        user_id           = lv_userid
+*        bundle_id         = lv_bundle
+*     IMPORTING
+*       STATUS_CODE       =
+*       STATUS_TEXT       =
+*       STATUS_HTML       =
+    .
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TEAM_MANAGER_CLASS->SAVE_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method save_data.
+    data: lv_work_order   type aufnr,
+          lv_operation    type vornr,
+          lt_assignments  type ypm_npt_assignment_t,
+          ls_assignment   type ypm_npt_assignment,
+          lt_methods      type table of bapi_alm_order_method,
+          ls_method       type bapi_alm_order_method,
+          lt_operation    type table of bapi_alm_order_operation,
+          ls_operation    type bapi_alm_order_operation,
+          lt_operation_up type table of bapi_alm_order_operation_up,
+          ls_operation_up type bapi_alm_order_operation_up,
+          lt_return       type table of bapiret2,
+          ls_return       type bapiret2,
+          lv_ref          type i.
+
+    lv_work_order = wa_aufk-aufnr.
+    ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+
+    lv_operation = wa_aufk-vornr.
+    ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+*    check if assinged hours are changed to order
+    if wa_aufk-hrs = 'X'.
+      ls_method-refnumber = lv_ref + 1.
+      ls_method-objecttype = 'OPERATION'.
+      ls_method-method = 'CHANGE'.
+      concatenate lv_work_order lv_operation into ls_method-objectkey respecting blanks.
+      append ls_method to lt_methods.
+      ls_operation-activity = lv_operation.
+      ls_operation-duration_normal = wa_aufk-dauno.
+      ls_operation-number_of_capacities  = wa_aufk-anzzl.
+      ls_operation-duration_normal_unit = 'H'.
+      ls_operation-un_work      = 'H'.
+      append ls_operation to lt_operation.
+      ls_operation_up-number_of_capacities = 'X'.
+      ls_operation_up-activity        = 'X'.
+      ls_operation_up-duration_normal_unit = 'X'.
+      ls_operation_up-un_work         = 'X'.
+      append ls_operation_up to lt_operation_up.
+
+      ls_method-refnumber  = '000000'.
+      ls_method-method = 'SAVE'.
+      ls_method-objectkey = lv_work_order.
+      append ls_method to lt_methods.
+
+      call function 'BAPI_ALM_ORDER_MAINTAIN'
+        tables
+          it_methods      = lt_methods
+          it_operation    = lt_operation
+          it_operation_up = lt_operation_up
+          return          = lt_return.
+      read table lt_return into ls_return with key type = 'E'.
+      if sy-subrc eq 0.
+        call function 'BAPI_TRANSACTION_COMMIT'
+          exporting
+            wait = 'X'.
+        if sy-subrc eq 0.
+          clear wa_message.
+          message id 'YPM_NEPTUNE' type 'S'
+              number '029' into wa_message-message.
+          wa_message-mss_type = 'Success'.
+          append wa_message to gt_message.
+        endif.
+      endif.
+    endif.
+
+*    check if hours are confirmed
+    if wa_aufk-ass = 'X'.
+      loop at gt_kbed into wa_kbed.
+        clear ls_assignment.
+        ls_assignment-canum            = wa_kbed-canum.
+        ls_assignment-personnel_number = wa_kbed-pernr.
+        ls_assignment-work_hours       = wa_kbed-arbei.
+
+        if not wa_kbed-date is initial.
+          ls_assignment-split_date = wa_kbed-date.
+        endif.
+
+        if not wa_kbed-canum is initial.
+          ls_assignment-change_rec = 'X'.
+        endif.
+
+        append ls_assignment to lt_assignments.
+      endloop.
+
+      loop at gt_kbed_del into wa_kbed.
+        clear ls_assignment.
+        ls_assignment-canum            = wa_kbed-canum.
+        ls_assignment-personnel_number = wa_kbed-pernr.
+        ls_assignment-work_hours       = wa_kbed-arbei.
+        ls_assignment-delete_rec       = 'X'.
+        append ls_assignment to lt_assignments.
+      endloop.
+
+      ycl_pm_npt_utilities=>create_requirements(
+        exporting
+          iv_work_order = lv_work_order
+          iv_operation = lv_operation
+          it_assignments = lt_assignments
+        exceptions
+          post_failure = 1
+      ).
+
+      if sy-subrc = 0.
+        clear wa_message.
+        message id 'YPM_NEPTUNE' type 'S'
+            number '000' into wa_message-message.
+        wa_message-mss_type = 'Success'.
+        append wa_message to gt_message.
+
+        get_workorders( ).
+      else.
+        clear wa_message.
+        message id 'YPM_NEPTUNE' type 'S'
+            number '006' into wa_message-message.
+        wa_message-mss_type = 'Error'.
+        append wa_message to gt_message.
+      endif.
+    endif.
+
+*    data: lv_aufpl          type co_aufpl,
+*          lv_aplzl          type co_aplzl,
+*          lv_work_order     type aufnr,
+*          lv_operation      type vornr,
+*          lv_error_occurred type flag,
+*          ls_kbed           type kbed,
+*          lt_kbedd          type table of kbedd,
+*          ls_kbedd          type kbedd,
+*          ls_kbedd_temp     type kbedd,
+*          lt_kbed_quan      type table of cykbedquan,
+*          ls_kbed_quan      type cykbedquan,
+*          lt_afvgd          type table of afvgd,
+*          ls_afvgd          type afvgd,
+*          lv_max_split      type i,
+*          lv_split          type i,
+*          lv_error          type c,
+*          wa_return         type bapiret2,
+*          gv_message_id     type symsgid value 'YPM_NEPTUNE',
+*          ls_assignment     type ypm_npt_assignment.
+*    data : lt_info       type table of uinfo2,
+*           wa_info       type uinfo2,
+*           lt_return_msg type bapiret2_t.
+*
+*    field-symbols: <kbedd> type kbedd.
+*    sort gt_kbed by aufnr vornr." chng.
+*    loop at gt_kbed into wa_kbed where chng ne space.
+*      lv_work_order = wa_kbed-aufnr.
+*      lv_operation = wa_kbed-vornr.
+*    endloop.
+**    loop at gt_kbed into wa_kbed where chng ne space.
+**      lv_work_order = wa_kbed-aufnr.
+**      split wa_kbed-oroper at ' - ' into lv_work_order lv_operation.
+**  conversion_in( changing cv_value = lv_work_order ).
+**
+**      lv_operation = wa_kbed-vornr.
+**  conversion_in( changing cv_value = lv_operation ).
+*    clear : wa_kbed.
+*    select single aufpl into lv_aufpl from afko
+*        where aufnr = lv_work_order.
+*
+*    select single aplzl into lv_aplzl from afvc
+*        where aufpl = lv_aufpl
+*          and vornr = lv_operation.
+*
+*    select single *
+*        into ls_kbed
+*        from kbed
+*        where aufpl = lv_aufpl
+*          and aplzl = lv_aplzl
+*          and split = 0
+*          and kapid <> 0.
+*
+*    call function 'PM_ORDER_DATA_READ'
+*      exporting
+*        order_number = lv_work_order
+*      tables
+*        iafvgd       = lt_afvgd
+*      exceptions
+*        others       = 1.
+*
+*    call function 'CY_BT_KBED_CREATE'
+*      exporting
+*        i_aufnr = lv_work_order
+*        i_bedid = ls_kbed-bedid
+*      exceptions
+*        others  = 1.
+*
+*    call function 'CY_BT_KBED_READ_WITH_KEY'
+*      exporting
+*        i_aufnr   = lv_work_order
+*        i_bedid   = ls_kbed-bedid
+*        i_bedzl   = ls_kbed-bedzl
+*        i_canum   = ls_kbed-canum
+*      importing
+*        kbedd_exp = ls_kbedd
+*      exceptions
+*        others    = 1.
+*
+*    call function 'CY_BT_KBED_OPR_TAB_GET'
+*      exporting
+*        i_bedid = ls_kbed-bedid
+*        i_bedzl = ls_kbed-bedzl
+*      tables
+*        t_kbedd = lt_kbedd
+*      exceptions
+*        others  = 1.
+*
+*    read table lt_afvgd into ls_afvgd with key vornr = lv_operation.
+*
+*    loop at lt_kbedd into ls_kbedd_temp.
+*      if ls_kbedd_temp-split > lv_max_split.
+*        lv_max_split = ls_kbedd_temp-split.
+*      endif.
+*      clear : wa_kbed.
+*      read table gt_kbed into wa_kbed
+*          with key canum = ls_kbedd_temp-canum
+*                   aufpl = ls_kbedd_temp-aufpl
+*                   aplzl = ls_kbedd_temp-aplzl.
+*      if sy-subrc eq 0.
+*        if wa_kbed-chng = 'C'.
+**      if ls_assignment-change_rec = 'X'.
+*          ls_kbedd_temp-arbei = wa_kbed-arbei.
+*          ls_kbedd_temp-dauno = wa_kbed-arbei.
+*        endif.
+*      endif.
+**
+*      move-corresponding ls_kbedd_temp to ls_kbed_quan.
+*      append ls_kbed_quan to lt_kbed_quan.
+*    endloop.
+*
+*    lv_split = lv_max_split.
+*    loop at gt_kbed into wa_kbed where canum is initial
+*                                                and aufpl = ls_afvgd-aufpl
+*                                                and aplzl = ls_afvgd-aplzl.
+*      if wa_kbed-chng = 'N'.
+*        clear ls_kbed_quan.
+*        ls_kbed_quan-otype = 'P'.
+*        ls_kbed_quan-pernr = wa_kbed-pernr.
+*        ls_kbed_quan-sstad = ls_afvgd-ssavd.
+*        ls_kbed_quan-sstau = ls_afvgd-ssavz.
+*        ls_kbed_quan-arbei = wa_kbed-arbei.
+*        ls_kbed_quan-arbeh = 'STD'.
+*        ls_kbed_quan-dauno = wa_kbed-arbei.
+*
+*        lv_split = lv_split + 1.
+*        ls_kbed_quan-split = lv_split.
+*
+**    conversion_in( changing cv_value = ls_kbed_quan-pernr ).
+*        append ls_kbed_quan to lt_kbed_quan.
+*      endif.
+*    endloop.
+**      at end of aufnr.
+*    call function 'CX_KBED_INDIVIDUAL_CAPACITIES'
+*      exporting
+*        afvgd_imp         = ls_afvgd
+*        kbedd_imp         = ls_kbedd
+*        i_flg_arbei       = 'X'
+*        i_flg_shift_order = 'X'
+*      tables
+*        t_kbedd           = lt_kbedd
+*        t_kbed_quan       = lt_kbed_quan
+*      exceptions
+*        others            = 1.
+*
+** Remove records marked for deletion.
+*    loop at lt_kbedd into ls_kbedd_temp.
+*      clear : wa_kbed.
+*      read table gt_kbed into wa_kbed
+*          with key canum = ls_kbedd_temp-canum
+*                   aufpl = ls_kbedd_temp-aufpl
+*                   aplzl = ls_kbedd_temp-aplzl.
+*      if sy-subrc eq 0.
+*        if wa_kbed-chng = 'D'.
+**      if ls_assignment-delete_rec = 'X'.
+*          delete lt_kbedd.
+*          continue.
+*        endif.
+*      endif.
+*    endloop.
+*
+** Re-number splits after record deletion.
+*    lv_split = 1.
+*    loop at lt_kbedd assigning <kbedd> where not canum = ls_kbedd-canum.
+*      <kbedd>-split = lv_split.
+*      lv_split = lv_split + 1.
+*    endloop.
+*
+** Send splits to SAP internal memory.
+*    call function 'CY_BT_KBED_ASSIGN'
+*      exporting
+*        kbedd_imp = ls_kbedd
+*        i_aufnr   = lv_work_order
+*      tables
+*        t_kbedd   = lt_kbedd.
+*
+** Update the database with new split info.
+*    call function 'CY_BT_VB_CHECK'
+*      exporting
+*        i_bedid_1           = ls_kbed-bedid
+*        i_aufnr_1           = lv_work_order
+*        i_aufpl             = lv_aufpl
+*      importing
+*        e_aend_flag         = lv_error_occurred
+*      exceptions
+*        error_kbed_vb_check = 1.
+*    if sy-subrc eq 0.
+*      commit work and wait.
+*      if sy-subrc eq 0.
+**        wait up to 10 seconds.
+**        wa_message-message = 'Data Saved Successfully'. "custom Message
+*        clear : wa_return-message.
+*        wa_return-number = '000'.
+*        call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+*          exporting
+*            i_langu                 = wa_info-lang
+*            i_msgid                 = gv_message_id
+*            i_msgno                 = wa_return-number
+*          importing
+*            e_msg                   = wa_return-message
+*          tables
+*            et_return               = lt_return_msg
+*          exceptions
+*            msg_for_langu_not_found = 1
+*            others                  = 2.
+*        if sy-subrc <> 0.
+** Implement suitable error handling here
+*        endif.
+*        wa_message-message = wa_return-message.
+*        wa_message-mss_type = 'Success'.
+*        wa_message-keyfield = wa_kbed-oroper.
+*        append wa_message to gt_message.
+*        refresh : lt_kbedd,
+*                  lt_kbed_quan.
+*      else.
+*        clear : wa_return-message.
+*        wa_return-number = '006'.
+*        call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+*          exporting
+*            i_langu                 = wa_info-lang
+*            i_msgid                 = gv_message_id
+*            i_msgno                 = wa_return-number
+*          importing
+*            e_msg                   = wa_return-message
+*          tables
+*            et_return               = lt_return_msg
+*          exceptions
+*            msg_for_langu_not_found = 1
+*            others                  = 2.
+*        if sy-subrc <> 0.
+** Implement suitable error handling here
+*        endif.
+*        lv_error = 'X'.
+*        wa_message-message = wa_return-message.
+*        wa_message-mss_type = 'Error'.
+*        wa_message-keyfield = wa_kbed-oroper.
+*        append wa_message to gt_message.
+*        refresh : lt_kbedd,
+*                  lt_kbed_quan.
+*      endif.
+*    endif.
+**      endat.
+**    endloop.
+*    Get the updated records if processed without errors
+*    if lv_error ne 'X'.
+*
+*    endif.
+  endmethod.
+ENDCLASS.

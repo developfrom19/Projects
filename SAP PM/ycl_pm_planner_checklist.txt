@@ -1,0 +1,451 @@
+class YCL_PM_PLANNER_CHECKLIST definition
+  public
+  create public .
+
+public section.
+
+  interfaces /NEPTUNE/IF_NAD_SERVER .
+
+  types: begin of s_plant,
+           plant      type werks_d,
+           plant_text type string,
+         end of s_plant.
+
+  types: begin of s_list_field,
+           category             type string,
+           category_text        type string,
+           field_id             type string,
+           create_op            type string,
+           create_txt           type string,
+           std_text_key         type string,
+           short_text           type string,
+           description          type string,
+           selected             type string,
+           edit_mode            type string,
+           work_center          type string,
+           work_center_editable type string,
+         end of s_list_field.
+
+  types: begin of s_key_value,
+           key   type string,
+           value type string,
+         end of s_key_value.
+
+  data: gt_list_fields  type table of s_list_field,
+        wa_list_field   type s_list_field,
+        gt_plants       type table of s_plant,
+        wa_plant        type s_plant,
+        gt_work_centers type table of s_key_value,
+        gt_categories   type table of s_key_value.
+
+  data: begin of wa_criteria,
+          plant type werks_d,
+        end of wa_criteria.
+
+  data: begin of wa_program_state,
+          program_state   type string,
+          program_message type string,
+          incorrect_field type string,
+        end of wa_program_state.
+
+  data: begin of wa_globals,
+          tab_index type string,
+        end of wa_globals.
+protected section.
+
+  methods GET_PLANTS
+    importing
+      !IV_SEARCH_STRING type STRING .
+  methods LOAD_CONFIGURATION
+    importing
+      !IV_PLANT type STRING .
+  methods ADD_ITEM .
+  methods CHANGE_ITEM .
+  methods SAVE_SELECTIONS .
+  methods DELETE_ITEM .
+  methods GET_WORK_CENTERS
+    importing
+      !IV_WC_SEARCH type STRING .
+private section.
+ENDCLASS.
+
+
+
+CLASS YCL_PM_PLANNER_CHECKLIST IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_PLANNER_CHECKLIST->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method /NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX.
+  case ajax_id.
+    when 'GET_PLANTS'.
+      get_plants( ajax_value ).
+    when 'LOAD_CONFIGURATION'.
+      load_configuration( ajax_value ).
+    when 'ADD_ITEM'.
+      add_item( ).
+    when 'CHANGE_ITEM'.
+      change_item( ).
+    when 'DELETE_ITEM'.
+      delete_item( ).
+    when 'SAVE_SELECTIONS'.
+      save_selections( ).
+    when 'GET_WORK_CENTERS'.
+      get_work_centers( ajax_value ).
+  endcase.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->ADD_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method ADD_ITEM.
+  data: ls_ypmnptclist  type ypmnptclist,
+        ls_ypmnptclistt type ypmnptclistt.
+
+* Category is required.
+  if wa_list_field-category is initial.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Entry is required.'.
+    wa_program_state-incorrect_field = 'selEditItemCategory'.
+    return.
+  endif.
+
+* Field ID is required.
+  if wa_list_field-field_id is initial.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Entry is required.'.
+    wa_program_state-incorrect_field = 'inpEditItemFieldID'.
+    return.
+  endif.
+
+* Check for duplicate Field ID.
+  select count( * ) from ypmnptclist
+      where category = wa_list_field-category
+        and field_id = wa_list_field-field_id.
+  if sy-subrc = 0.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Field ID already exists.'.
+    wa_program_state-incorrect_field = 'inpEditItemFieldID'.
+    return.
+  endif.
+
+  ls_ypmnptclist-category     = wa_list_field-category.
+  ls_ypmnptclist-field_id     = wa_list_field-field_id.
+  ls_ypmnptclist-field_type   = ' '. "Future use
+  ls_ypmnptclist-std_text_key = wa_list_field-std_text_key.
+
+  if wa_list_field-create_op = 'true'.
+    ls_ypmnptclist-create_op = 'X'.
+  endif.
+
+  if wa_list_field-create_txt = 'true'.
+    ls_ypmnptclist-create_txt = 'X'.
+  endif.
+
+  ls_ypmnptclistt-category    = wa_list_field-category.
+  ls_ypmnptclistt-field_id    = wa_list_field-field_id.
+  ls_ypmnptclistt-language    = sy-langu.
+  ls_ypmnptclistt-short_text  = wa_list_field-short_text.
+  ls_ypmnptclistt-description = wa_list_field-description.
+
+  insert ypmnptclist from ls_ypmnptclist.
+  if sy-subrc = 0.
+    insert ypmnptclistt from ls_ypmnptclistt.
+  endif.
+
+  commit work.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->CHANGE_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method CHANGE_ITEM.
+  data: ls_ypmnptclist  type ypmnptclist,
+        ls_ypmnptclistt type ypmnptclistt.
+
+* Category is required.
+  if wa_list_field-category is initial.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Entry is required.'.
+    wa_program_state-incorrect_field = 'selEditItemCategory'.
+    return.
+  endif.
+
+* Field ID is required.
+  if wa_list_field-field_id is initial.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Entry is required.'.
+    wa_program_state-incorrect_field = 'inpEditItemFieldID'.
+    return.
+  endif.
+
+* Check existence of Field ID.
+  select count( * ) from ypmnptclist
+      where category = wa_list_field-category
+        and field_id = wa_list_field-field_id.
+  if sy-subrc <> 0.
+*   Try to add the field.
+    add_item( ).
+    return.
+  endif.
+
+  ls_ypmnptclist-category     = wa_list_field-category.
+  ls_ypmnptclist-field_id     = wa_list_field-field_id.
+  ls_ypmnptclist-field_type   = ' '. "Future use
+  ls_ypmnptclist-std_text_key = wa_list_field-std_text_key.
+
+  if wa_list_field-create_op = 'true'.
+    ls_ypmnptclist-create_op = 'X'.
+  endif.
+
+  if wa_list_field-create_txt = 'true'.
+    ls_ypmnptclist-create_txt = 'X'.
+  endif.
+
+  ls_ypmnptclistt-category    = wa_list_field-category.
+  ls_ypmnptclistt-field_id    = wa_list_field-field_id.
+  ls_ypmnptclistt-language    = sy-langu.
+  ls_ypmnptclistt-short_text  = wa_list_field-short_text.
+  ls_ypmnptclistt-description = wa_list_field-description.
+
+  modify ypmnptclist from ls_ypmnptclist.
+  if sy-subrc = 0.
+    modify ypmnptclistt from ls_ypmnptclistt.
+  endif.
+
+  commit work.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->DELETE_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method DELETE_ITEM.
+  delete from ypmnptclist
+      where category = wa_list_field-category
+        and field_id = wa_list_field-field_id.
+
+  delete from ypmnptclistt
+      where category = wa_list_field-category
+        and field_id = wa_list_field-field_id.
+
+  delete from ypmnptclistplnt
+      where category = wa_list_field-category
+        and field_id = wa_list_field-field_id.
+
+  commit work.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->GET_PLANTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_PLANTS.
+  data: lv_search_string type string.
+
+  refresh gt_plants.
+
+  lv_search_string = iv_search_string.
+  replace '*' in lv_search_string with ''.
+  replace '%' in lv_search_string with ''.
+  lv_search_string = `%` && lv_search_string && `%`.
+  translate lv_search_string to upper case.
+
+  select a~werks a~name1 into table gt_plants
+      from t001w as a inner join ypmchecklist as b
+      on a~werks = b~werks
+      where ( a~werks like lv_search_string
+         or name1 like lv_search_string )
+        and ( /emn/plant_stat = 'A' or /emn/plant_stat = ' ' )
+        and b~user_name = sy-uname.
+
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->GET_WORK_CENTERS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WC_SEARCH                   TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_WORK_CENTERS.
+  data: lv_search_string(100) type c.
+
+  refresh gt_work_centers.
+
+  check not iv_wc_search is initial.
+
+  lv_search_string = iv_wc_search.
+  replace '*' in lv_search_string with ''.
+  replace '%' in lv_search_string with ''.
+  lv_search_string = `%` && lv_search_string && `%`.
+  translate lv_search_string to upper case.
+
+  select crhd~arbpl crtx~ktext into table gt_work_centers
+      from crtx
+      inner join crhd on crtx~objty = crhd~objty
+                     and crtx~objid = crhd~objid
+      where crtx~spras = sy-langu
+        and crhd~werks = wa_criteria-plant
+        and ( crtx~ktext_up like lv_search_string
+           or crhd~arbpl like lv_search_string )
+      order by crhd~arbpl.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->LOAD_CONFIGURATION
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_PLANT                       TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method LOAD_CONFIGURATION.
+  data: lt_ypmnptclist     type table of ypmnptclist,
+        ls_ypmnptclist     type ypmnptclist,
+        lt_ypmnptclistt    type table of ypmnptclistt,
+        ls_ypmnptclistt    type ypmnptclistt,
+        lt_ypmnptclistplnt type hashed table of ypmnptclistplnt
+                               with unique key category field_id,
+        ls_ypmnptclistplnt type ypmnptclistplnt,
+        ls_config_out      type s_list_field,
+        ls_category        type s_key_value.
+
+  refresh: gt_categories,
+           gt_list_fields.
+  clear wa_program_state.
+
+  select count( * ) from t001w where werks = iv_plant
+      and ( /emn/plant_stat = 'A' or /emn/plant_stat = ' ' ).
+  if sy-subrc <> 0.
+*   Invalid plant.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Invalid entry'.
+    return.
+  endif.
+
+  select domvalue_l ddtext into table gt_categories
+      from dd07t
+      where domname    = 'YPMNPTCLISTCAT'
+        and ddlanguage = 'E'
+        and as4local   = 'A'
+        and as4vers    = 0
+      order by valpos.
+
+  select * into table lt_ypmnptclist from ypmnptclist.
+  select * into table lt_ypmnptclistt from ypmnptclistt
+      where language = sy-langu.
+  if sy-subrc <> 0.
+*   Translations not maintained.
+    select * into table lt_ypmnptclistt from ypmnptclistt
+        where language = 'E'.
+  endif.
+
+  select * into table lt_ypmnptclistplnt from ypmnptclistplnt
+      where plant = iv_plant.
+
+  loop at lt_ypmnptclist into ls_ypmnptclist.
+    clear ls_config_out.
+    ls_config_out-category   = ls_ypmnptclist-category.
+    ls_config_out-field_id   = ls_ypmnptclist-field_id.
+
+    read table gt_categories into ls_category
+        with key key = ls_config_out-category.
+    if sy-subrc = 0.
+      ls_config_out-category_text = ls_category-value.
+    endif.
+
+    if ls_ypmnptclist-create_op = 'X'.
+      ls_config_out-create_op = 'true'.
+    else.
+      ls_config_out-create_op = 'false'.
+    endif.
+
+    if ls_ypmnptclist-create_txt = 'X'.
+      ls_config_out-create_txt = 'true'.
+    else.
+      ls_config_out-create_txt = 'false'.
+    endif.
+
+    read table lt_ypmnptclistplnt into ls_ypmnptclistplnt
+        with key category = ls_config_out-category
+                 field_id = ls_config_out-field_id.
+    if sy-subrc = 0.
+      ls_config_out-selected    = 'true'.
+      ls_config_out-work_center = ls_ypmnptclistplnt-work_center.
+    else.
+      ls_config_out-selected = 'false'.
+    endif.
+
+    read table lt_ypmnptclistt into ls_ypmnptclistt
+        with key category = ls_config_out-category
+                 field_id = ls_config_out-field_id.
+    if sy-subrc = 0.
+      ls_config_out-short_text  = ls_ypmnptclistt-short_text.
+      ls_config_out-description = ls_ypmnptclistt-description.
+    endif.
+
+    append ls_config_out to gt_list_fields.
+  endloop.
+
+  sort gt_list_fields by category field_id.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_PLANNER_CHECKLIST->SAVE_SELECTIONS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SAVE_SELECTIONS.
+  data: lt_ypmnptclistplnt type table of ypmnptclistplnt,
+        ls_ypmnptclistplnt type ypmnptclistplnt,
+        ls_config_in       type s_list_field,
+        lv_plant           type string.
+
+  clear wa_program_state.
+
+  select count( * ) from t001w where werks = wa_criteria-plant
+      and ( /emn/plant_stat = 'A' or /emn/plant_stat = ' ' ).
+  if sy-subrc <> 0.
+*   Invalid plant.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'The specified plant is not valid'.
+    return.
+  endif.
+
+  delete from ypmnptclistplnt where plant = wa_criteria-plant.
+
+  loop at gt_list_fields into ls_config_in where selected = 'true'.
+    clear ls_ypmnptclistplnt.
+    ls_ypmnptclistplnt-plant       = wa_criteria-plant.
+    ls_ypmnptclistplnt-category    = ls_config_in-category.
+    ls_ypmnptclistplnt-field_id    = ls_config_in-field_id.
+    ls_ypmnptclistplnt-work_center = ls_config_in-work_center.
+    append ls_ypmnptclistplnt to lt_ypmnptclistplnt.
+  endloop.
+
+  if not lt_ypmnptclistplnt[] is initial.
+    insert ypmnptclistplnt from table lt_ypmnptclistplnt.
+  endif.
+
+  commit work and wait.
+
+  lv_plant = wa_criteria-plant.
+  load_configuration( lv_plant ).
+
+  wa_program_state-program_state   = 'Success'.
+  wa_program_state-program_message = 'Your selections were saved.'.
+endmethod.
+ENDCLASS.

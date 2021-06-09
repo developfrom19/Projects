@@ -1,0 +1,4517 @@
+class ycl_pm_craftperson_class definition
+  public
+  final
+  create public .
+
+  public section.
+
+    interfaces /neptune/if_nad_server .
+
+    types:
+      begin of  ty_equi ,
+        qmnum      type viqmel-qmnum,
+        equnr      type viqmel-equnr,
+        qmtxt      type viqmel-qmtxt,
+        aufnr      type viqmel-aufnr,
+        qmdab      type viqmel-qmdab,
+        seqnr(2)   type c,
+        work_order type aufnr,
+        keyfield   type string,
+        erdat      type viqmel-erdat,
+        visible    type boolean,
+      end of ty_equi .
+    types:
+      begin of ty_tech,
+        qmnum          type qmfe-qmnum,
+        fenum          type qmfe-fenum,
+        otgrp          type qmfe-otgrp,
+        oteil          type qmfe-oteil,
+        obj_text       type qpct-kurztext,
+        fegrp          type qmfe-fegrp,
+        fecod          type qmfe-fecod,
+        dam_text       type qpct-kurztext,
+        fetxt          type qmfe-fetxt,
+        bautl          type qmfe-bautl,
+        maktx          type makt-maktx,
+        urgrp          type qmur-urgrp,
+        urcod          type qmur-urcod,
+        cus_text       type qpct-kurztext,
+        urtxt          type qmur-urtxt,
+        qurnum         type qmur-qurnum,
+        manum          type qmma-manum,
+        act_fenum      type qmma-fenum,
+        mngrp          type qmma-mngrp,
+        mncod          type qmma-mncod,
+        atv_text       type qpct-kurztext,
+        matxt          type qmma-matxt,
+        itm_text       type string,
+        cau_text       type string,
+        act_text       type string,
+        edit_visibilty type boolean,
+        del_visibility type boolean,
+        status         type string,
+        notification   type qmnum,
+        keyfield       type string,
+        aufnr          type aufnr,
+        vornr          type vornr,
+        uuid           type string,
+        gendate        type string,
+      end of ty_tech .
+    types:
+      begin of ty_act,
+        qmnum          type qmma-qmnum,
+        manum          type qmma-manum,
+        fenum          type qmma-fenum,
+        mngrp          type qmma-mngrp, "Code Grp for Activites
+        mncod          type qmma-mncod, "Code for Activites
+        matxt          type qmma-matxt,
+        atv_text       type qpct-kurztext,
+        act_text       type string,
+        edit_visibilty type boolean,
+        del_visibility type boolean,
+        status         type string,
+        notification   type qmnum,
+        keyfield       type string,
+        aufnr          type aufnr,
+        vornr          type vornr,
+        uuid           type string,
+        gendate        type string,
+      end of ty_act .
+    types:
+      begin of ty_work ,
+        arbpl    type arbpl,
+        cr_objty type cr_objty,
+        cr_objid type cr_objid,
+        plant    type werks_d,
+        cr_ktext type cr_ktext,
+        text     type string,
+      end of ty_work .
+    types:
+      begin of ty_aufk,
+        aufnr               type aufk-aufnr,
+        auart               type aufart,
+        ktext               type aufk-ktext,
+        werks               type aufk-werks,
+        phas0               type aufk-phas0,
+        phas1               type aufk-phas1,
+        aufpl               type afko-aufpl,
+        arbid               type kbed-arbid,
+        aplzl               type kbed-aplzl,
+        vornr               type kbed-vornr,
+        pernr               type char08,
+        fsavd               type dats, "Early start date (operation)
+        iedd                type dats, "Actual finish - execution (operation)
+        obsta               type kbed-obsta,
+        ltxa1               type afvc-ltxa1,
+        stort               type iloa-stort,
+        oroper              type char50, "field to concate order and opertion
+        status              type string,
+        text                type string,
+        icon                type string, "icon for status
+        fl_ind              type char1, " filter indication
+        fl_unsch            type char1, "Unscheduled order indicator
+        color               type string, "color of the status
+        qmnum               type afih-qmnum,
+        eqfnr               type iloa-eqfnr,
+        equnr               type afih-equnr,
+        eqktx               type ktx01,
+        pltxt               type iflotx-pltxt,
+        name1               type t001w-name1,
+        tidnr               type equz-tidnr,
+        qmartx              type tq80_t-qmartx,
+        tplnr               type char40,
+        rel                 type char1,
+        beber               type beber,
+        beber_text          type string,
+        search              type string,
+        tech_req            type char1,
+        operation_long_text type string,
+        offline             type string,
+        offline_icon        type string,
+        offline_state       type string,
+        offline_text        type string,
+        status_code         type string,
+      end of ty_aufk .
+    types:
+      begin of ty_iloa,
+        aufnr type aufk-aufnr,
+        equnr type afih-equnr,
+        iloan type afih-iloan,
+        qmnum type afih-qmnum,
+        tplnr type iloa-tplnr,
+        eqfnr type iloa-eqfnr,
+        stort type iloa-stort,
+        beber type beber,
+      end of ty_iloa .
+    types:
+      begin of ty_resb,
+        aufnr           type resb-aufnr,
+        rsnum           type resb-rsnum,
+        rspos           type resb-rspos,
+        matnr           type resb-matnr,
+        werks           type resb-werks,
+        bdmng           type resb-bdmng,
+        meins           type resb-meins,
+        enmng           type resb-enmng,
+        postp           type resb-postp,
+        posnr           type resb-posnr,
+        potx1           type resb-potx1,
+        vornr           type resb-vornr,
+        ekgrp           type resb-ekgrp,
+        matkl           type resb-matkl,
+        bdter           type resb-bdter,
+        afnam           type resbd-afnam,
+        ekorg           type resbd-ekorg,
+        gpreis          type resbd-gpreis,
+        idnlf           type resbd-idnlf,
+        flief           type resbd-flief,
+        lifnr           type resbd-lifnr,
+        catalogid       type resbd-catalogid,
+        catalog_prod_id type resbd-catalog_prod_id,
+        edit_visibilty  type boolean,
+        del_visibility  type boolean,
+        text            type string,
+        ptext           type pttxt,
+        status          type string,
+        keyfield        type string,
+        uuid            type string,
+        gendate         type string,
+        ltxt_visibility type string,
+      end of ty_resb .
+    types:
+      begin of ty_struct,
+        work_order    type aufnr,
+        node_id       type string,
+        parent_id     type string,
+        iscontainer   type ddbool_d,
+        text          type string,
+        expanded      type ddbool_d,
+        selectable    type ddbool_d,
+        icon          type string,
+        highlight     type string,
+        object_number type char40,
+        maktx         type makt-maktx,
+        meins         type mara-meins,
+        keyfield      type string,
+        bklas         type mbew-bklas,
+      end of ty_struct .
+    types:
+      begin of ty_assembly ,
+        matnr      type mara-matnr,
+        maktx      type makt-maktx,
+        werks      type marc-werks,
+        work_order type aufnr,
+        keyfield   type string,
+      end of ty_assembly .
+    types:
+      begin of ty_time,
+        date     type string,
+        rueck    type afru-rueck,
+        rmzhl    type afru-rmzhl,
+        aufnr    type aufk-aufnr,
+        vornr    type afvc-vornr,
+        pernr    type afru-pernr,
+        ersda    type afru-ersda,
+        ismnw    type afru-ismnw,
+        ismne    type afru-ismne,
+        grund    type afru-grund,
+        aueru    type afru-aueru,
+        lstar    type crco-lstar,
+        text     type string,
+        tabix    type sy-tabix,
+        seqnr(2) type c,
+        keyfield type string,
+        uuid     type string,
+        gendate  type string,
+        grdtx    type string,
+      end of ty_time .
+    types:
+      begin of ty_attachment,
+        work_order        type aufnr,
+        keyfield          type string,
+        icon              type string,
+        icon_color        type string,
+        file_name         type string,
+        extension         type string,
+        mime_type         type string,
+        origin_type       type string,
+        instid_b          type string,
+        file_data         type string,
+        available_offline type string,
+        sort_group        type numc01,
+        operation         type vornr,
+        uuid              type string,
+        gendate           type string,
+      end of ty_attachment .
+    types:
+      begin of ty_attachment_data,
+        instid_b  type string,
+        file_data type string,
+      end of ty_attachment_data .
+    types:
+      begin of ty_sync_message,
+        aufnr   type string,
+        vornr   type string,
+        type    type bapi_mtype,
+        message type bapi_msg,
+        state   type string,
+      end of ty_sync_message .
+    types:
+      begin of ty_trug,
+        werks    type werks_d,
+        grund    type co_agrnd,
+        grdtx    type co_grdtx,
+        keyfield type string,
+      end of ty_trug .
+    types:
+      begin of ty_order_op,
+        keyfield type string,
+      end of ty_order_op .
+    types:
+      begin of ty_uuid,
+        guid         type string,
+        work_order   type aufnr,
+        record_date  type dats,
+        record_table type string,
+      end of ty_uuid .
+    types:
+      begin of ty_order_sync,
+        work_order     type aufnr,
+        operation      type vornr,
+        display_number type string,
+        status_icon    type string,
+        status_state   type string,
+        has_messages   type string,
+      end of ty_order_sync .
+    types:
+      begin of ty_act_type,
+        aufnr type aufk-aufnr,
+        vornr type afvc-vornr,
+        lstar type cssl-lstar,
+        text  type text132,
+        key   type char75,
+        oper  type char50,
+      end of ty_act_type .
+    types:
+      begin of ty_jobpkg.
+            include type ypmnptjobpkg.
+
+    types: line_number type i,
+           keyfield    type string.
+    types: end of ty_jobpkg .
+    types:
+      begin of ty_trex_search,
+        short_text type string,
+        full_text  type string,
+        material   type string,
+      end of ty_trex_search .
+    types:
+      t_struct type table of ty_struct .
+    types:
+      t_resb   type table of ty_resb .
+    types:
+      t_tech   type table of ty_tech .
+    types:
+      t_act    type table of ty_act .
+    types:
+      t_assembly type table of ty_assembly .
+    types:
+      t_equi     type table of ty_equi .
+    types:
+      t_trug type table of ty_trug .
+    types:
+      t_time type table of ty_time .
+    types:
+      t_act_type type table of ty_act_type .
+    types:
+      t_order_op type table of ty_order_op .
+    types:
+      t_attachment_data type table of ty_attachment_data .
+    types:
+      t_uuid type table of ty_uuid .
+
+    data wa_trex_search type ty_trex_search .
+    data:
+*  Structure for filter
+      begin of wa_default,
+        dt_range  type string,
+        wk_center type string,
+        wk_all    type boolean,
+        arbpl     type string,
+*           wk_assigned type char1,
+      end of wa_default .
+    data:
+      gt_attach_jobpkg type standard table of ty_jobpkg .
+    data:
+      gt_aufk type table of ty_aufk .
+    data:
+      gt_iloa type table of ty_iloa .
+    data:
+      gt_resb type table of ty_resb .
+    data:
+      gt_resb_hist type table of ty_resb .
+    data:
+      gt_workcenter type table of ty_work .
+    data:
+      gt_lines type table of tline .
+    data:
+      gt_tech type table of ty_tech .
+    data:
+      gt_tech_hist type table of ty_tech .
+    data:
+      gt_act type table of ty_act .
+    data:
+      gt_act_hist type table of ty_act .
+    data:
+      gt_fl_struct type table of ty_struct .
+    data:
+      gt_assembly type table of ty_assembly .
+    data:
+      gt_act_types type table of ty_act_type .
+    data wa_act_types type ty_act_type .
+    data:
+      gt_message type table of ty_sync_message .
+    data gt_trug type t_trug .
+    data gt_people type ypm_person_t .
+    data:
+      gt_time type table of ty_time .
+    data:
+      gt_existing_time type table of ty_time .
+    data:
+      gt_object_part_catalog type table of ty_struct .
+    data:
+      gt_damage_catalog      type table of ty_struct .
+    data:
+      gt_cause_catalog       type table of ty_struct .
+    data:
+      gt_activity_catalog    type table of ty_struct .
+    data:
+      gt_current_catalog     type table of ty_struct .
+    data:
+      gt_order_sync type table of ty_order_sync .
+    data gt_order_operation type t_order_op .
+    data gt_uuid type t_uuid .
+    data wa_aufk type ty_aufk .
+    data wa_message type ty_sync_message .
+    data wa_iloa type ty_iloa .
+    data wa_resb type ty_resb .
+    data wa_resb_hist type ty_resb .
+    data wa_head type thead .
+    data wa_lines type tline .
+    data wa_tech type ty_tech .
+    data wa_tech_hist type ty_tech .
+    data wa_act type ty_act .
+    data wa_act_hist type ty_act .
+    data wa_assembly type ty_assembly .
+    data wa_time type ty_time .
+    data:
+      begin of wa_job_ticket,
+        pdf_data type string,
+      end of wa_job_ticket .
+    data:
+      begin of wa_detail,
+        aufnr type aufk-aufnr,
+        vornr type afvc-vornr,
+        qmnum type qmel-qmnum,
+        werks type t001w-werks,
+        arbid type crhd-objid,
+        equnr type equi-equnr,
+        pernr type pa0105-pernr,
+*        lv_act type i,
+      end of wa_detail .
+    data:
+      gt_attachments type table of ty_attachment .
+    data:
+      gt_attachment_data type table of ty_attachment_data .
+    data wa_attachment_data type ty_attachment_data .
+    data gt_material_text type ypm_material_search_result_t .
+    data gt_previous_issue type ypm_material_search_result_t .
+    data gt_oci_catalogs type ypm_npt_oci_catalog_t .
+    data wa_oci_catalog type ypm_npt_oci_catalog .
+    data:
+      gt_equi type table of ty_equi .
+    data wa_equi type ty_equi .
+    data gv_message_id type symsgid value 'YPM_NEPTUNE' ##NO_TEXT.
+
+    data: begin of wa_photo_info,
+            data type string,
+          end of wa_photo_info.
+
+    methods get_data
+      importing
+        !ajax_value type string optional .
+    methods get_workcenter
+      importing
+        !ajax_value type string .
+    methods get_parts
+      importing
+        !iv_work_order type aufnr
+        !iv_operation  type vornr
+      exporting
+        !et_resb       type t_resb .
+    methods get_detail
+      importing
+        !ajax_value type string .
+    methods get_techreport
+      importing
+        !iv_work_order type aufnr optional
+      exporting
+        !et_tech       type t_tech
+        !et_act        type t_act
+        !et_assembly   type t_assembly .
+    methods read_text
+      importing
+        !wa_head                type thead optional
+        !iv_preserve_formatting type flag default abap_true
+      exporting
+        !text                   type string .
+    methods get_job_tickets
+      importing
+        !it_operations  type string_table
+      exporting
+        !et_job_tickets type t_attachment_data .
+    methods get_attachment_list
+      importing
+        !iv_work_order type aufnr .
+    methods get_attachment_data .
+    methods get_catalogs .
+    methods get_catalog_order
+      importing
+        !ir_server type ref to /neptune/cl_nad_server .
+    methods get_equipment_history
+      importing
+        !iv_work_order type aufnr
+      exporting
+        !et_tech_hist  type t_tech
+        !et_act_hist   type t_act
+        !et_resb_hist  type t_resb
+        !et_equi       type t_equi .
+    methods save_data .
+    methods get_catalog_search_helps
+      importing
+        !iv_work_order          type aufnr
+      exporting
+        !et_object_part_catalog type t_struct
+        !et_damage_catalog      type t_struct
+        !et_cause_catalog       type t_struct
+        !et_activity_catalog    type t_struct .
+    methods get_timeentry
+      importing
+        !iv_work_order type aufnr
+        !iv_operation  type vornr
+      exporting
+        !et_time       type t_time
+        !et_people     type ypm_person_t .
+    methods get_fl_struct
+      importing
+        !iv_work_order type aufnr
+      exporting
+        !et_fl_struct  type t_struct .
+    class-methods get_previous_issue
+      importing
+        !iv_work_order           type aufnr
+      returning
+        value(rt_previous_issue) type ypm_material_search_result_t .
+    methods get_workcenter_id .
+protected section.
+
+  methods FILL_CATALOG_SEARCH_HELP
+    importing
+      !IT_CATALOG_IN type YPM_NPT_CATALOG_CODE_T
+      !IV_WORK_ORDER type AUFNR
+    exporting
+      !ET_CATALOG_OUT type T_STRUCT .
+  methods GET_JOB_TICKET .
+  methods SEARCH_MATERIAL_TREX .
+  methods GET_SYSTEM_STATUS
+    importing
+      !IV_WORK_ORDER type AUFNR
+      !IV_OPERATION type VORNR .
+private section.
+ENDCLASS.
+
+
+
+CLASS YCL_PM_CRAFTPERSON_CLASS IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method /neptune/if_nad_server~handle_on_ajax.
+*-------------------------------------------------------------------------------*
+*    This method is used t call the ajax id                                     *
+*-------------------------------------------------------------------------------*
+    data: lv_tile_count   type i,
+          lv_tile_count_s type string.
+
+    case ajax_id.
+
+      when 'GET_DATA'.
+        get_data( ajax_value ).
+*        call method get_workcenter( ajax_value ).
+        describe table gt_aufk lines lv_tile_count.
+*        lv_tile_count_s = lv_tile_count.
+*        server->api_tile_info(
+*          number = lv_tile_count_s
+*        ).
+      when 'GET_DETAIL'.
+        get_detail( ajax_value ).
+
+      when 'GET_TECHREPORT'.
+        get_techreport( ).
+
+      when 'SEARCH_MATERIAL_TEXT'.
+        search_material_trex( ).
+
+      when 'GET_CATALOG_ORDER'.
+        get_catalog_order( server ).
+
+      when 'GET_WORKCENTER'.
+        get_workcenter( ajax_value ).
+      when 'SAVE'.
+        save_data( ).
+
+      when 'GET_OCI_CATALOGS'.
+        get_catalogs( ).
+      when 'GET_WORKCENTER_ID'.
+        call method get_workcenter_id( ).
+      when 'GET_JOB_TICKET'.
+        get_job_ticket( ).
+    endcase.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_REQUEST
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] KEY_ID                         TYPE        STRING(optional)
+* | [--->] KEY                            TYPE        STRING
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAV_TO                         TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method /NEPTUNE/IF_NAD_SERVER~HANDLE_ON_REQUEST.
+  data: lv_expiry_time type tims,
+        lr_mime_api    type ref to if_mr_api,
+        lv_data        type xstring.
+
+  case key.
+    when 'OCI_RETURN'.
+*     Export results of external catalog call to the database.
+      lv_expiry_time = sy-uzeit + 60.
+      cl_bsp_server_side_cookie=>set_server_cookie(
+        name                  = 'OCIRETURN'
+        application_namespace = '/NEPTUNE'
+        application_name      = 'SERVER'
+        username              = sy-uname
+        session_id            = space
+        expiry_date_abs       = sy-datum
+        expiry_time_abs       = lv_expiry_time
+        data_name             = 'USER'
+        data_value            = request-json
+      ).
+
+*     Output a static page in the response.
+      lr_mime_api = cl_mime_repository_api=>get_api( ).
+      lr_mime_api->get(
+        exporting
+          i_url     = '/neptune/public/application/ypm_craftperson_appl/catalogorder.html'
+        importing
+          e_content = lv_data
+      ).
+      server->api_response_xstring(
+        data = lv_data
+        content_type = 'text/html'
+      ).
+      return.
+  endcase.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_IN
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] LASTSYNCDATE                   TYPE        STRING
+* | [--->] IT_SYNC_DATA                   TYPE        /NEPTUNE/SYNC_DATA_TT
+* | [<---] EX_STATUS                      TYPE        /NEPTUNE/SYNC_HEADER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method /NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_IN.
+
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_OUT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] LASTSYNCDATE                   TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method /neptune/if_nad_server~handle_on_sync_out.
+  data: lt_form_fields         type tihttpnvp,
+        ls_form_field          type ihttpnvp,
+        lv_appsync_info        type string,
+        lt_appsync_split       type string_table,
+        lv_appsync_split       type string,
+        lt_info_fields         type hashed table of ihttpnvp
+                                   with unique key name,
+        ls_info_field          type ihttpnvp,
+        lt_work_orders         type table of aufnr,
+        lt_history_orders      type table of aufnr,
+        lt_operations          type string_table,
+        lv_operation           type string,
+        lt_results             type match_result_tab,
+        ls_result              type match_result,
+        lv_equipment           type equnr,
+        lt_resb                type table of ty_resb,
+        lt_previous_issue      type ypm_material_search_result_t,
+        lt_fl_struct           type t_struct,
+        lt_tech                type t_tech,
+        lt_act                 type t_act,
+        lt_assembly            type t_assembly,
+        lt_tech_hist           type t_tech,
+        lt_act_hist            type t_act,
+        lt_resb_hist           type t_resb,
+        lt_equi                type t_equi,
+        lt_object_part_catalog type t_struct,
+        lt_damage_catalog      type t_struct,
+        lt_cause_catalog       type t_struct,
+        lt_activity_catalog    type t_struct,
+        lt_time                type t_time,
+        lt_people              type ypm_person_t,
+        ls_order_operation     type ty_order_op,
+        lt_job_tickets         type t_attachment_data,
+        ls_aufk                type ty_aufk,
+        lt_activity_types      type bsp_wd_dropdown_table,
+        lw_act_type            type bsp_wd_dropdown_line,
+        lv_1week_ago           type dats.
+
+  field-symbols: <work_order> type aufnr,
+                 <trug>       type ty_trug.
+
+* Get OCI catalogs (not dependent on any user-specific data).
+*  get_catalogs( ).
+
+* Get the entire reason config table.
+  select werks grund grdtx from trugt into table gt_trug
+      where spras = sy-langu.
+  loop at gt_trug assigning <trug>.
+    <trug>-keyfield = <trug>-werks && <trug>-grund.
+  endloop.
+
+* Get information from request.
+  server->api_get_form_fields( changing it_form_fields = lt_form_fields ).
+  check not lt_form_fields[] is initial.
+
+* AppSyncInfo is in the first form field of the request.
+  read table lt_form_fields into ls_form_field index 1.
+  find first occurrence of regex '"info":\{([^\}]+)\}' in ls_form_field-name
+      submatches lv_appsync_info.
+
+  check not lv_appsync_info is initial.
+
+* Matches name value pairs in which the value may be either a string or an array.
+  find all occurrences of regex '[^:,]*:((?:\[[^\]]*\])|(?:[^,]*))' in lv_appsync_info
+      results lt_results.
+  loop at lt_results into ls_result.
+    clear ls_info_field.
+    lv_appsync_split = lv_appsync_info+ls_result-offset(ls_result-length).
+    replace all occurrences of '"' in lv_appsync_split with ''.
+    replace all occurrences of '[' in lv_appsync_split with ''.
+    replace all occurrences of ']' in lv_appsync_split with ''.
+    split lv_appsync_split at ':' into ls_info_field-name ls_info_field-value.
+    insert ls_info_field into table lt_info_fields.
+  endloop.
+
+  read table lt_info_fields into ls_info_field
+      with key name = 'workOrders'.
+  if sy-subrc = 0.
+    split ls_info_field-value at ',' into table lt_work_orders.
+    sort lt_work_orders.
+    delete adjacent duplicates from lt_work_orders.
+    loop at lt_work_orders assigning <work_order>.
+      ycl_pm_npt_utilities=>conversion_in( changing cv_value = <work_order> ).
+    endloop.
+  endif.
+
+  refresh: gt_resb,
+           gt_time,
+           gt_existing_time,
+           gt_people,
+           gt_order_operation.
+
+  read table lt_info_fields into ls_info_field
+      with key name = 'operations'.
+  if sy-subrc = 0.
+    split ls_info_field-value at ',' into table lt_operations.
+    loop at lt_operations into lv_operation.
+      refresh lt_resb.
+
+      split lv_operation at '-' into wa_detail-aufnr wa_detail-vornr.
+      ycl_pm_npt_utilities=>conversion_in( changing cv_value = wa_detail-vornr ).
+
+      get_parts(
+        exporting
+          iv_work_order = wa_detail-aufnr
+          iv_operation  = wa_detail-vornr
+         importing
+           et_resb      = lt_resb
+       ).
+      append lines of lt_resb to gt_resb.
+
+      get_timeentry(
+        exporting
+          iv_work_order  = wa_detail-aufnr
+          iv_operation   = wa_detail-vornr
+        importing
+          et_time        = lt_time
+          et_people      = lt_people
+      ).
+      append lines of:
+          lt_time to gt_existing_time,
+          lt_people to gt_people.
+
+      clear ls_order_operation.
+      ls_order_operation-keyfield = lv_operation.
+      append ls_order_operation to gt_order_operation.
+*      get activity types f4 help
+
+      call method ycl_pm_npt_utilities=>get_activity_types
+        exporting
+          iv_work_order     = wa_detail-aufnr
+          iv_operation      = wa_detail-vornr
+        receiving
+          rt_activity_types = lt_activity_types.
+
+      loop at lt_activity_types into lw_act_type.
+        wa_act_types-aufnr = wa_detail-aufnr.
+        wa_act_types-vornr = wa_detail-vornr.
+        wa_act_types-lstar = lw_act_type-key.
+        wa_act_types-text = lw_act_type-value.
+        CONCATENATE wa_act_types-aufnr wa_act_types-vornr
+         wa_act_types-lstar into wa_act_types-key SEPARATED BY '-'.
+        CONCATENATE wa_act_types-aufnr wa_act_types-vornr
+                 into wa_act_types-oper SEPARATED BY '-'.
+        append wa_act_types to gt_act_types.
+      endloop.
+    endloop.
+  endif.
+
+* Get tables which are not dependent on the operation.
+  refresh: gt_fl_struct,
+           gt_previous_issue,
+           gt_tech,
+           gt_act,
+           gt_equi,
+           gt_assembly,
+           gt_object_part_catalog,
+           gt_damage_catalog,
+           gt_cause_catalog,
+           gt_activity_catalog.
+
+  loop at lt_work_orders assigning <work_order>.
+    refresh: lt_previous_issue,
+             lt_fl_struct,
+             lt_tech,
+             lt_act,
+             lt_assembly,
+             lt_tech_hist,
+             lt_act_hist,
+             lt_resb_hist,
+             lt_equi,
+             lt_object_part_catalog,
+             lt_damage_catalog,
+             lt_cause_catalog,
+             lt_activity_catalog.
+
+*   Parts previously issued
+    lt_previous_issue = get_previous_issue( <work_order> ).
+    append lines of lt_previous_issue to gt_previous_issue.
+
+*   Functional location structure
+    get_fl_struct(
+      exporting
+        iv_work_order = <work_order>
+      importing
+        et_fl_struct  = lt_fl_struct
+    ).
+    append lines of lt_fl_struct to gt_fl_struct.
+
+*   Technical report
+    get_techreport(
+      exporting
+        iv_work_order = <work_order>
+      importing
+        et_tech       = lt_tech
+        et_act        = lt_act
+        et_assembly   = lt_assembly
+    ).
+    append lines of:
+        lt_tech to gt_tech,
+        lt_act to gt_act,
+        lt_assembly to gt_assembly.
+
+*   Equipment history
+    get_equipment_history(
+      exporting
+        iv_work_order = <work_order>
+      importing
+        et_equi       = lt_equi
+        et_tech_hist  = lt_tech_hist
+        et_act_hist   = lt_act_hist
+        et_resb_hist  = lt_resb_hist
+    ).
+    append lines of:
+        lt_equi to gt_equi,
+        lt_tech_hist to gt_tech,
+        lt_act_hist to gt_act,
+        lt_resb_hist to gt_resb.
+
+*   Catalog search helps
+    get_catalog_search_helps(
+      exporting
+        iv_work_order          = <work_order>
+      importing
+        et_object_part_catalog = lt_object_part_catalog
+        et_damage_catalog      = lt_damage_catalog
+        et_cause_catalog       = lt_cause_catalog
+        et_activity_catalog    = lt_activity_catalog
+    ).
+    append lines of:
+        lt_object_part_catalog to gt_object_part_catalog,
+        lt_damage_catalog to gt_damage_catalog,
+        lt_cause_catalog to gt_cause_catalog,
+        lt_activity_catalog to gt_activity_catalog.
+  endloop.
+
+* Get the list of work orders from the equipment history.
+  loop at gt_equi into wa_equi where not aufnr is initial.
+    append wa_equi-aufnr to lt_work_orders.
+  endloop.
+
+  sort lt_work_orders.
+  delete adjacent duplicates from lt_work_orders.
+
+* Get attachments for all work orders (including historical).
+  refresh: gt_attachments,
+           gt_attachment_data.
+
+  loop at lt_work_orders assigning <work_order>.
+    get_attachment_list( <work_order> ).
+  endloop.
+
+  sort gt_attachments by work_order sort_group file_name.
+
+  get_attachment_data( ).
+
+  get_job_tickets(
+    exporting
+      it_operations  = lt_operations
+    importing
+      et_job_tickets = lt_job_tickets
+  ).
+  append lines of lt_job_tickets to gt_attachment_data.
+
+** Get successful posts for the last week from the current user.
+*  lv_1week_ago = sy-datum - 7.
+*  select guid record_date record_table
+*      into table gt_uuid
+*      from ypmnptrecpr
+*      where userid = sy-uname
+*        and record_date > lv_1week_ago.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_CRAFTPERSON_CLASS->FILL_CATALOG_SEARCH_HELP
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_CATALOG_IN                  TYPE        YPM_NPT_CATALOG_CODE_T
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<---] ET_CATALOG_OUT                 TYPE        T_STRUCT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method FILL_CATALOG_SEARCH_HELP.
+  data: ls_catalog_in      type ypm_npt_catalog_code,
+        ls_catalog_out     type ty_struct,
+        lv_last_code_group type qcodegrp.
+
+  field-symbols: <catalog_out> type ty_struct.
+
+  refresh et_catalog_out.
+
+  loop at it_catalog_in into ls_catalog_in.
+    if ls_catalog_in-code_group <> lv_last_code_group.
+      lv_last_code_group = ls_catalog_in-code_group.
+
+      clear ls_catalog_out.
+      ls_catalog_out-node_id       = ls_catalog_in-code_group.
+      ls_catalog_out-parent_id     = ' '.
+      ls_catalog_out-iscontainer   = 'X'.
+      ls_catalog_out-text          = ls_catalog_in-code_group && `: ` && ls_catalog_in-code_group_text.
+      ls_catalog_out-object_number = ls_catalog_in-code_group.
+      ls_catalog_out-maktx         = ls_catalog_in-code_group_text.
+      ls_catalog_out-expanded      = 'X'.
+      ls_catalog_out-selectable    = ' '.
+      ls_catalog_out-icon          = ' '.
+      insert ls_catalog_out into table et_catalog_out.
+    endif.
+
+    clear ls_catalog_out.
+    ls_catalog_out-node_id       = ls_catalog_in-code_group && ls_catalog_in-code.
+    ls_catalog_out-parent_id     = ls_catalog_in-code_group.
+    ls_catalog_out-iscontainer   = ' '.
+    ls_catalog_out-text          = ls_catalog_in-code && `: ` && ls_catalog_in-code_text.
+    ls_catalog_out-object_number = ls_catalog_in-code.
+    ls_catalog_out-maktx         = ls_catalog_in-code_text.
+    ls_catalog_out-expanded      = ' '.
+    ls_catalog_out-selectable    = 'X'.
+    ls_catalog_out-icon          = 'sap-icon://task'.
+
+    insert ls_catalog_out into table et_catalog_out.
+  endloop.
+
+  loop at et_catalog_out assigning <catalog_out>.
+*   Add key for AppDB.
+    <catalog_out>-work_order = iv_work_order.
+    <catalog_out>-keyfield   = iv_work_order
+        && <catalog_out>-node_id.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_ATTACHMENT_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_ATTACHMENT_DATA.
+  data: lv_attachment_key  type string,
+        lt_attachment_keys type sorted table of string
+                               with unique key table_line,
+        ls_attachment_data type ty_attachment_data,
+        ls_dms_attachment  type ypm_npt_dms_attachment.
+
+  field-symbols: <attachment_out> type ty_attachment.
+
+* Ensure uniqueness of attachment keys so that they are
+* read only once.
+  loop at gt_attachments assigning <attachment_out>.
+    read table lt_attachment_keys
+        with key table_line = <attachment_out>-instid_b
+        transporting no fields.
+    if sy-subrc <> 0.
+      lv_attachment_key = <attachment_out>-instid_b.
+      insert lv_attachment_key into table lt_attachment_keys.
+    endif.
+  endloop.
+
+* Get data for all relevant attachments.
+  loop at lt_attachment_keys into lv_attachment_key.
+    clear ls_attachment_data.
+    ls_attachment_data-instid_b = lv_attachment_key.
+
+    if lv_attachment_key(3) = 'DMS'.
+      clear ls_dms_attachment.
+      ls_dms_attachment = lv_attachment_key+3.
+      ls_attachment_data-file_data = ycl_pm_npt_utilities=>get_dms_attachment_data( ls_dms_attachment ).
+    else.
+      call function 'YPM_GET_ATTACHMENT_DATA'
+        exporting
+          iv_attachment_key  = lv_attachment_key
+        importing
+          ev_attachment_data = ls_attachment_data-file_data.
+    endif.
+
+    append ls_attachment_data to gt_attachment_data.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_ATTACHMENT_LIST
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_ATTACHMENT_LIST.
+  data: lt_attachments_in  type table of ypm_npt_attachment,
+        ls_attachment_in   type ypm_npt_attachment,
+        lt_dms_attachments type ypm_npt_dms_attachment_t,
+        ls_dms_attachment  type ypm_npt_dms_attachment,
+        ls_attachment_out  type ty_attachment,
+        lv_work_order      type aufnr,
+        lv_operation       type vornr,
+        ls_attachment_data type ty_attachment_data,
+        ls_attach_jobpkg type STANDARD TABLE OF ypmnptjobpkg,
+        lw_attach type ypmnptjobpkg,
+        lw_jobpkg type ty_jobpkg,
+        lv_dummy           type string.
+
+  call function 'YPM_GET_WORK_ORDER_ATTACHMENTS'
+    exporting
+      iv_work_order  = iv_work_order
+    tables
+      et_attachments = lt_attachments_in.
+
+  loop at lt_attachments_in into ls_attachment_in.
+    clear ls_attachment_out.
+
+    move-corresponding ls_attachment_in to ls_attachment_out.
+    ls_attachment_out-work_order = iv_work_order.
+    ls_attachment_out-keyfield   = iv_work_order && ls_attachment_out-instid_b.
+
+    ycl_pm_npt_utilities=>get_mime_type_from_extension(
+      exporting
+        iv_extension       = ls_attachment_out-extension
+      importing
+        ev_mime_type       = ls_attachment_out-mime_type
+        ev_file_icon       = ls_attachment_out-icon
+        ev_file_icon_color = ls_attachment_out-icon_color
+    ).
+
+*   Add numeric sort field for grouping by origin type.
+    case ls_attachment_in-origin_type.
+      when 'Work Order'.
+        ls_attachment_out-sort_group = 1.
+      when 'Notification'.
+        ls_attachment_out-sort_group = 2.
+      when 'General Task'.
+        ls_attachment_out-sort_group = 3.
+      when 'FL Task'.
+        ls_attachment_out-sort_group = 4.
+      when 'EQ Task'.
+        ls_attachment_out-sort_group = 5.
+      when 'Functional Location'.
+        ls_attachment_out-sort_group = 6.
+      when 'Equipment'.
+        ls_attachment_out-sort_group = 7.
+      when others.
+        ls_attachment_out-sort_group = 8.
+    endcase.
+
+    insert ls_attachment_out into table gt_attachments.
+  endloop.
+
+  lt_dms_attachments = ycl_pm_npt_utilities=>get_dms_attachments( iv_work_order = iv_work_order ).
+  loop at lt_dms_attachments into ls_dms_attachment.
+    ls_attachment_out-file_name = ls_dms_attachment-filename.
+    split ls_attachment_out-file_name at '.' into lv_dummy ls_attachment_out-extension.
+
+    ycl_pm_npt_utilities=>get_mime_type_from_extension(
+      exporting
+        iv_extension       = ls_attachment_out-extension
+      importing
+        ev_mime_type       = ls_attachment_out-mime_type
+        ev_file_icon       = ls_attachment_out-icon
+        ev_file_icon_color = ls_attachment_out-icon_color
+    ).
+
+    ls_attachment_out-origin_type = 'Operation (DMS)'.
+    ls_attachment_out-sort_group  = 0.
+    ls_attachment_out-instid_b =
+        'DMS' && ls_dms_attachment-operation && ls_dms_attachment-dokar
+     && ls_dms_attachment-doknr && ls_dms_attachment-dokvr && ls_dms_attachment-doktl
+     && ls_dms_attachment-loio_id && ls_dms_attachment-phio_id.
+
+    ls_attachment_out-work_order = iv_work_order.
+    ls_attachment_out-keyfield   = iv_work_order && ls_attachment_out-instid_b.
+
+    insert ls_attachment_out into table gt_attachments.
+  endloop.
+*    Get job Package data
+    select * from ypmnptjobpkg into table ls_attach_jobpkg
+                      where work_order = iv_work_order.
+      loop at ls_attach_jobpkg into lw_attach.
+        MOVE-CORRESPONDING lw_attach to lw_jobpkg.
+        lw_jobpkg-line_number = sy-tabix.
+        lw_jobpkg-keyfield = lw_jobpkg-work_order && lw_jobpkg-instid_b.
+        append lw_jobpkg to gt_attach_jobpkg.
+      ENDLOOP.
+*  sort gt_attachments by sort_group file_name.
+
+* Get the job ticket output.
+*  clear ls_attachment_data.
+*  ls_attachment_data-instid_b  = iv_work_order && 'JT'.
+*  ls_attachment_data-file_data = ycl_pm_npt_utilities=>get_work_order_output( iv_work_order ).
+*  insert ls_attachment_data into table gt_attachment_data.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_CATALOGS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CATALOGS.
+  refresh gt_oci_catalogs.
+
+  gt_oci_catalogs = ycl_pm_npt_utilities=>get_all_catalogs( ).
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_CATALOG_ORDER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IR_SERVER                      TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CATALOG_ORDER.
+  types: begin of s_param,
+           parameter(1000) type c,
+         end of s_param.
+
+  data: lv_catalog_json   type string,
+        ls_material_out   type ty_resb,
+        lt_oci_materials  type ypm_npt_resbd_t,
+        ls_oci_material   type ypm_npt_resbd.
+
+* Retrieve stored values from OCI POST.
+  ir_server->api_parameter_get(
+    exporting
+      name = 'OCIRETURN'
+    changing
+      value = lv_catalog_json
+  ).
+
+* Remove stored OCI POST info from the database.
+  cl_bsp_server_side_cookie=>delete_server_cookie(
+    name                  = 'OCIRETURN'
+    application_namespace = '/NEPTUNE'
+    application_name      = 'SERVER'
+    username              = sy-uname
+    session_id            = space
+  ).
+
+  lt_oci_materials = ycl_pm_npt_utilities=>process_oci_order(
+    iv_oci_json   = lv_catalog_json
+    iv_work_order = wa_aufk-aufnr
+    iv_operation  = wa_aufk-vornr
+    iv_catalog_id = wa_oci_catalog-catalog_id
+  ).
+
+  loop at lt_oci_materials into ls_oci_material.
+    clear ls_material_out.
+    move-corresponding ls_oci_material to ls_material_out.
+    ls_material_out-text   = ls_oci_material-long_text.
+    ls_material_out-ptext  = ls_oci_material-item_type_text.
+
+    ls_material_out-aufnr  = wa_resb-aufnr.
+    ls_material_out-vornr  = wa_resb-vornr.
+    ls_material_out-rsnum  = wa_resb-rsnum.
+    ls_material_out-rspos  = wa_resb-rspos.
+    ls_material_out-werks  = wa_resb-werks.
+    ls_material_out-posnr  = wa_resb-posnr.
+    ls_material_out-status = wa_resb-status.
+    ls_material_out-del_visibility = 'X'.
+
+    ycl_pm_npt_utilities=>conversion_in( changing cv_value = ls_material_out-vornr ).
+
+    append ls_material_out to gt_resb.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_CATALOG_SEARCH_HELPS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<---] ET_OBJECT_PART_CATALOG         TYPE        T_STRUCT
+* | [<---] ET_DAMAGE_CATALOG              TYPE        T_STRUCT
+* | [<---] ET_CAUSE_CATALOG               TYPE        T_STRUCT
+* | [<---] ET_ACTIVITY_CATALOG            TYPE        T_STRUCT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CATALOG_SEARCH_HELPS.
+  data: lt_object_part_catalog type ypm_npt_catalog_code_t,
+        lt_damage_catalog      type ypm_npt_catalog_code_t,
+        lt_cause_catalog       type ypm_npt_catalog_code_t,
+        lt_activity_catalog    type ypm_npt_catalog_code_t,
+        ls_catalog             type ypm_npt_catalog_code,
+        ls_catalog_out         type ty_struct,
+        lv_last_code_group     type qcodegrp.
+
+  refresh: et_object_part_catalog,
+           et_damage_catalog,
+           et_cause_catalog,
+           et_activity_catalog.
+
+  ycl_pm_npt_utilities=>get_maintenance_catalogs(
+    exporting
+      iv_work_order          = iv_work_order
+    importing
+      et_object_part_catalog = lt_object_part_catalog
+      et_damage_catalog      = lt_damage_catalog
+      et_cause_catalog       = lt_cause_catalog
+      et_activity_catalog    = lt_activity_catalog
+  ).
+
+  fill_catalog_search_help(
+    exporting
+      iv_work_order  = iv_work_order
+      it_catalog_in  = lt_object_part_catalog
+    importing
+      et_catalog_out = et_object_part_catalog
+  ).
+
+  fill_catalog_search_help(
+    exporting
+      iv_work_order  = iv_work_order
+      it_catalog_in  = lt_damage_catalog
+    importing
+      et_catalog_out = et_damage_catalog
+  ).
+
+  fill_catalog_search_help(
+    exporting
+      iv_work_order  = iv_work_order
+      it_catalog_in  = lt_cause_catalog
+    importing
+      et_catalog_out = et_cause_catalog
+  ).
+
+  fill_catalog_search_help(
+    exporting
+      iv_work_order  = iv_work_order
+      it_catalog_in  = lt_activity_catalog
+    importing
+      et_catalog_out = et_activity_catalog
+  ).
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_data.
+*-------------------------------------------------------------------------------*
+*    This method is used t0 call the all the orders based on user               *
+*-------------------------------------------------------------------------------*
+    types : begin of ty_qmel,
+              qmnum  type qmel-qmnum,
+              qmart  type qmel-qmart,
+              qmartx type tq80_t-qmartx,
+            end of ty_qmel.
+    types : begin of ty_arbpl,
+              vaplz type aufk-vaplz,
+            end of ty_arbpl.
+    types: begin of ty_beber,
+             werks      type werks_d,
+             beber      type beber,
+             beber_text type string,
+           end of ty_beber.
+
+    types: begin of s_kbed,
+             aufpl type co_aufpl,
+             aplzl type co_aplzl,
+             pernr type pernr_d,
+             fssbd type dats,
+             sssbd type dats,
+           end of s_kbed.
+
+    data : lv_pernr     type p0105-pernr,
+           ra_date      type range of kbed-fssbd,
+           ra_vaplz     type range of afvc-arbid,
+           lt_vaplz     type table of ty_arbpl,
+           rw_date      like line of ra_date,
+           rw_vaplz     like line of ra_vaplz,
+           lw_vaplz     type ty_arbpl,
+           lv_date      type sy-datum,
+           lv_uname     type p0105-usrid,
+           lt_qmel      type table of ty_qmel,
+           lt_jest      type sorted table of jest
+                                with unique key objnr stat,
+           lw_jest      type jest,
+           lt_tj04      type hashed table of tj04
+                                with unique key istat,
+           lv_low       type char20,
+           lv_high      type char20,
+           all_orders   type char1,
+           lw_qmel      type ty_qmel,
+           lt_equi_txt  type hashed table of bsp_wd_dropdown_line
+                                with unique key key,
+           ls_equi_txt  type bsp_wd_dropdown_line,
+           lt_beber_txt type hashed table of ty_beber
+                                with unique key werks beber,
+           ls_beber_txt type ty_beber,
+           lv_comp_date type dats,
+           ls_message   type ty_sync_message.
+
+    data: lt_kbed type sorted table of s_kbed
+                      with non-unique key aufpl aplzl pernr,
+          ls_kbed type s_kbed.
+    data : lt_info          type table of uinfo2,
+           wa_info          type uinfo2,
+           lv_msgno         type symsgno,
+           ln               type i,
+           lv_pernr_sel(80) type c,
+           lt_return_msg    type bapiret2_t.
+    data : lt_sclass   type table of sclass,
+           lt_clobjdat type table of clobjdat,
+           lv_object   type char50,
+           ls_clobjdat type clobjdat.
+
+    call function 'TH_LONG_USR_INFO'
+      tables
+        user_info = lt_info.
+    describe table lt_info lines ln.
+    read table lt_info into wa_info index ln.
+
+    clear : lv_date,
+            lv_pernr,
+            all_orders,
+            wa_lines.
+
+    refresh : gt_lines,
+              gt_aufk,
+              gt_iloa,
+              lt_qmel,
+              gt_message.
+
+* D.Rempe - 12/14/2017 - Explanation of new requirements:
+*           1. List is reduced to only 2 categories: Work center work and directly assigned work. All date filters removed.
+*           2. Early start date appears in the order list.  List is sorted by this date, ascending.
+*           3. For assigned work, use late start date from requirements assignment.  Otherwise, use operation early start date.
+
+    select single pernr from pa0105 into
+        lv_pernr where usrid = sy-uname.
+    if sy-subrc = 0.
+      lv_pernr_sel = `c~pernr = '` && lv_pernr && `'`.
+    endif.
+
+* Check if date range is selected
+    if wa_default-dt_range is not initial.
+      split wa_default-dt_range at '-' into lv_low lv_high.
+      condense: lv_low,
+                lv_high.
+
+*  Convert  dates into SAP format
+      call function 'CONVERT_DATE_TO_INTERNAL'
+        exporting
+          date_external            = lv_low
+        importing
+          date_internal            = rw_date-low
+        exceptions
+          date_external_is_invalid = 1
+          others                   = 2.
+      if sy-subrc eq 0.
+
+      endif.
+      call function 'CONVERT_DATE_TO_INTERNAL'
+        exporting
+          date_external            = lv_high
+        importing
+          date_internal            = rw_date-high
+        exceptions
+          date_external_is_invalid = 1
+          others                   = 2.
+      if sy-subrc eq 0.
+
+      endif.
+      rw_date-option = 'BT'.
+      rw_date-sign = 'I'.
+      append rw_date to ra_date.
+    endif.
+
+* Get all selected work centers
+    split wa_default-wk_center at ',' into table lt_vaplz.
+    loop at lt_vaplz into lw_vaplz.
+      rw_vaplz-sign = 'I'.
+      rw_vaplz-option = 'EQ'.
+      rw_vaplz-low = lw_vaplz-vaplz.
+      append rw_vaplz to ra_vaplz.
+    endloop.
+
+    lv_uname = sy-uname.
+
+* Return error if no work center is selected.
+    if ra_vaplz[] is initial.
+*      get message translated to logon langu
+      clear ls_message.
+      lv_msgno = '007'.
+      call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+        exporting
+          i_langu                 = wa_info-lang
+          i_msgid                 = gv_message_id
+          i_msgno                 = lv_msgno
+        importing
+          e_msg                   = ls_message-message
+        tables
+          et_return               = lt_return_msg
+        exceptions
+          msg_for_langu_not_found = 1
+          others                  = 2.
+      if sy-subrc <> 0.
+* Implement suitable error handling here
+      endif.
+*    ls_message-message = 'Choose at least one work center.'.
+      ls_message-state   = 'Error'.
+      append ls_message to gt_message.
+      return.
+    endif.
+
+* D.Rempe - 12/11/2017 - separate KBED selection from AUFK selection.
+    select  a~aufnr
+            a~auart
+            a~ktext
+            a~werks
+            a~phas0
+            a~phas1
+            b~aufpl
+            d~vornr
+            d~aplzl
+            d~arbid
+            afvv~fsavd
+            afvv~iedd
+            d~objnr as obsta
+            d~ltxa1 into corresponding fields of table gt_aufk from
+            aufk as a inner join afko as b
+            on a~aufnr = b~aufnr inner join afvc as d
+            on b~aufpl = d~aufpl
+            inner join afvv on d~aufpl = afvv~aufpl
+                           and d~aplzl = afvv~aplzl
+            where a~autyp = '30'
+              and ( a~phas0 = 'X' or
+                    a~phas1 = 'X' )
+              and d~loekz = space
+*              and d~phflg = space
+       and d~arbid in ra_vaplz
+       and ( d~steus = 'PM01' or d~steus = 'PM10' )
+*       and ( d~steus ne 'PM02' and
+*             d~steus ne 'PM03' )
+       and afvv~fsavd in ra_date.
+
+* Get the persernal no's assigned to user.
+    select  a~aufnr
+            a~auart
+            a~ktext
+            a~werks
+            a~phas0
+            a~phas1
+            b~aufpl
+            c~arbid
+            c~aplzl
+            c~vornr
+            c~pernr
+            c~fssbd
+            d~objnr as obsta
+            c~obsta
+            d~ltxa1 appending corresponding fields of  table gt_aufk from
+            aufk as a inner join afko as b
+              on a~aufnr = b~aufnr inner join afvc as d
+              on b~aufpl = d~aufpl inner join
+            kbed as c on d~aufpl = c~aufpl
+                  and d~aplzl = c~aplzl
+              where a~autyp = '30'
+                and ( a~phas0 = 'X' or
+                       a~phas1 = 'X' )
+                and d~loekz = space
+                and d~phflg = space
+                and ( d~arbid in ra_vaplz or ( c~pernr <> '00000000' and c~pernr = lv_pernr ) )
+                and (lv_pernr_sel)
+                and c~fssbd in ra_date.
+
+    if gt_aufk[] is not initial.
+      sort gt_aufk by aufnr vornr.
+      delete adjacent duplicates from gt_aufk comparing aufnr vornr.
+
+      if not gt_aufk[] is initial.
+        select aufpl aplzl pernr fssbd sssbd
+            into table lt_kbed
+            from kbed
+            for all entries in gt_aufk
+            where aufpl = gt_aufk-aufpl
+              and aplzl = gt_aufk-aplzl.
+      endif.
+
+      select * into table lt_tj04 from tj04 where obtyp = 'ORI'.
+
+*     Get status: note, this is OPERATION level SYSTEM status.
+      select * from jest into table lt_jest
+              for all entries in gt_aufk
+                  where objnr = gt_aufk-obsta
+                    and stat like 'I%'
+                    and inact eq space.
+      if sy-subrc eq 0.
+*       D.Rempe - Exclude CNF and TECO statuses on operations.
+        loop at gt_aufk into wa_aufk.
+          read table lt_jest with key objnr = wa_aufk-obsta
+                                      stat = 'I0045' "TECO
+              transporting no fields.
+          if sy-subrc = 0.
+            delete gt_aufk.
+            continue.
+          endif.
+
+          read table lt_jest with key objnr = wa_aufk-obsta
+                                      stat = 'I0009' "CNF
+              transporting no fields.
+          if sy-subrc = 0.
+*           Only remove CNF orders if Actual Finish Date is more than 2 days ago.
+            lv_comp_date = sy-datum - 3.
+            if not wa_aufk-iedd is initial and wa_aufk-iedd < lv_comp_date.
+              delete gt_aufk.
+              continue.
+            endif.
+          endif.
+        endloop.
+      endif.
+
+* get function location details
+      select  a~aufnr
+              a~equnr
+              a~iloan
+              a~qmnum
+              b~tplnr
+              b~eqfnr
+              b~stort
+              b~beber into table gt_iloa
+              from afih as a inner join iloa as b
+              on a~iloan = b~iloan
+              for all entries in gt_aufk
+               where a~aufnr = gt_aufk-aufnr.
+
+      if sy-subrc eq 0.
+        select a~qmnum
+               a~qmart
+               b~qmartx from qmel as a inner join tq80_t as b
+               on a~qmart = b~qmart into table lt_qmel
+               for all entries in gt_iloa
+               where a~qmnum = gt_iloa-qmnum
+                 and b~spras = sy-langu.
+
+        if sy-subrc eq 0 .
+
+        endif.
+
+        select equi~equnr eqkt~eqktx into table lt_equi_txt
+            from equi
+            inner join eqkt on equi~equnr = eqkt~equnr
+            for all entries in gt_iloa
+            where equi~equnr = gt_iloa-equnr
+              and spras = sy-langu.
+
+        select werks beber fing into table lt_beber_txt
+            from t357
+            for all entries in gt_iloa
+            where beber = gt_iloa-beber.
+      endif.
+
+      loop at gt_aufk into wa_aufk.
+*      concatenate order and operation
+        call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+          exporting
+            input  = wa_aufk-vornr
+          importing
+            output = wa_aufk-vornr.
+
+        concatenate wa_aufk-aufnr ' - ' wa_aufk-vornr into wa_aufk-oroper.
+*     concate order and description for searching
+        concatenate wa_aufk-aufnr wa_aufk-ktext into wa_aufk-search.
+
+*       Output operation system status.
+*       12/21/2017 - support a precedence of statuses.
+        read table lt_jest into lw_jest
+            with key objnr = wa_aufk-obsta
+                     stat = 'I0009'. "Confirmed
+        if sy-subrc <> 0.
+          read table lt_jest into lw_jest
+              with key objnr = wa_aufk-obsta
+                       stat = 'I0002'. "Released
+          if sy-subrc <> 0.
+            read table lt_jest into lw_jest
+                with key objnr = wa_aufk-obsta
+                         stat = 'I0001'. "Created
+            if sy-subrc <> 0.
+              read table lt_jest into lw_jest
+                  with key objnr = wa_aufk-obsta.
+            endif.
+          endif.
+        endif.
+
+        if not lw_jest-stat is initial.
+          select single txt30 into wa_aufk-status from tj02t
+               where istat = lw_jest-stat
+                 and spras = sy-langu.
+
+          wa_aufk-status_code = lw_jest-stat.
+
+          wa_aufk-icon  = 'sap-icon://activity-2'.
+          wa_aufk-color = 'Success'.
+        endif.
+
+        if not lv_pernr is initial.
+          read table lt_kbed into ls_kbed
+              with key aufpl = wa_aufk-aufpl
+                       aplzl = wa_aufk-aplzl
+                       pernr = lv_pernr.
+
+
+          if sy-subrc = 0.
+            wa_aufk-fl_ind = 'C'. "My work
+            wa_aufk-fsavd  = ls_kbed-sssbd. "Latest start date from req. assignment
+          endif.
+        endif.
+
+*       get buliding and sort fields
+        read table gt_iloa into wa_iloa with key aufnr = wa_aufk-aufnr.
+        if sy-subrc eq 0.
+          wa_aufk-stort = wa_iloa-stort.
+          wa_aufk-eqfnr = wa_iloa-eqfnr.
+          wa_aufk-qmnum = wa_iloa-qmnum.
+          wa_aufk-equnr = wa_iloa-equnr.
+          wa_aufk-tplnr = wa_iloa-tplnr.
+          wa_aufk-beber = wa_iloa-beber.
+
+*          get function location description
+          select single pltxt into wa_aufk-pltxt from iflotx
+                              where tplnr = wa_iloa-tplnr
+                                and spras = sy-langu.
+          if sy-subrc eq 0.
+
+          endif.
+*       Get Tech id
+          select single tidnr from equz into wa_aufk-tidnr
+                             where equnr = wa_iloa-equnr.
+          if sy-subrc eq 0.
+
+          endif.
+        endif.
+*     Notification Type
+        read table lt_qmel into lw_qmel with key qmnum = wa_iloa-qmnum.
+        if sy-subrc eq 0.
+          wa_aufk-qmartx = lw_qmel-qmartx.
+        endif.
+
+*     Get plant description
+        select single name1 from t001w into wa_aufk-name1
+                          where werks = wa_aufk-werks.
+        if sy-subrc eq 0.
+
+        endif.
+
+* Prepare data for long text
+        concatenate sy-mandt wa_aufk-aufnr into wa_head-tdname.
+        wa_head-tdid = 'KOPF'.
+        wa_head-tdobject = 'AUFK'.
+        wa_head-tdspras = sy-langu.
+        call method read_text
+          exporting
+            wa_head = wa_head
+          importing
+            text    = wa_aufk-text.
+
+*       D.Rempe - get the long text of the operation.
+        clear wa_head.
+        wa_head-tdname   = sy-mandt && wa_aufk-aufpl && wa_aufk-aplzl.
+        wa_head-tdid     = 'AVOT'.
+        wa_head-tdobject = 'AUFK'.
+        wa_head-tdspras  = sy-langu.
+
+        ycl_pm_npt_utilities=>read_text(
+          exporting
+            iv_tdobject = wa_head-tdobject
+            iv_tdname   = wa_head-tdname
+            iv_tdid     = wa_head-tdid
+          importing
+            ev_text     = wa_aufk-operation_long_text
+        ).
+
+*        read_text(
+*          exporting
+*            wa_head                = wa_head
+*            iv_preserve_formatting = abap_true
+*          importing
+*            text                   = wa_aufk-operation_long_text
+*        ).
+
+        read table lt_equi_txt into ls_equi_txt
+            with key key = wa_aufk-equnr.
+        if sy-subrc = 0.
+          wa_aufk-eqktx = ls_equi_txt-value.
+        endif.
+
+        read table lt_beber_txt into ls_beber_txt
+            with key werks = wa_aufk-werks
+                     beber = wa_aufk-beber.
+        if sy-subrc = 0.
+          wa_aufk-beber_text = ls_beber_txt-beber_text.
+        endif.
+
+*   Added code to check if Technical Requriments are mandatory
+*        Get Technical Requriment Indicator
+        if wa_aufk-tplnr is not initial.
+          refresh : lt_sclass,
+                    lt_clobjdat.
+          clear : wa_aufk-tech_req,
+                  lv_object.
+          lv_object = wa_aufk-tplnr.
+          call function 'CLAF_CLASSIFICATION_OF_OBJECTS'
+            exporting
+              classtype          = '003'
+              object             = lv_object
+            tables
+              t_class            = lt_sclass
+              t_objectdata       = lt_clobjdat
+            exceptions
+              no_classification  = 1
+              no_classtypes      = 2
+              invalid_class_type = 3
+              others             = 4.
+
+          read table lt_clobjdat into ls_clobjdat with key atnam = 'EMN_PM_TECHRPT'.
+          if sy-subrc eq 0.
+            if ls_clobjdat-ausp1 = 'Required'.
+              wa_aufk-tech_req = 'R'.
+            endif.
+          endif.
+        endif.
+
+        ycl_pm_npt_utilities=>conversion_out( changing cv_value = wa_aufk-equnr ).
+        call function 'CONVERSION_EXIT_TPLNR_OUTPUT'
+          exporting
+            input  = wa_aufk-tplnr
+          importing
+            output = wa_aufk-tplnr.
+
+        wa_aufk-offline_state = 'None'.
+* conversion exit
+*        if wa_aufk-pernr is INITIAL.
+          wa_aufk-pernr = lv_pernr.
+*        endif.
+      call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        exporting
+          input         = wa_aufk-pernr
+       IMPORTING
+         OUTPUT        = wa_aufk-pernr
+                .
+        modify gt_aufk from wa_aufk.
+        clear : wa_aufk.
+      endloop.
+      sort gt_aufk by fsavd aufnr vornr.
+*      Get first record to view in the screen
+      read table gt_aufk into wa_aufk index 1.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_DETAIL
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_DETAIL.
+  data: lv_order       type aufnr,
+        lv_operation   type vornr,
+        lt_work_orders type table of aufnr,
+        lt_operations  type string_table,
+        lv_order_op    type string,
+        lt_job_tickets type t_attachment_data,
+        lt_activity_types type BSP_WD_DROPDOWN_TABLE,
+        lw_act_type type BSP_WD_DROPDOWN_LINE,
+        lv_1week_ago   type dats.
+
+  lv_order = wa_detail-aufnr.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_order ).
+
+  lv_operation = wa_detail-vornr.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+  append lv_order to lt_work_orders.
+
+  lv_order_op = lv_order && `-` && wa_detail-vornr.
+  append lv_order_op to lt_operations.
+
+* Get parts
+  get_parts(
+    exporting
+      iv_work_order = lv_order
+      iv_operation  = lv_operation
+    importing
+      et_resb       = gt_resb
+  ).
+
+  get_timeentry(
+    exporting
+      iv_work_order  = wa_detail-aufnr
+      iv_operation   = wa_detail-vornr
+    importing
+      et_time        = gt_existing_time
+      et_people      = gt_people
+  ).
+
+* Parts previously issued
+  gt_previous_issue = get_previous_issue( lv_order ).
+
+* Functional location structure
+  get_fl_struct(
+    exporting
+      iv_work_order = lv_order
+    importing
+      et_fl_struct  = gt_fl_struct
+  ).
+
+* Technical report
+  get_techreport(
+    exporting
+      iv_work_order = lv_order
+    importing
+      et_tech       = gt_tech
+      et_act        = gt_act
+      et_assembly   = gt_assembly
+  ).
+
+* Equipment history
+  get_equipment_history(
+    exporting
+      iv_work_order = lv_order
+    importing
+      et_equi       = gt_equi
+      et_tech_hist  = gt_tech_hist
+      et_act_hist   = gt_act_hist
+      et_resb_hist  = gt_resb_hist
+  ).
+
+* Catalog search helps
+  get_catalog_search_helps(
+    exporting
+      iv_work_order          = lv_order
+    importing
+      et_object_part_catalog = gt_object_part_catalog
+      et_damage_catalog      = gt_damage_catalog
+      et_cause_catalog       = gt_cause_catalog
+      et_activity_catalog    = gt_activity_catalog
+  ).
+
+*get activity types f4
+call method ycl_pm_npt_utilities=>get_activity_types
+  exporting
+    iv_work_order     = lv_order
+    iv_operation      = lv_operation
+  receiving
+    rt_activity_types = lt_activity_types
+    .
+  loop at lt_activity_types into lw_act_type.
+    wa_act_types-aufnr = lv_order.
+    wa_act_types-vornr = lv_operation.
+    wa_act_types-lstar = lw_act_type-key.
+    wa_act_types-text = lw_act_type-value.
+    append wa_act_types to gt_act_types.
+  ENDLOOP.
+
+* Get the list of work orders from the equipment history.
+  loop at gt_equi into wa_equi where not aufnr is initial.
+    append wa_equi-aufnr to lt_work_orders.
+  endloop.
+
+  sort lt_work_orders.
+  delete adjacent duplicates from lt_work_orders.
+
+* Get attachments for all work orders (including historical).
+  refresh: gt_attachments,
+           gt_attachment_data.
+
+  loop at lt_work_orders into lv_order.
+    get_attachment_list( lv_order ).
+  endloop.
+
+  sort gt_attachments by work_order sort_group file_name.
+
+  get_attachment_data( ).
+
+*  get_job_tickets(
+*    exporting
+*      it_operations  = lt_operations
+*    importing
+*      et_job_tickets = lt_job_tickets
+*  ).
+*  append lines of lt_job_tickets to gt_attachment_data.
+
+* Get records which have already been processed lately.
+  lv_1week_ago = sy-datum - 7.
+  select guid object_number record_date record_table
+      into table gt_uuid
+      from ypmnptrecpr
+      where object_type   = 'AUFK'
+        and object_number = lv_order
+        and record_date  >= lv_1week_ago.
+
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_EQUIPMENT_HISTORY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<---] ET_TECH_HIST                   TYPE        T_TECH
+* | [<---] ET_ACT_HIST                    TYPE        T_ACT
+* | [<---] ET_RESB_HIST                   TYPE        T_RESB
+* | [<---] ET_EQUI                        TYPE        T_EQUI
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_equipment_history.
+    data : lt_items  type table of bapi2080_notiteme,
+           lw_items  type bapi2080_notiteme,
+           lt_caus   type table of bapi2080_notcause,
+           lw_caus   type bapi2080_notcause,
+           lt_act    type table of bapi2080_notactve,
+           lw_act    type bapi2080_notactve,
+           lt_resb   type table of ty_resb,
+           lw_resb   type ty_resb,
+           lv_seqnr  type i,
+           lt_equi   type table of ty_equi,
+           ls_equi   type ty_equi,
+           lt_return type table of bapiret2,
+           lt_t418t  type table of t418t,
+           lw_t418t  type t418t,
+           lv_date   type sy-datum,
+           lv_tplnr  type tplnr.
+
+    refresh: et_tech_hist,
+             et_act_hist,
+             et_resb_hist,
+             et_equi.
+
+    field-symbols: <equi> type ty_equi,
+                   <resb> type ty_resb,
+                   <tech> type ty_tech,
+                   <act>  type ty_act.
+
+*   1/8/2018 - Get history from FL if Equipment is not populated.
+    select single afih~equnr iloa~tplnr
+        into (wa_detail-equnr,lv_tplnr)
+        from afih
+        inner join iloa on afih~iloan = iloa~iloan
+        where afih~aufnr = iv_work_order.
+
+    check sy-subrc = 0.
+
+    if not wa_detail-equnr is initial.
+*    get notifications created from last 30 days.
+      lv_date = sy-datum - 30.
+      select qmnum equnr qmtxt erdat
+          into corresponding fields of table lt_equi from viqmel
+                where equnr = wa_detail-equnr
+                 and erdat ge lv_date
+                 and qmdat ne space.
+*   get past 10 equipments
+      select qmnum equnr qmtxt aufnr qmdab up to 10 rows
+               appending table et_equi from viqmel
+              where equnr = wa_detail-equnr
+                order by qmdat descending.
+    elseif not lv_tplnr is initial.
+      select qmnum equnr qmtxt aufnr qmdab up to 10 rows
+              appending table et_equi from viqmel
+              where tplnr = lv_tplnr
+                order by qmdat descending.
+    else.
+      return.
+    endif.
+
+    if sy-subrc eq 0.
+      loop at et_equi into wa_equi.
+        refresh : lt_items,
+                  lt_caus,
+                  lt_act,
+                  lt_return.
+
+*        Get Notification details
+        if wa_equi-qmnum is not initial.
+          read table lt_equi into ls_equi with key qmnum = wa_equi-qmnum.
+          if sy-subrc eq 0.
+            wa_equi-visible = 'true'.
+            delete lt_equi where qmnum = wa_equi-qmnum.
+          endif.
+          call function 'BAPI_ALM_NOTIF_GET_DETAIL'
+            exporting
+              number    = wa_equi-qmnum
+            tables
+              notitem   = lt_items
+              notifcaus = lt_caus
+              notifactv = lt_act
+              return    = lt_return.
+          if sy-subrc eq 0.
+            loop at lt_items into lw_items.
+*         Pass items detail
+              wa_tech_hist-qmnum = lw_items-notif_no.
+              wa_tech_hist-fenum = lw_items-item_key.
+              wa_tech_hist-fetxt = lw_items-descript.
+              wa_tech_hist-otgrp = lw_items-dl_codegrp.
+              wa_tech_hist-oteil = lw_items-dl_code.
+              wa_tech_hist-fegrp = lw_items-d_codegrp.
+              wa_tech_hist-fecod = lw_items-d_code.
+              wa_tech_hist-obj_text = lw_items-txt_objptcd.
+              wa_tech_hist-dam_text = lw_items-txt_probcd.
+              wa_tech_hist-bautl = lw_items-assembly.
+              wa_tech_hist-maktx = lw_items-txt_part.
+*      Get long text for items/Causes and activites
+              wa_head-tdid = 'LTXT'.
+              wa_head-tdobject = 'QMFE'.
+              wa_head-tdspras = sy-langu.
+              concatenate wa_tech_hist-qmnum wa_tech_hist-fenum
+                      into wa_head-tdname.
+*     Read Item Text
+              call method read_text
+                exporting
+                  wa_head = wa_head
+                importing
+                  text    = wa_tech_hist-itm_text.
+*    Rad Cause details for an item
+              clear : lw_caus,
+                      wa_head.
+              read table lt_caus into lw_caus
+                            with key notif_no = lw_items-notif_no
+                                     item_key = lw_items-item_key.
+              if sy-subrc eq 0.
+                wa_tech_hist-urgrp = lw_caus-cause_codegrp.
+                wa_tech_hist-urcod = lw_caus-cause_code.
+                wa_tech_hist-urtxt = lw_caus-causetext.
+                wa_tech_hist-qurnum = lw_caus-cause_sort_no.
+                wa_tech_hist-cus_text = lw_caus-txt_causecd.
+*         Read Cause Text
+                clear : wa_head.
+                wa_head-tdid = 'LTXT'.
+                wa_head-tdobject = 'QMUR'.
+                wa_head-tdspras = sy-langu.
+                concatenate wa_tech_hist-qmnum wa_tech_hist-fenum wa_tech_hist-qurnum
+                        into wa_head-tdname.
+                call method read_text
+                  exporting
+                    wa_head = wa_head
+                  importing
+                    text    = wa_tech_hist-cau_text.
+              endif.
+*    Read activity details for an item
+              clear : lw_act.
+              read table lt_act into lw_act
+                        with key notif_no = lw_items-notif_no
+                                 item_key = lw_items-item_key.
+              if sy-subrc eq 0.
+                wa_tech_hist-manum = lw_act-act_key.
+                wa_tech_hist-mngrp = lw_act-act_codegrp.
+                wa_tech_hist-mncod = lw_act-act_code.
+                wa_tech_hist-atv_text = lw_act-txt_actcd.
+*    Read activity text
+                clear : wa_head.
+                wa_head-tdid = 'LTXT'.
+                wa_head-tdobject = 'QMMA'.
+                wa_head-tdspras = sy-langu.
+                concatenate wa_tech_hist-qmnum wa_tech_hist-manum
+                        into wa_head-tdname.
+                call method read_text
+                  exporting
+                    wa_head = wa_head
+                  importing
+                    text    = wa_tech_hist-act_text.
+              endif.
+              append wa_tech_hist to et_tech_hist.
+
+            endloop.
+*   Get individual activites.
+            clear : lw_act.
+            loop at lt_act into lw_act where item_key is initial.
+              wa_act_hist-qmnum = lw_act-notif_no.
+              wa_act_hist-manum = lw_act-act_key.
+              wa_act_hist-mngrp = lw_act-act_codegrp.
+              wa_act_hist-mncod = lw_act-act_code.
+              wa_act_hist-matxt = lw_act-acttext.
+              wa_act_hist-atv_text = lw_act-txt_actcd.
+*  Read activity text
+              clear : wa_head.
+              wa_head-tdid = 'LTXT'.
+              wa_head-tdobject = 'QMMA'.
+              wa_head-tdspras = sy-langu.
+              concatenate wa_tech_hist-qmnum wa_tech_hist-manum
+                      into wa_head-tdname.
+              call method read_text
+                exporting
+                  wa_head = wa_head
+                importing
+                  text    = wa_act_hist-act_text.
+              append wa_act_hist to et_act_hist.
+            endloop.
+          endif.
+        endif.
+        if wa_equi-aufnr is not initial.
+          select aufnr
+                 rsnum
+                 rspos
+                 matnr
+                 werks
+                 bdmng
+                 meins
+                 enmng
+                 postp
+                 posnr
+                 potx1
+                 vornr into table lt_resb from resb
+                      where aufnr = wa_equi-aufnr
+                         and xloek eq space.
+          if sy-subrc eq 0.
+*           Get text item descriptions
+            select * from t418t into table lt_t418t
+                          for all entries in lt_resb
+                              where spras = sy-langu
+                                and postp = lt_resb-postp.
+
+            loop at lt_resb into lw_resb.
+              move-corresponding lw_resb to wa_resb_hist.
+*                Get material description
+              if lw_resb-matnr is not initial.
+                select single maktx into lw_resb-potx1 from makt
+                                         where matnr = lw_resb-matnr
+                                           and spras = sy-langu.
+                if sy-subrc eq 0.
+                  wa_resb_hist-potx1 = lw_resb-potx1.
+                endif.
+              endif.
+*             Get long text for the order
+              clear : wa_head.
+              concatenate sy-mandt lw_resb-rsnum lw_resb-rspos
+                        into wa_head-tdname.
+              wa_head-tdid = 'MATK'.
+              wa_head-tdobject = 'AUFK'.
+              wa_head-tdspras = sy-langu.
+              call method read_text
+                exporting
+                  wa_head = wa_head
+                importing
+                  text    = lw_resb-text.
+              wa_resb_hist-text = lw_resb-text.
+
+*             Get item text description
+              read table lt_t418t into lw_t418t
+                    with key postp = wa_resb_hist-postp.
+              if sy-subrc eq 0.
+                wa_resb_hist-ptext = lw_t418t-ptext.
+              endif.
+
+              append wa_resb_hist to et_resb_hist.
+            endloop.
+          endif.
+        endif.
+        modify gt_equi from wa_equi.
+      endloop.
+
+    endif.
+* check if open notiications are avilabile.
+    clear : ls_equi.
+    loop at lt_equi into ls_equi.
+      clear : wa_equi.
+      move-corresponding ls_equi to wa_equi.
+      wa_equi-visible = 'true'.
+      append wa_equi to gt_equi.
+    endloop.
+*   Set key fields for AppDB.
+    loop at et_equi assigning <equi>.
+      <equi>-work_order = iv_work_order.
+      write sy-tabix to <equi>-seqnr left-justified.
+      <equi>-keyfield = iv_work_order && <equi>-seqnr.
+    endloop.
+
+    loop at et_tech_hist assigning <tech>.
+      <tech>-notification = <tech>-qmnum.
+      <tech>-keyfield     = <tech>-qmnum && <tech>-fenum.
+    endloop.
+
+    loop at et_act_hist assigning <act>.
+      <act>-notification = <act>-qmnum.
+      <act>-keyfield     = <act>-qmnum && <act>-manum.
+    endloop.
+
+    loop at et_resb_hist assigning <resb>.
+      <resb>-keyfield = <resb>-aufnr && <resb>-vornr && <resb>-rspos.
+    endloop.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_FL_STRUCT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<---] ET_FL_STRUCT                   TYPE        T_STRUCT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method get_fl_struct.
+  data: lt_hierarchy type table of ypm_fl_hierarchy,
+        ls_hierarchy type ypm_fl_hierarchy,
+        lv_matnr     type mara-matnr,
+        ls_tree      type ty_struct.
+
+  refresh et_fl_struct.
+
+  call function 'YPM_SEARCH_FL_BOM'
+    exporting
+      iv_work_order = iv_work_order
+    tables
+      et_hierarchy  = lt_hierarchy.
+
+  loop at lt_hierarchy into ls_hierarchy.
+    clear ls_tree.
+    ls_tree-node_id   = ls_hierarchy-object_type && ls_hierarchy-object_number.
+    ls_tree-highlight = 'None'.
+
+*    if ls_hierarchy-object_type <> 'T'.
+    ls_tree-parent_id = ls_hierarchy-parent_type && ls_hierarchy-parent_number.
+
+    if ls_hierarchy-parent_type = 'T'.
+*       If a node lists a functional location as its parent,
+*       make sure that FL is actually in the hierarchy.
+*       Otherwise, the node will be orphaned.
+      read table lt_hierarchy
+          with key object_type   = ls_hierarchy-parent_type
+                   object_number = ls_hierarchy-parent_number
+          transporting no fields.
+      if sy-subrc <> 0.
+        clear ls_tree-parent_id.
+      endif.
+    endif.
+*    else.
+*      ls_tree-expanded  = 'X'.
+*    endif.
+
+    if ls_hierarchy-has_children = 'Y'.
+      ls_tree-iscontainer = 'X'.
+    else.
+      ls_tree-iscontainer = ' '.
+      if ls_hierarchy-object_type = 'M'.
+        ls_tree-selectable = 'X'.
+        ls_tree-icon       = 'sap-icon://add-equipment'.
+      endif.
+    endif.
+
+    case ls_hierarchy-object_type.
+      when 'T'.
+        ls_tree-highlight = 'None'.
+      when 'E'.
+        ls_tree-highlight = 'Success'.
+      when 'M'.
+        if ls_hierarchy-has_children = 'Y'.
+          ls_tree-highlight = 'Warning'.
+        else.
+          ls_tree-highlight = 'Error'.
+        endif.
+    endcase.
+*    get valuation class
+    if ls_hierarchy-object_type = 'M' and ls_tree-iscontainer ne 'X'.
+      call function 'CONVERSION_EXIT_MATN1_INPUT'
+        exporting
+          input        = ls_hierarchy-object_number
+        importing
+          output       = lv_matnr
+        exceptions
+          length_error = 1
+          others       = 2.
+      if sy-subrc <> 0.
+* Implement suitable error handling here
+      endif.
+
+      select single bklas from mbew into ls_tree-bklas where matnr = lv_matnr.
+    endif.
+    ls_tree-meins         = ls_hierarchy-unit_of_measure.
+    ls_tree-object_number = ls_hierarchy-object_number.
+    ls_tree-maktx         = ls_hierarchy-object_text.
+    ls_tree-text          = ls_hierarchy-object_number && `: ` && ls_hierarchy-object_text.
+
+    ls_tree-work_order    = iv_work_order.
+    ls_tree-keyfield      = ls_tree-work_order && ls_tree-parent_id && ls_tree-node_id.
+    insert ls_tree into table et_fl_struct.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_CRAFTPERSON_CLASS->GET_JOB_TICKET
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_JOB_TICKET.
+  data: lv_work_order type aufnr,
+        lv_operation  type vornr.
+
+  lv_work_order = wa_aufk-aufnr.
+  lv_operation  = wa_aufk-vornr.
+
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+  clear wa_attachment_data.
+  wa_attachment_data-instid_b = lv_work_order && `-` && lv_operation && 'JT'.
+  wa_attachment_data-file_data = ycl_pm_npt_utilities=>get_work_order_output(
+    iv_work_order = lv_work_order
+    iv_operation  = lv_operation
+  ).
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_JOB_TICKETS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_OPERATIONS                  TYPE        STRING_TABLE
+* | [<---] ET_JOB_TICKETS                 TYPE        T_ATTACHMENT_DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_JOB_TICKETS.
+  data: lv_order_operation type string,
+        lv_work_order      type aufnr,
+        lv_operation       type vornr,
+        ls_attachment_data type ty_attachment_data.
+
+  refresh et_job_tickets.
+
+  loop at it_operations into lv_order_operation.
+    split lv_order_operation at '-' into lv_work_order lv_operation.
+    ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+    ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+    clear ls_attachment_data.
+    ls_attachment_data-instid_b = lv_order_operation && 'JT'.
+    ls_attachment_data-file_data = ycl_pm_npt_utilities=>get_work_order_output(
+      iv_work_order = lv_work_order
+      iv_operation  = lv_operation
+    ).
+    append ls_attachment_data to et_job_tickets.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_PARTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [<---] ET_RESB                        TYPE        T_RESB
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_parts.
+    types : begin of ly_resb,
+              aufnr type aufnr,
+              rsnum type resb-rsnum,
+              rspos type resb-rspos,
+              posnr type resb-posnr,
+            end of ly_resb.
+    data :
+           lt_makt      type table of makt,
+           lw_makt      type makt,
+           lt_t418t     type table of t418t,
+           lw_t418t     type t418t,
+           lv_resb      type table of ly_resb,
+           lw_resb      type ly_resb,
+           ln           type i,
+           lt_hierarchy type table of ypm_fl_hierarchy,
+           ls_hierarchy type ypm_fl_hierarchy,
+           ls_tree      type ty_struct,
+           lv_matnr     type mara-matnr.
+
+  wa_detail-aufnr = iv_work_order.
+  wa_detail-vornr = iv_operation.
+
+CONDENSE : wa_detail-aufnr,
+           wa_detail-vornr.
+
+    call function 'CONVERSION_EXIT_ALPHA_INPUT'
+      exporting
+        input  = wa_detail-vornr
+      importing
+        output = wa_detail-vornr.
+
+refresh : et_resb,
+          lt_makt,
+          lt_t418t.
+
+    select aufnr
+           rsnum
+           rspos
+           matnr
+           werks
+           bdmng
+           meins
+           enmng
+           postp
+           posnr
+           potx1
+           vornr into table et_resb from resb
+                  where aufnr = wa_detail-aufnr
+                     and vornr = wa_detail-vornr
+                     and xloek eq space.
+    if sy-subrc eq 0.
+*    Get MAKTX
+      select *
+             from makt
+             into table lt_makt
+             for all entries in et_resb
+             where spras eq sy-langu
+               and matnr eq et_resb-matnr.
+      if sy-subrc eq 0.
+
+      endif.
+*   Get text item descriptions
+      select * from t418t into table lt_t418t
+                    for all entries in et_resb
+                        where spras = sy-langu
+                          and postp = et_resb-postp.
+    else.
+*  Get reservation number from order if operation doesn't exists
+      select aufnr rsnum rspos posnr from resb into table lv_resb
+                            where aufnr = wa_detail-aufnr.
+      if sy-subrc eq 0.
+        describe table lv_resb lines ln.
+        read table lv_resb into lw_resb index ln.
+        wa_resb-rsnum = lw_resb-rsnum.
+        wa_resb-rspos = lw_resb-rspos.
+        wa_resb-posnr = lw_resb-posnr.
+      endif.
+    endif.
+
+    loop at et_resb into wa_resb.
+*      get material text
+      read table lt_makt into lw_makt
+          with key matnr = wa_resb-matnr.
+      if sy-subrc eq 0.
+        wa_resb-potx1 = lw_makt-maktx.
+      endif.
+*     Get item text description
+      read table lt_t418t into lw_t418t
+            with key postp = wa_resb-postp.
+      if sy-subrc eq 0.
+        wa_resb-ptext = lw_t418t-ptext.
+      endif.
+*    Long text display
+      concatenate sy-mandt wa_resb-rsnum wa_resb-rspos
+                             into wa_head-tdname.
+      wa_head-tdid = 'MATK'.
+      wa_head-tdobject = 'AUFK'.
+      wa_head-tdspras = sy-langu.
+      call method read_text
+        exporting
+          wa_head = wa_head
+        importing
+          text    = wa_resb-text.
+
+      if not wa_resb-text is initial.
+        wa_resb-ltxt_visibility = 'true'.
+      else.
+        wa_resb-ltxt_visibility = 'false'.
+      endif.
+
+*      wa_resb-edit_visibilty = '""'.
+*      wa_resb-del_visibility = '"'.
+
+*     Set key field for AppDB.
+      wa_resb-keyfield = wa_resb-aufnr && wa_resb-vornr && wa_resb-rspos.
+
+      modify et_resb from wa_resb.
+    endloop.
+    clear : wa_resb-matnr,
+            wa_resb-potx1,
+            wa_resb-bdmng,
+            wa_resb-meins,
+            wa_resb-postp,
+            wa_resb-ptext.
+
+*    Get materials based on work order
+
+    check not wa_detail-aufnr is initial.
+
+    sort et_resb by posnr.
+
+*    call function 'YPM_SEARCH_FL_BOM'
+*      exporting
+*        iv_work_order = wa_detail-aufnr
+*      tables
+*        et_hierarchy  = lt_hierarchy.
+*
+*    loop at lt_hierarchy into ls_hierarchy.
+*      clear ls_tree.
+*      ls_tree-node_id   = ls_hierarchy-object_type && ls_hierarchy-object_number.
+*      ls_tree-highlight = 'None'.
+*
+*      if ls_hierarchy-object_type <> 'T'.
+*        ls_tree-parent_id = ls_hierarchy-parent_type && ls_hierarchy-parent_number.
+*      else.
+*        ls_tree-expanded  = 'X'.
+*        ls_tree-highlight = 'Error'.
+*      endif.
+*
+*      if ls_hierarchy-has_children = 'Y'.
+*        ls_tree-iscontainer = 'X'.
+*        if ls_hierarchy-object_type <> 'T'.
+*          ls_tree-highlight   = 'Warning'.
+*        endif.
+*      else.
+*        ls_tree-iscontainer = ' '.
+*        if ls_hierarchy-object_type = 'M'.
+*          ls_tree-selectable = 'X'.
+*          ls_tree-icon       = 'sap-icon://add-equipment'.
+*          ls_tree-highlight  = 'Success'.
+*        endif.
+*      endif.
+*      ls_tree-meins = ls_hierarchy-UNIT_OF_MEASURE.
+*      ls_tree-object_number = ls_hierarchy-object_number.
+*      ls_tree-maktx = ls_hierarchy-object_text.
+*      ls_tree-text = ls_hierarchy-object_number && `: ` && ls_hierarchy-object_text.
+*
+*      ls_tree-work_order = wa_detail-aufnr.
+*      ls_tree-keyfield   = ls_tree-work_order && ls_tree-parent_id && ls_tree-node_id.
+*      insert ls_tree into table gt_fl_struct.
+*    endloop.
+
+*    get_previous_issue( ).
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_CRAFTPERSON_CLASS=>GET_PREVIOUS_ISSUE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<-()] RT_PREVIOUS_ISSUE              TYPE        YPM_MATERIAL_SEARCH_RESULT_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method get_previous_issue.
+  types: begin of s_material_text,
+           matnr type matnr,
+           maktx type maktx,
+         end of s_material_text.
+
+  types: begin of s_reservation,
+           matnr type matnr,
+           meins type meins,
+           bdmng type bdmng,
+           bdter type dats,
+           werks type werks_d,
+           tplnr type char40,
+           equnr type equi-equnr,
+         end of s_reservation.
+
+  data: ls_previous_issue      type ypm_material_search_result,
+        lt_work_orders         type table of aufnr,
+        lv_functional_location type char40,
+        lv_equnr               type equi-equnr,
+        lv_3_years_ago         type dats,
+        lt_material_text       type hashed table of s_material_text
+                                   with unique key matnr,
+        ls_material_text       type s_material_text,
+        lt_reservation         type table of s_reservation,
+        ls_reservation         type s_reservation.
+
+  field-symbols: <result> type ypm_material_search_result.
+
+  refresh rt_previous_issue.
+
+* Get the functional location of the notification.
+  select single iloa~tplnr afih~equnr into ( lv_functional_location, lv_equnr )
+      from afih
+      inner join qmih on afih~qmnum = qmih~qmnum
+      inner join iloa on iloa~iloan = qmih~iloan
+      where afih~aufnr = iv_work_order.
+
+
+  call function 'RP_CALC_DATE_IN_INTERVAL'
+    exporting
+      date      = sy-datum
+      days      = 0
+      months    = 0
+      years     = 3
+      signum    = '-'
+    importing
+      calc_date = lv_3_years_ago.
+  if not lv_functional_location is initial.
+* Get notifications/work orders related to the functional location.
+    select qmel~aufnr into table lt_work_orders
+        from iloa
+        inner join qmih on iloa~iloan = qmih~iloan
+        inner join qmel on qmih~qmnum = qmel~qmnum
+        where iloa~tplnr = lv_functional_location
+*          and qmih~equnr = lv_equnr
+          and qmel~erdat >= lv_3_years_ago
+          and qmel~aufnr <> ' '.
+
+    check not lt_work_orders[] is initial.
+
+* Get all materials on any of the selected work orders.
+    select matnr meins bdmng bdter werks
+        into table lt_reservation
+        from resb
+        for all entries in lt_work_orders
+        where aufnr = lt_work_orders-table_line
+          and matnr <> ' '
+          and xloek = ' '.
+
+    sort lt_reservation by matnr.
+
+    call function 'CONVERSION_EXIT_TPLNR_OUTPUT'
+      exporting
+        input  = lv_functional_location
+      importing
+        output = lv_functional_location.
+
+* Calculate the minimum and maximum quantity of each material.
+    loop at lt_reservation into ls_reservation.
+      if ls_previous_issue-material <> ls_reservation-matnr.
+        if not ls_previous_issue-material is initial.
+          insert ls_previous_issue into table rt_previous_issue.
+        endif.
+        clear ls_previous_issue.
+        ls_previous_issue-material        = ls_reservation-matnr.
+        ls_previous_issue-unit_of_measure = ls_reservation-meins.
+        ls_previous_issue-minimum_qty     = floor( ls_reservation-bdmng ).
+        ls_previous_issue-maximum_qty     = floor( ls_reservation-bdmng ).
+        ls_previous_issue-req_date        = ls_reservation-bdter.
+        ls_previous_issue-plant           = ls_reservation-werks.
+        ls_previous_issue-tplnr = lv_functional_location.
+      endif.
+
+      if ls_reservation-bdmng < ls_previous_issue-minimum_qty.
+        ls_previous_issue-minimum_qty = floor( ls_reservation-bdmng ).
+      endif.
+
+      if ls_reservation-bdmng > ls_previous_issue-maximum_qty.
+        ls_previous_issue-maximum_qty = floor( ls_reservation-bdmng ).
+      endif.
+
+      if ls_reservation-bdter > ls_previous_issue-req_date.
+        ls_previous_issue-req_date = ls_reservation-bdter.
+      endif.
+    endloop.
+
+    if sy-subrc = 0.
+*   Append the last line.
+      insert ls_previous_issue into table rt_previous_issue.
+    endif.
+
+    check not rt_previous_issue[] is initial.
+
+* Get the material descriptions.
+    select matnr maktx into table lt_material_text
+        from makt
+        for all entries in rt_previous_issue
+        where matnr = rt_previous_issue-material
+          and spras = sy-langu.
+
+* Output the materials.
+    loop at rt_previous_issue assigning <result>.
+      read table lt_material_text into ls_material_text
+          with key matnr = <result>-material.
+      if sy-subrc = 0.
+        <result>-description = ls_material_text-maktx.
+      endif.
+
+      <result>-work_order = iv_work_order.
+      <result>-keyfield = <result>-work_order && <result>-material.
+
+*      ycl_pm_npt_utilities=>conversion_out( changing cv_value = <result>-material ).
+    endloop.
+    sort rt_previous_issue .
+    delete ADJACENT DUPLICATES FROM rt_previous_issue comparing material tplnr.
+  endif.
+*     get equipment previous issues
+  if not lv_equnr is initial.
+    refresh : lt_work_orders[].
+* Get notifications/work orders related to the functional location.
+    select qmel~aufnr into table lt_work_orders
+        from qmih inner join qmel on qmih~qmnum = qmel~qmnum
+        where qmih~equnr = lv_equnr
+          and qmel~erdat >= lv_3_years_ago
+          and qmel~aufnr <> ' '.
+
+    check not lt_work_orders[] is initial.
+    refresh : lt_reservation.
+* Get all materials on any of the selected work orders.
+    select matnr meins bdmng bdter werks
+        appending table lt_reservation
+        from resb
+        for all entries in lt_work_orders
+        where aufnr = lt_work_orders-table_line
+          and matnr <> ' '
+          and xloek = ' '.
+
+    sort lt_reservation by matnr.
+
+    call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+      exporting
+        input  = lv_equnr
+      importing
+        output = lv_equnr.
+* Calculate the minimum and maximum quantity of each material.
+    loop at lt_reservation into ls_reservation.
+      READ TABLE rt_previous_issue into  ls_previous_issue with key material = ls_reservation-matnr.
+      if sy-subrc eq 0.
+        ls_previous_issue-equnr = lv_equnr.
+        modify rt_previous_issue from ls_previous_issue index sy-tabix .
+        clear : ls_reservation,
+                ls_previous_issue.
+        continue.
+      endif.
+      if ls_previous_issue-material <> ls_reservation-matnr.
+        if not ls_previous_issue-material is initial.
+          insert ls_previous_issue into table rt_previous_issue.
+        endif.
+        clear ls_previous_issue.
+        ls_previous_issue-material        = ls_reservation-matnr.
+        ls_previous_issue-unit_of_measure = ls_reservation-meins.
+        ls_previous_issue-minimum_qty     = floor( ls_reservation-bdmng ).
+        ls_previous_issue-maximum_qty     = floor( ls_reservation-bdmng ).
+        ls_previous_issue-req_date        = ls_reservation-bdter.
+        ls_previous_issue-plant           = ls_reservation-werks.
+        ls_previous_issue-equnr = lv_equnr.
+      endif.
+
+      if ls_reservation-bdmng < ls_previous_issue-minimum_qty.
+        ls_previous_issue-minimum_qty = floor( ls_reservation-bdmng ).
+      endif.
+
+      if ls_reservation-bdmng > ls_previous_issue-maximum_qty.
+        ls_previous_issue-maximum_qty = floor( ls_reservation-bdmng ).
+      endif.
+
+      if ls_reservation-bdter > ls_previous_issue-req_date.
+        ls_previous_issue-req_date = ls_reservation-bdter.
+      endif.
+    endloop.
+
+    if sy-subrc = 0 and ls_previous_issue-material is not INITIAL.
+*   Append the last line.
+      insert ls_previous_issue into table rt_previous_issue.
+    endif.
+
+    check not rt_previous_issue[] is initial.
+
+* Get the material descriptions.
+    select matnr maktx into table lt_material_text
+        from makt
+        for all entries in rt_previous_issue
+        where matnr = rt_previous_issue-material
+          and spras = sy-langu.
+
+* Output the materials.
+    loop at rt_previous_issue assigning <result>.
+      read table lt_material_text into ls_material_text
+          with key matnr = <result>-material.
+      if sy-subrc = 0.
+        <result>-description = ls_material_text-maktx.
+      endif.
+
+      <result>-work_order = iv_work_order.
+      <result>-keyfield = <result>-work_order && <result>-material.
+
+      ycl_pm_npt_utilities=>conversion_out( changing cv_value = <result>-material ).
+    endloop.
+
+  endif.
+
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_CRAFTPERSON_CLASS->GET_SYSTEM_STATUS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_SYSTEM_STATUS.
+  data: lv_work_order type aufnr,
+        lv_operation  type vornr,
+        lv_objnr      type j_objnr,
+        lt_jest       type sorted table of jest
+                          with unique key stat,
+        lw_jest       type jest.
+
+  lv_work_order = iv_work_order.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+
+  lv_operation = iv_operation.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+* Reselect phase fields in case they have changed.
+  select single phas0 phas1 into (wa_aufk-phas0,wa_aufk-phas1)
+      from aufk
+      where aufnr = lv_work_order.
+
+  select single afvc~objnr into lv_objnr
+      from afko
+      inner join afvc on afko~aufpl = afvc~aufpl
+      where afko~aufnr = lv_work_order
+        and afvc~vornr = lv_operation.
+
+  check not lv_objnr is initial.
+
+  select * into table lt_jest from jest
+      where objnr = lv_objnr
+        and inact = space.
+
+* Output operation system status.
+* 12/21/2017 - support a precedence of statuses.
+  read table lt_jest into lw_jest
+      with key stat = 'I0009'. "Confirmed
+  if sy-subrc <> 0.
+    read table lt_jest into lw_jest
+        with key stat = 'I0002'. "Released
+    if sy-subrc <> 0.
+      read table lt_jest into lw_jest
+          with key stat = 'I0001'. "Created
+      if sy-subrc <> 0.
+        read table lt_jest into lw_jest
+            index 1.
+      endif.
+    endif.
+  endif.
+
+  if not lw_jest-stat is initial.
+   select single txt30 into wa_aufk-status from tj02t
+        where istat = lw_jest-stat
+          and spras = sy-langu.
+
+    wa_aufk-icon  = 'sap-icon://activity-2'.
+    wa_aufk-color = 'Success'.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_TECHREPORT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR(optional)
+* | [<---] ET_TECH                        TYPE        T_TECH
+* | [<---] ET_ACT                         TYPE        T_ACT
+* | [<---] ET_ASSEMBLY                    TYPE        T_ASSEMBLY
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+   method get_techreport.
+     data :
+       lt_qpct         type table of qpct,
+       lt_cause        type table of ty_tech,
+       lt_act          type table of ty_tech,
+       lt_act_noitem   type table of ty_act,
+       lw_cause        type ty_tech,
+       lw_act          type ty_tech,
+       lv_arbpl        type crhd-arbpl,
+       lw_qpct         type qpct,
+       ln type i.
+
+     data: lt_persons    type table of object_person_assignment,
+           ls_person     type object_person_assignment,
+           ls_person_out type ypm_person,
+           lt_hr_objects type table of hrobject,
+           ls_hr_object  type hrobject.
+
+     field-symbols: <assembly> type ty_assembly.
+
+     refresh : gt_lines,
+               lt_cause,
+               lt_act,
+               et_tech,
+               et_act,
+               et_assembly.
+
+     clear : wa_head,
+             lw_act,
+             lw_cause.
+
+     select single qmnum into wa_detail-qmnum from afih
+         where aufnr = iv_work_order.
+
+     check sy-subrc = 0 and not wa_detail-qmnum is initial.
+
+* Get Items and Causes
+     select qmnum
+            fenum
+            otgrp  "Code Grp for objects
+            oteil  "code for objects
+            fegrp  "code Grp for Damage
+            fecod  "code for Damage
+            fetxt
+            bautl from qmfe into
+            corresponding fields of table et_tech
+                     where qmnum = wa_detail-qmnum.
+     if sy-subrc eq 0.
+*      Get causes for items
+       select qmnum
+              fenum
+              urgrp  "Code Grp for causes
+              urcod  "Code for causes
+              urtxt
+              qurnum from qmur into
+               corresponding fields of table lt_cause
+                 for all entries in et_tech
+                   where qmnum = et_tech-qmnum
+                     and fenum = et_tech-fenum.
+       if sy-subrc eq 0.
+*         DESCRIBE TABLE lt_cause lines lv_caus.
+         loop at lt_cause into lw_cause.
+           clear : lw_qpct.
+*          Cause text
+           select single * from qpct into lw_qpct
+               where katalogart = '5'
+                 and codegruppe = lw_cause-urgrp
+                 and code = lw_cause-urcod
+                 and sprache = sy-langu.
+           if sy-subrc eq 0.
+             lw_cause-cus_text = lw_qpct-kurztext.
+           endif.
+*     Read Cause Text
+           clear : wa_head.
+           wa_head-tdid = 'LTXT'.
+           wa_head-tdobject = 'QMUR'.
+           wa_head-tdspras = sy-langu.
+           concatenate lw_cause-qmnum lw_cause-fenum lw_cause-qurnum
+                   into wa_head-tdname.
+           call method read_text
+             exporting
+               wa_head = wa_head
+             importing
+               text    = lw_cause-cau_text.
+           modify lt_cause from lw_cause.
+         endloop.
+       endif.
+*      Get activites for items
+       select qmnum
+              manum
+              fenum
+              mngrp  "Code Grp for Activites
+              mncod  "Code for Activites
+              matxt
+              from qmma into corresponding fields
+              of table lt_act
+              for all entries in et_tech
+              where qmnum = et_tech-qmnum
+                and fenum = et_tech-fenum.
+       if sy-subrc eq 0.
+         DESCRIBE TABLE lt_act lines ln.
+         loop at lt_act into lw_act.
+           clear : lw_qpct.
+*          Activity
+           select single * from qpct into lw_qpct
+                         where katalogart = 'A'
+                           and codegruppe = lw_act-mngrp
+                           and code = lw_act-mncod
+                           and sprache = sy-langu.
+           if sy-subrc eq 0.
+             lw_act-atv_text = lw_qpct-kurztext.
+           endif.
+*    Read activity text
+           clear : wa_head.
+           wa_head-tdid = 'LTXT'.
+           wa_head-tdobject = 'QMMA'.
+           wa_head-tdspras = sy-langu.
+           concatenate lw_act-qmnum lw_act-manum
+                   into wa_head-tdname.
+           call method read_text
+             exporting
+               wa_head = wa_head
+             importing
+               text    = lw_act-act_text.
+           modify lt_act from lw_act.
+         endloop.
+       endif.
+     endif.
+
+     loop at et_tech into wa_tech.
+*      Get code text for Objects/Damage/ Causes and activites
+*      Objects
+       select single * from qpct into lw_qpct
+                       where katalogart = 'B'
+                         and codegruppe = wa_tech-otgrp
+                         and code = wa_tech-oteil
+                         and sprache = sy-langu.
+       if sy-subrc eq 0.
+         wa_tech-obj_text = lw_qpct-kurztext.
+       endif.
+*     Damage
+       select single * from qpct into lw_qpct
+                     where katalogart = 'C'
+                       and codegruppe = wa_tech-fegrp
+                       and code = wa_tech-fecod
+                       and sprache = sy-langu.
+       if sy-subrc eq 0.
+         wa_tech-dam_text = lw_qpct-kurztext.
+       endif.
+*        Text for assembly
+       select single maktx from makt into wa_tech-maktx
+                           where matnr = wa_tech-bautl
+                             and spras = sy-langu.
+*      Get long text for items/Causes and activites
+       wa_head-tdid = 'LTXT'.
+       wa_head-tdobject = 'QMFE'.
+       wa_head-tdspras = sy-langu.
+       concatenate wa_tech-qmnum wa_tech-fenum
+               into wa_head-tdname.
+*     Read Item Text
+       call method read_text
+         exporting
+           wa_head = wa_head
+         importing
+           text    = wa_tech-itm_text.
+
+       wa_tech-edit_visibilty = ' '.
+       wa_tech-del_visibility = ' '.
+*      Causes
+       clear : lw_cause.
+       read table lt_cause into lw_cause
+                  with key qmnum = wa_tech-qmnum
+                           fenum = wa_tech-fenum.
+       if sy-subrc eq 0.
+         wa_tech-urgrp = lw_cause-urgrp.  "Code Grp for causes
+         wa_tech-urcod = lw_cause-urcod . "Code for causes.
+         wa_tech-urtxt = lw_cause-urtxt.
+         wa_tech-qurnum = lw_cause-qurnum.
+         wa_tech-cus_text = lw_cause-cus_text.
+         wa_tech-cau_text = lw_cause-cau_text.
+       endif.
+*      Activity
+       read table lt_act into lw_act
+                  with key qmnum = wa_tech-qmnum
+                           fenum = wa_tech-fenum.
+       if sy-subrc eq 0.
+         wa_tech-manum = lw_act-manum.
+         wa_tech-mngrp = lw_act-mngrp. "Code Grp for Activites
+         wa_tech-mncod = lw_act-mncod."Code for Activites
+         wa_tech-matxt = lw_act-matxt.
+         wa_tech-act_fenum = lw_act-fenum.
+         wa_tech-atv_text = lw_act-atv_text.
+         wa_tech-act_text = lw_act-act_text.
+*        MOVE-CORRESPONDING lw_act to wa_tech.
+       endif.
+
+*      Add key for AppDB
+       wa_tech-notification = wa_tech-qmnum.
+       wa_tech-keyfield     = wa_tech-qmnum && wa_tech-fenum.
+
+       modify et_tech from wa_tech.
+     endloop.
+
+*    Get individual activites
+     select qmnum
+            manum
+            fenum
+            mngrp  "Code Grp for Activites
+            mncod  "Code for Activites
+            matxt from qmma into table et_act
+                       where qmnum = wa_detail-qmnum
+                         and fenum eq space.
+     if sy-subrc eq 0.
+       clear : lw_qpct.
+*       DESCRIBE TABLE gt_act lines wa_detail-lv_act.
+*       wa_detail-lv_act = wa_detail-lv_act + ln. "gettotal no of activites
+       loop at et_act into wa_act.
+*   Get Activity text
+         select single * from qpct into lw_qpct
+                         where katalogart = 'A'
+                           and codegruppe = wa_act-mngrp
+                           and code = wa_act-mncod
+                           and sprache = sy-langu.
+           if sy-subrc eq 0.
+             wa_act-atv_text = lw_qpct-KURZTEXT.
+           endif.
+*     Read activity text
+         clear : wa_head.
+         wa_head-tdid = 'LTXT'.
+         wa_head-tdobject = 'QMMA'.
+         wa_head-tdspras = sy-langu.
+         concatenate wa_act-qmnum wa_act-manum
+                 into wa_head-tdname.
+         call method read_text
+           exporting
+             wa_head = wa_head
+           importing
+             text    = wa_act-act_text.
+         wa_tech-edit_visibilty = ' '.
+         wa_tech-del_visibility = ' '.
+
+*        Add key for AppDB
+         wa_act-notification = wa_act-qmnum.
+         wa_act-keyfield     = wa_act-qmnum && wa_act-manum.
+
+         modify et_act from wa_act.
+       endloop.
+     endif.
+
+* Get Materials for Assembly
+     select a~matnr
+            a~maktx
+            b~werks from resb
+            inner join makt as a on resb~matnr = a~matnr
+            inner join marc as b
+             on a~matnr = b~matnr inner join mbew as c
+             on b~matnr = c~matnr into table et_assembly
+                                 where resb~aufnr = iv_work_order
+                                   and resb~xloek = space
+                                   and a~spras =  sy-langu
+                                   and c~bklas = '0065'
+*                                   and b~werks = wa_detail-werks
+             order by resb~matnr.
+     if sy-subrc eq 0.
+       delete adjacent duplicates from et_assembly comparing matnr.
+     endif.
+
+     loop at et_assembly assigning <assembly>.
+       <assembly>-work_order = iv_work_order.
+       <assembly>-keyfield   = iv_work_order && <assembly>-matnr.
+     endloop.
+   endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_TIMEENTRY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [<---] ET_TIME                        TYPE        T_TIME
+* | [<---] ET_PEOPLE                      TYPE        YPM_PERSON_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_timeentry.
+    data : lv_arbpl      type crhd-arbpl,
+           lt_persons    type table of object_person_assignment,
+           ls_person     type object_person_assignment,
+           ls_person_out type ypm_person,
+           lv_2weeks_ago type dats,
+           ls_trug       type ty_trug.
+
+    field-symbols: <time> type ty_time.
+
+    refresh: et_time,
+             et_people.
+
+*   Get work center information from operation data.
+    select single afvc~arbid into wa_detail-arbid
+        from afko
+        inner join afvc on afko~aufpl = afvc~aufpl
+        where afko~aufnr = iv_work_order
+          and afvc~vornr = iv_operation.
+
+*   Get personnel number from user ID.
+    select single pernr into wa_detail-pernr
+        from pa0105
+        where subty = '0001'
+          and usrid = sy-uname.
+* conversion exit
+      call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+        exporting
+          input         = wa_detail-pernr
+       IMPORTING
+         OUTPUT        = wa_detail-pernr
+                .
+
+* Get Time entry details
+    lv_2weeks_ago = sy-datum - 14.
+
+    select rueck
+           rmzhl
+           aufnr
+           vornr
+           ersda
+           pernr
+           ismnw
+           ismne
+           grund
+           aueru into corresponding fields of table et_time
+        from afru where aufnr = iv_work_order
+                    and vornr = iv_operation
+                    and ersda >= lv_2weeks_ago
+        order by ersda descending pernr ascending.
+
+*       Reason for code
+* D.Rempe - note - moved to sync outbound.  I need this entire config table for offline.
+* Nivya P -- Uncomented to get the reason codes online
+  if gt_trug[] is INITIAL.
+    select werks grund grdtx from trugt into table gt_trug
+                     where spras = sy-langu
+                       and werks = wa_detail-werks.
+    if sy-subrc eq 0.
+
+    endif.
+  endif.
+
+    loop at et_time assigning <time>.
+      <time>-keyfield = <time>-rueck && <time>-rmzhl.
+
+      if not <time>-grund is initial.
+        read table gt_trug into ls_trug
+            with key grund = <time>-grund.
+        if sy-subrc = 0.
+          <time>-grdtx = ls_trug-grdtx.
+        endif.
+      endif.
+    endloop.
+
+*    Get pernr
+    select single arbpl werks into (lv_arbpl,wa_detail-werks) from crhd
+                   where objty = 'A'
+                     and objid = wa_detail-arbid.
+    if sy-subrc eq 0.
+
+    endif.
+    call function 'CR_PERSONS_OF_WORKCENTER'
+      exporting
+        arbpl                       = lv_arbpl
+        werks                       = wa_detail-werks
+*       DATE                        = SY-DATLO
+      tables
+        out_persons                 = lt_persons
+      exceptions
+        invalid_object              = 1
+        invalid_hr_planning_variant = 2
+        other_error                 = 3
+        others                      = 4.
+    if sy-subrc eq 0.
+      loop at lt_persons into ls_person.
+        clear ls_person_out.
+        ls_person_out-work_center      = wa_detail-arbid.
+        ls_person_out-personnel_number = ls_person-pernr.
+        ls_person_out-short_name       = ls_person-short.
+        ls_person_out-full_name        = ls_person-stext.
+        ls_person_out-keyfield         = wa_detail-arbid && ls_person-pernr.
+
+        ycl_pm_npt_utilities=>conversion_out( changing cv_value = ls_person_out-personnel_number ).
+        append ls_person_out to et_people.
+      endloop.
+    endif.
+
+*    loop at et_time assigning <time>.
+*      write sy-tabix to <time>-seqnr left-justified.
+*      <time>-keyfield = <time>-aufnr && <time>-vornr && <time>-seqnr.
+*    endloop.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_WORKCENTER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_workcenter.
+    data: lv_param_value type xuvalue,
+          lv_plant       type werks_d,
+          lw_work        type ty_work.
+
+    data: lv_search_string(100) type c,
+          lv_string             type string,
+          lv_msg                type bapi_msg,
+          lv_msg1               type bapi_msg,
+          ls_message            type ty_sync_message.
+
+    data : lt_info       type table of uinfo2,
+           wa_info       type uinfo2,
+           ln            type i,
+           lt_return_msg type bapiret2_t.
+
+    call function 'TH_LONG_USR_INFO'
+      tables
+        user_info = lt_info.
+    describe table lt_info lines ln.
+    read table lt_info into wa_info index ln.
+
+    refresh: gt_workcenter,
+             gt_message.
+
+* Get maintenance planning plant parameter for this user.
+    select single parva into lv_param_value from usr05
+        where bname = sy-uname
+          and parid = 'IWK'.
+
+    if sy-subrc = 0 and not lv_param_value is initial.
+      lv_plant = lv_param_value.
+*   Get Default work center
+      clear : lv_param_value.
+      select single parva into lv_param_value from usr05
+                                where bname = sy-uname
+                                  and parid = 'AGR'.
+      if sy-subrc eq 0 and not lv_param_value is initial.
+        wa_default-arbpl = lv_param_value.
+        select single objid from crhd into  wa_default-wk_center
+                                where arbpl = wa_default-arbpl
+                                  and werks = lv_plant.
+        if sy-subrc ne 0.
+          clear : wa_default-arbpl,
+                  wa_default-wk_center.
+        endif.
+      endif.
+
+      check not ajax_value is initial.
+      check strlen( ajax_value ) >= 3.
+      lv_string = ajax_value.
+      replace '*' in lv_string with ''.
+      replace '%' in lv_string with ''.
+      lv_search_string = `%` && lv_string && `%`.
+      translate lv_search_string to upper case.
+
+      select crhd~arbpl
+             crhd~objty
+             crhd~objid
+             crhd~werks
+             crtx~ktext into table gt_workcenter
+          from crtx
+          inner join crhd on crtx~objty = crhd~objty
+                         and crtx~objid = crhd~objid
+          where crtx~spras = sy-langu
+            and crhd~werks = lv_plant
+            and ( crtx~ktext_up like lv_search_string
+               or crhd~arbpl like lv_search_string )
+          order by crhd~arbpl.
+
+      if sy-subrc eq 0.
+        loop at gt_workcenter into lw_work.
+          concatenate lw_work-cr_objid
+                      lw_work-cr_ktext into lw_work-text separated by space.
+          modify gt_workcenter from lw_work transporting text.
+        endloop.
+      endif.
+    else.
+      clear ls_message.
+* Get custom messages
+      call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+        exporting
+          i_langu                 = wa_info-lang
+          i_msgid                 = gv_message_id
+          i_msgno                 = '008'
+        importing
+          e_msg                   = lv_msg
+        tables
+          et_return               = lt_return_msg
+        exceptions
+          msg_for_langu_not_found = 1
+          others                  = 2.
+      if sy-subrc <> 0.
+* Implement suitable error handling here
+      endif.
+      call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+        exporting
+          i_langu                 = wa_info-lang
+          i_msgid                 = gv_message_id
+          i_msgno                 = '009'
+        importing
+          e_msg                   = lv_msg1
+        tables
+          et_return               = lt_return_msg
+        exceptions
+          msg_for_langu_not_found = 1
+          others                  = 2.
+      if sy-subrc <> 0.
+* Implement suitable error handling here
+      endif.
+      concatenate lv_msg lv_msg1 into ls_message-message separated by space.
+*      ls_message-message = 'IWK (default plant) is not set in your user profile. Work center search is not possible.'.
+      ls_message-state   = 'Error'.
+      append ls_message to gt_message.
+      return.
+    endif.
+    sort gt_workcenter by arbpl.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->GET_WORKCENTER_ID
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method GET_WORKCENTER_ID.
+    data: lv_param_value type xuvalue,
+          lv_plant       type werks_d,
+          lw_work        type ty_work.
+
+* Get maintenance planning plant parameter for this user.
+    select single parva into lv_param_value from usr05
+        where bname = sy-uname
+          and parid = 'IWK'.
+
+
+    lv_plant = lv_param_value.
+    clear lv_param_value.
+    select single parva into lv_param_value from usr05
+                          where bname = sy-uname
+                            and parid = 'AGR'.
+
+    if sy-subrc eq 0 and not lv_param_value is initial.
+      wa_default-arbpl = lv_param_value.
+      select single objid from crhd into  wa_default-wk_center
+                              where arbpl = wa_default-arbpl
+                                and werks = lv_plant.
+      if sy-subrc ne 0.
+        clear : wa_default-arbpl,
+                wa_default-wk_center.
+      endif.
+    endif.
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->READ_TEXT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] WA_HEAD                        TYPE        THEAD(optional)
+* | [--->] IV_PRESERVE_FORMATTING         TYPE        FLAG (default =ABAP_TRUE)
+* | [<---] TEXT                           TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method read_text.
+    data: read_text(1000)  type c, lv_firstline(70).
+    data : string1(70), string2(70).
+    data : lt_text type standard table of string,
+           lw_text type                   string.
+
+    data: lt_stream type table of w3_html,
+          lv_stream type w3_html.
+
+    clear : read_text,
+            text.
+    call function 'READ_TEXT'
+      exporting
+        client                  = sy-mandt
+        id                      = wa_head-tdid
+        language                = wa_head-tdspras
+        name                    = wa_head-tdname
+        object                  = wa_head-tdobject
+      tables
+        lines                   = gt_lines
+      exceptions
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 4
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        others                  = 8.
+
+  if iv_preserve_formatting = abap_true.
+    if sy-subrc = 0 and not gt_lines[] is initial.
+      call function 'CONVERT_ITF_TO_STREAM_TEXT'
+        tables
+          itf_text    = gt_lines
+          text_stream = lt_stream.
+
+      loop at lt_stream into lv_stream.
+        text = text && lv_stream.
+      endloop.
+    endif.
+  else.
+    if sy-subrc eq 0.
+      loop at gt_lines into wa_lines.
+        clear: string1, string2.
+        shift wa_lines-tdline left deleting leading '*'.
+        shift wa_lines-tdline left deleting leading space.
+        if sy-tabix = 1.
+          lv_firstline = wa_lines-tdline.
+        else.
+          if sy-tabix = 2.
+            split wa_lines-tdline  at cl_abap_char_utilities=>newline into string1 string2.
+            concatenate string1 string2 into read_text separated by space.
+
+          else.
+            split wa_lines-tdline  at cl_abap_char_utilities=>newline into string1 string2.
+            concatenate read_text string1 string2  into read_text separated by space.
+          endif.
+        endif.
+      endloop.
+* Wrap the text
+      refresh: lt_text[] .
+      call function 'RKD_WORD_WRAP'
+        exporting
+          textline            = read_text
+          outputlen           = 70
+        tables
+          out_lines           = lt_text
+        exceptions
+          outputlen_too_large = 1
+          others              = 2.
+
+      if sy-subrc eq 0.
+        clear : text,
+                read_text.
+
+        if lt_text[] is initial.
+          text = lv_firstline.
+          return.
+        endif.
+
+        loop at lt_text into lw_text.
+          if sy-tabix = 1.
+            concatenate
+               lv_firstline
+               cl_abap_char_utilities=>cr_lf
+               into text.
+          endif.
+
+          replace all occurrences of regex cl_abap_char_utilities=>cr_lf
+                                          in lw_text with ' '.
+
+          concatenate text
+               lw_text
+               cl_abap_char_utilities=>cr_lf
+               into text.
+        endloop.
+      endif.
+
+    endif.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_CRAFTPERSON_CLASS->SAVE_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method save_data.
+    data : lv_ref          type i,
+           header          type standard table of bapi_alm_order_headers_i,
+           wa_header       type                   bapi_alm_order_headers_i,
+           header_up       type standard table of bapi_alm_order_headers_up,
+           wa_header_up    type                   bapi_alm_order_headers_up,
+           component       type table of          bapi_alm_order_component,
+           component_up    type table of          bapi_alm_order_component_up,
+           wa_component    type                   bapi_alm_order_component,
+           wa_component_up type                   bapi_alm_order_component_up,
+           wa_methods      type                   bapi_alm_order_method,
+           methods         type standard table of bapi_alm_order_method,
+           text            type table of          bapi_alm_text,
+           wa_text         type                   bapi_alm_text,
+           text_lines      type table of          bapi_alm_text_lines,
+           wa_textlines    type                   bapi_alm_text_lines,
+           lt_time         type table of bapi_alm_timeconfirmation,
+           ls_time         type bapi_alm_timeconfirmation,
+           return          type standard table of bapiret2,
+           ls_return       type                   bapiret2,
+           lt_return       type table of bapi_alm_return,
+           lw_return       type bapi_alm_return,
+           text_lines_tab  type standard table of tline,
+           lv_res          type char1.
+
+    data : lt_text  type standard table of string,
+           lw_text  type                   string,
+           ln1      type i,
+           lv_arbpl type crhd-arbpl,
+           lv_lstar type crco-lstar,
+           lt_tline type standard table of tline,
+           wa_tline type                   tline,
+           wa_head  type                   thead.
+    data : it_soli type table of soli,
+           wa_soli type soli.
+    data: resb_text(1000) type c.
+    data lv_nl_index type i.
+    data maktx(40).
+    data : lt_info       type table of uinfo2,
+           wa_info       type uinfo2,
+           lt_return_msg type bapiret2_t.
+    data : ln type i.
+    data: lt_uuids        type hashed table of ypmnptuuid with unique key table_line,
+          ls_ypmnptrecpr  type ypmnptrecpr,
+          ls_ypmnptjobpkg type ypmnptjobpkg,
+          lv_1week_ago    type dats,
+          ls_attachment   type ty_attachment,
+          ls_lporb        type sibflporb,
+          lv_file_data    type xstring,
+          lt_gos_messages type bapirettab,
+          ls_gos_message  type bapiret2,
+          lv_tcode        type sytcode.
+
+* Get the list of previously processed records.
+    lv_1week_ago = sy-datum - 7.
+    select guid into table lt_uuids from ypmnptrecpr
+        where object_type   = 'AUFK'
+          and object_number = wa_aufk-aufnr
+          and record_date  >= lv_1week_ago.
+
+* Prepare data for saving time entry
+* Get work center from work center id
+    select single arbpl into lv_arbpl
+          from crhd where objty = 'A'
+                      and objid = wa_aufk-arbid.
+    if sy-subrc eq 0.
+
+    endif.
+
+* Get the Logon Langu
+    call function 'TH_LONG_USR_INFO'
+      tables
+        user_info = lt_info.
+    describe table lt_info lines ln.
+    read table lt_info into wa_info index ln.
+
+    loop at gt_time into wa_time.
+*     Remove time entries which have already been processed.
+      read table lt_uuids with key table_line = wa_time-uuid
+          transporting no fields.
+      if sy-subrc = 0.
+        delete gt_time.
+        continue.
+      endif.
+
+      ls_time-orderid = wa_aufk-aufnr.
+      ls_time-operation = wa_time-vornr.
+      ls_time-act_work_2 = wa_time-ismnw.
+      ls_time-act_work = wa_time-ismnw.
+      if wa_time-aueru = 't'.
+        ls_time-fin_conf = 'X'."wa_time-aueru.
+      endif.
+      ls_time-pers_no = wa_time-pernr.
+      ls_time-postg_date = wa_time-date.
+      ls_time-dev_reason = wa_time-grund.
+      ls_time-plant = wa_aufk-werks.
+      ls_time-work_cntr = lv_arbpl.
+      ls_time-act_type = wa_time-lstar.
+      ls_time-conf_text = wa_time-text.
+      append ls_time to lt_time.
+    endloop.
+    if lt_time[] is not initial.
+      set update task local.
+      lv_tcode = sy-tcode.
+      sy-tcode = 'IW42'.
+      call function 'BAPI_ALM_CONF_CREATE' "DESTINATION 'NONE'
+*     EXPORTING
+*       POST_WRONG_ENTRIES       = '0'
+*       TESTRUN                  =
+        importing
+          return        = ls_return
+        tables
+          timetickets   = lt_time
+          detail_return = lt_return.
+      if sy-subrc eq 0.
+        loop at lt_return into lw_return.
+          message id lw_return-message_id type lw_return-type
+              number lw_return-message_number into lw_return-message
+              with lw_return-message_v1 lw_return-message_v2 lw_return-message_v3 lw_return-message_v4.
+
+          if lw_return-type = 'E'.
+            wa_message-aufnr   = wa_aufk-aufnr.
+            wa_message-vornr   = wa_aufk-vornr.
+            wa_message-message = lw_return-message.
+            wa_message-state   = 'Error'.
+            append wa_message to gt_message.
+          elseif lw_return-type = 'I' and lw_return-message_id = 'RU' and lw_return-message_number = '100'.
+            read table gt_time index ls_return-row into wa_time.
+            if strlen( wa_time-text ) > 40.
+              wa_head-tdid = 'RMEL'.
+              wa_head-tdobject = 'AUFK'.
+              wa_head-tdspras = sy-langu.
+              concatenate sy-mandt lw_return-conf_no lw_return-conf_cnt into wa_head-tdname.
+              call function 'VB_CP_CONVERT_STRING_2_ITF'
+                exporting
+                  i_string = wa_time-text
+                tables
+                  et_table = text_lines_tab.
+              .
+              call function 'SAVE_TEXT'
+                exporting
+                  client          = sy-mandt
+                  header          = wa_head
+                  savemode_direct = 'X'
+                tables
+                  lines           = text_lines_tab
+                exceptions
+                  id              = 1
+                  language        = 2
+                  name            = 3
+                  object          = 4
+                  others          = 5.
+              if sy-subrc eq 0.
+                call function 'COMMIT_TEXT'.
+              endif.
+
+            endif.
+          endif.
+        endloop.
+        read table lt_return into ls_return with key type = 'E'.
+        if sy-subrc ne 0.
+*          call function 'BAPI_TRANSACTION_COMMIT'
+*            EXPORTING
+*              WAIT          = 'X'.
+          commit work and wait.
+
+          if sy-subrc eq 0.
+
+            loop at gt_time into wa_time where not uuid is initial.
+*              Store processed entries.
+              clear ls_ypmnptrecpr.
+              ls_ypmnptrecpr-object_type   = 'AUFK'.
+              ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+              ls_ypmnptrecpr-guid          = wa_time-uuid.
+              ls_ypmnptrecpr-record_date   = wa_time-gendate.
+              ls_ypmnptrecpr-record_table  = 'TIME'.
+              insert ypmnptrecpr from ls_ypmnptrecpr.
+            endloop.
+            wa_message-aufnr   = wa_aufk-aufnr.
+            wa_message-vornr   = wa_aufk-vornr.
+*           custom message
+            ls_return-number = '001'.
+            call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+              exporting
+                i_langu                 = wa_info-lang
+                i_msgid                 = gv_message_id
+                i_msgno                 = ls_return-number
+              importing
+                e_msg                   = wa_message-message
+              tables
+                et_return               = lt_return_msg
+              exceptions
+                msg_for_langu_not_found = 1
+                others                  = 2.
+            if sy-subrc <> 0.
+** Implement suitable error handling here
+            endif.
+*            wa_message-message = 'Time entry saved successfully'. "custom message
+            wa_message-state   = 'Success'.
+            append wa_message to gt_message.
+          endif.
+        else.
+          return.
+        endif.
+      endif.
+      sy-tcode = lv_tcode.
+    endif.
+
+* pass methods for release
+    if wa_aufk-rel = 'X'.
+*     D.Rempe - 2/15/2018 - Only release order if it is in an unreleased state.
+*                           Otherwise, errors occur.
+      select count( * ) from aufk
+          where aufnr = wa_aufk-aufnr
+            and phas0 = 'X'.
+      if sy-subrc = 0.
+        clear wa_methods.
+        wa_methods-refnumber  = '000001'.
+        wa_methods-objecttype = 'HEADER'.
+        wa_methods-method     = 'RELEASE'.
+        wa_methods-objectkey  = wa_aufk-aufnr.
+        append wa_methods to methods.
+      endif.
+       export lv_no_popup = 'X' to memory id 'NEPTUNE_NO_AVAILABILITY_CHECK'.
+    endif.
+* D. Rempe - 11/6/2017 - Refresh internal buffers
+*            to avoid IWO_BAPI 123 message.
+    call function 'CO_ZF_DATA_RESET_COMPLETE'.
+
+* Prepare data for parts
+    clear : lv_ref,
+            wa_methods.
+    loop at gt_resb into wa_resb where status = 'NEW'.
+*     Remove components which have already been processed.
+      read table lt_uuids with key table_line = wa_resb-uuid
+          transporting no fields.
+      if sy-subrc = 0.
+        delete gt_resb.
+        continue.
+      endif.
+
+      lv_ref = lv_ref + 1.
+      call function 'CONVERSION_EXIT_ALPHA_INPUT'
+        exporting
+          input  = wa_resb-vornr
+        importing
+          output = wa_resb-vornr.
+      wa_methods-refnumber    = lv_ref.
+      wa_methods-objecttype   = 'COMPONENT'.
+      wa_methods-method       = 'CREATE'.
+      concatenate  wa_resb-aufnr wa_resb-vornr wa_resb-posnr into wa_methods-objectkey respecting blanks.
+      append wa_methods to methods.
+      call function 'CONVERSION_EXIT_ALPHA_INPUT'
+        exporting
+          input  = wa_resb-matnr
+        importing
+          output = wa_resb-matnr.
+      wa_component-material = wa_resb-matnr.
+      wa_component-activity     = wa_resb-vornr.
+      wa_component-item_number  = wa_resb-posnr.
+      if wa_resb-rsnum is not initial.
+        wa_component-reserv_no               =  wa_resb-rsnum.
+      else.
+        lv_res = 'X'.
+      endif.
+      wa_component-res_item                =  wa_resb-rspos.
+      wa_component-requirement_quantity    =  wa_resb-bdmng.
+      wa_component-requirement_quantity_unit =  wa_resb-meins.
+      wa_component-plant                     =  wa_resb-werks."lgort.
+*      wa_component-stge_loc                  = wa_resb-lgort.
+      wa_component-item_cat                  =  wa_resb-postp.
+      wa_component-item_text1 = wa_resb-potx1.
+
+      if wa_component-item_cat = 'L'.
+        wa_component-matl_desc = wa_resb-potx1.
+      elseif wa_component-item_cat = 'N'.
+        wa_component-pur_group = wa_resb-ekgrp.
+        wa_component-matl_group = wa_resb-matkl.
+        wa_component-vendor_no = wa_resb-lifnr.
+        wa_component-purch_org  = wa_resb-ekorg.
+      endif.
+      append wa_component to component.
+
+      wa_component_up-material                  =  'X'.
+      wa_component_up-requirement_quantity      =  'X'.
+      wa_component_up-requirement_quantity_unit =  'X'.
+      wa_component_up-plant                     =  'X'.
+*      wa_component_up-stge_loc                  =  'X'.
+      wa_component_up-item_text1 = 'X'.
+      wa_component_up-matl_desc = 'X'.
+      if wa_component-item_cat = 'N'.
+        wa_component_up-pur_group = 'X'.
+        wa_component_up-matl_group = 'X'.
+        wa_component_up-vendor_no = 'X'.
+        wa_component_up-purch_org  = 'X'.
+      endif.
+      append wa_component_up to component_up.
+*      Long text saving
+      clear : lw_text,
+            ln1,
+            wa_textlines.
+      refresh : lt_text.
+
+      resb_text = wa_resb-text.
+      call function 'RKD_WORD_WRAP'
+        exporting
+          textline            = resb_text
+          outputlen           = 70
+        tables
+          out_lines           = lt_text
+        exceptions
+          outputlen_too_large = 1
+          others              = 2.
+
+      read table lt_text into lw_text index 1.
+      describe table text_lines lines ln1.
+
+      if not lw_text is initial and not wa_resb-rsnum is initial.
+        wa_text-textstart = ln1 + 1.
+
+        maktx = wa_resb-potx1.
+        wa_textlines-tdformat = '*'.
+        concatenate maktx ''  into wa_textlines-tdline respecting blanks.
+        append wa_textlines to text_lines.
+
+
+        loop at lt_text into lw_text .
+          if wa_resb-status ne 'NEW' and sy-tabix = 1.
+            find first occurrence of  cl_abap_char_utilities=>newline in lw_text match offset lv_nl_index.
+            if sy-subrc eq 0.
+              lv_nl_index = lv_nl_index + 1.
+              shift lw_text by lv_nl_index places.
+            endif.
+            concatenate maktx ''  into wa_textlines-tdline respecting blanks.
+            wa_textlines-tdformat = '*'.
+            append wa_textlines to text_lines.
+          endif.
+
+          wa_textlines-tdformat = '*'.
+          wa_textlines-tdline = lw_text.
+          append wa_textlines to text_lines.
+        endloop.
+
+        clear : ln1.
+        describe table text_lines lines ln1.
+        wa_text-orderid = wa_resb-aufnr.
+        wa_text-activity = wa_resb-posnr.
+        wa_text-reserv_no = wa_resb-rsnum.
+        wa_text-res_item = wa_resb-rspos.
+        wa_text-textend = ln1.
+        append wa_text to text.
+
+        wa_methods-refnumber = lv_ref.
+        wa_methods-method = 'CHANGE'.
+        wa_methods-objecttype = 'TEXT'.
+        concatenate wa_resb-aufnr wa_resb-rspos into wa_methods-objectkey in character mode.
+        append wa_methods to methods.
+      endif.
+    endloop.
+    if methods[] is not initial.
+*    Call BAPI for saving the data
+      clear wa_methods.
+      wa_methods-refnumber  = '000001'.
+      wa_methods-method     = 'SAVE'.
+      wa_methods-objectkey  = wa_aufk-aufnr.
+      append wa_methods to methods.
+*    if component[] is not initial.
+      call function 'BAPI_ALM_ORDER_MAINTAIN'
+        tables
+          it_methods      = methods
+          it_component    = component
+          it_component_up = component_up
+          it_text         = text
+          it_text_lines   = text_lines
+          return          = return.
+      clear : ls_return.
+      read table return into ls_return with key type = 'E'.
+      if sy-subrc eq 0.
+        call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+          exporting
+            i_langu                 = wa_info-lang
+            i_msgid                 = ls_return-id
+            i_msgno                 = ls_return-number
+            i_msgv1                 = ls_return-message_v1
+            i_msgv2                 = ls_return-message_v2
+            i_msgv3                 = ls_return-message_v3
+            i_msgv4                 = ls_return-message_v4
+          importing
+            e_msg                   = ls_return-message
+          tables
+            et_return               = lt_return_msg
+          exceptions
+            msg_for_langu_not_found = 1
+            others                  = 2.
+        if sy-subrc <> 0.
+* Implement suitable error handling here
+        endif.
+        call function 'BAPI_TRANSACTION_ROLLBACK'.
+        shift wa_resb-aufnr left deleting leading '0'.
+        wa_message-aufnr   = wa_aufk-aufnr.
+        wa_message-vornr   = wa_aufk-vornr.
+        wa_message-message = ls_return-message.
+        wa_message-state   = 'Error'.
+        append wa_message to gt_message.
+      else.
+        loop at gt_resb into wa_resb where not uuid is initial.
+*         Store processed entries.
+          clear ls_ypmnptrecpr.
+          ls_ypmnptrecpr-object_type   = 'AUFK'.
+          ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+          ls_ypmnptrecpr-guid          = wa_resb-uuid.
+          ls_ypmnptrecpr-record_date   = wa_resb-gendate.
+          ls_ypmnptrecpr-record_table  = 'RESB'.
+          insert ypmnptrecpr from ls_ypmnptrecpr.
+        endloop.
+
+        call function 'BAPI_TRANSACTION_COMMIT'
+          exporting
+            wait = 'X'.
+*       Check if components are newly added in the app and save long text if exists
+        if lv_res = 'X'.
+          refresh : methods,
+          component,
+          text,
+          text_lines.
+          clear : lv_ref,
+                  maktx.
+          loop at gt_resb into wa_resb where status = 'NEW'
+                                         and text ne space.
+
+            clear : lw_text.
+            refresh : lt_text.
+
+            select single rsnum from resb into wa_resb-rsnum
+                                        where aufnr = wa_resb-aufnr.
+            lv_ref = lv_ref + 1.
+            clear : lw_text,
+                    ln1,
+                    wa_textlines.
+            refresh : lt_text.
+
+            resb_text = wa_resb-text.
+
+            call function 'RKD_WORD_WRAP'
+              exporting
+                textline            = resb_text
+                outputlen           = 70
+              tables
+                out_lines           = lt_text
+              exceptions
+                outputlen_too_large = 1
+                others              = 2.
+
+            read table lt_text into lw_text index 1.
+            describe table text_lines lines ln1.
+            if not lw_text is initial.
+              wa_text-textstart = ln1 + 1.
+
+              if not wa_resb-potx1 is initial.
+                maktx = wa_resb-potx1.
+                wa_textlines-tdformat = '*'.
+                concatenate maktx ''  into wa_textlines-tdline respecting blanks.
+                append wa_textlines to text_lines.
+              endif.
+
+              loop at lt_text into lw_text.
+                wa_textlines-tdformat = '*'.
+                wa_textlines-tdline = lw_text.
+                append wa_textlines to text_lines.
+              endloop.
+
+              clear : ln1.
+              describe table text_lines lines ln1.
+              wa_text-orderid = wa_resb-aufnr.
+              wa_text-activity = wa_resb-posnr.
+              wa_text-reserv_no = wa_resb-rsnum.
+              wa_text-res_item = wa_resb-rspos.
+*        wa_text-langu = sy-langu.
+              wa_text-textend = ln1.
+              append wa_text to text.
+
+              wa_methods-refnumber = lv_ref.
+              wa_methods-method = 'CREATE'.
+              wa_methods-objecttype = 'TEXT'.
+*        wa_methods-objectkey = wa_resb-aufnr.
+              concatenate wa_resb-aufnr wa_resb-rspos into wa_methods-objectkey in character mode.
+              append wa_methods to methods.
+            endif.
+          endloop.
+          if not methods[] is initial.
+            clear wa_methods.
+            wa_methods-refnumber  = '000001'.
+            wa_methods-method     = 'SAVE'.
+            wa_methods-objectkey  = wa_resb-aufnr.
+            append wa_methods to methods.
+
+            call function 'BAPI_ALM_ORDER_MAINTAIN'
+              tables
+                it_methods    = methods
+                it_text       = text
+                it_text_lines = text_lines
+                return        = return.
+            if sy-subrc eq 0.
+              read table return into ls_return with key type = 'E'.
+              if sy-subrc ne 0.
+                call function 'BAPI_TRANSACTION_COMMIT'
+                  exporting
+                    wait = 'X'.
+              endif.
+            endif.
+          endif.
+        endif.
+        wa_message-aufnr   = wa_aufk-aufnr.
+        wa_message-vornr   = wa_aufk-vornr.
+        ls_return-number = '000'.
+        call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+          exporting
+            i_langu                 = wa_info-lang
+            i_msgid                 = gv_message_id
+            i_msgno                 = ls_return-number
+          importing
+            e_msg                   = wa_message-message
+          tables
+            et_return               = lt_return_msg
+          exceptions
+            msg_for_langu_not_found = 1
+            others                  = 2.
+        if sy-subrc <> 0.
+* Implement suitable error handling here
+        endif.
+*        wa_message-message = 'Data Saved successfully'. "Custom Message
+        wa_message-state   = 'Success'.
+        append wa_message to gt_message.
+      endif.
+    endif.
+* Save Notifications
+    data : lt_notiftext  type table of bapi2080_notfulltxti,
+           lt_notifitem  type table of bapi2080_notitemi,
+           lt_notifitemx type table of bapi2080_notitemi_x,
+           lt_notifcaus  type table of bapi2080_notcausi,
+           lt_notifcausx type table of bapi2080_notcausi_x,
+           lt_notifact   type table of bapi2080_notactvi,
+           lw_notifitem  type          bapi2080_notitemi,
+           ls_notifitemx type bapi2080_notitemi_x,
+           lw_notifcaus  type          bapi2080_notcausi,
+           ls_notifcausx type bapi2080_notcausi_x,
+           lw_notifact   type          bapi2080_notactvi,
+           lt_notifactvx type table of bapi2080_notactvi_x,
+           ls_notifactvx type          bapi2080_notactvi_x,
+           lt_notiftxt   type table of bapi2080_notfulltxti,
+           lw_notiftxt   type          bapi2080_notfulltxti,
+           lv_code       type          qmma-mncod,
+           lv_text       type          qpct-kurztext.
+
+    loop at gt_tech into wa_tech where status = 'NEW'.
+*     Remove report items which have already been processed.
+      read table lt_uuids with key table_line = wa_tech-uuid
+          transporting no fields.
+      if sy-subrc = 0.
+        delete gt_tech.
+        continue.
+      endif.
+
+*   prepare data for items
+      lw_notifitem-refobjectkey = wa_tech-qmnum.
+      lw_notifitem-item_key = wa_tech-fenum.
+      lw_notifitem-descript = wa_tech-fetxt.
+      lw_notifitem-d_codegrp = wa_tech-fegrp.
+      lw_notifitem-d_code = wa_tech-fecod.
+      lw_notifitem-dl_codegrp = wa_tech-otgrp.
+      lw_notifitem-dl_code = wa_tech-oteil.
+      lw_notifitem-assembly = wa_tech-bautl.
+      lw_notifitem-item_sort_no = wa_tech-fenum.
+      append lw_notifitem to lt_notifitem.
+
+      if wa_tech-itm_text ne space.
+        refresh : lt_text,
+              lt_tline.
+        clear : wa_tline,
+                lw_text,
+                wa_head,
+                lw_notiftxt.
+        call function 'CONVERT_STRING_TO_TABLE'
+          exporting
+            i_string         = wa_tech-itm_text
+            i_tabline_length = '128'
+          tables
+            et_table         = lt_text.
+        loop at lt_text into lw_text.
+          lw_notiftxt-objtype = 'QMFE'.
+          lw_notiftxt-objkey = wa_tech-fenum.
+          lw_notiftxt-format_col = '*'.
+          lw_notiftxt-text_line = lw_text.
+          append lw_notiftxt to lt_notiftxt.
+        endloop.
+      endif.
+*  Prepare data for causes
+      if wa_tech-urgrp is not initial
+      and wa_tech-urcod is not initial.
+        lw_notifcaus-refobjectkey = wa_tech-qmnum.
+        lw_notifcaus-item_key = wa_tech-fenum.
+        lw_notifcaus-cause_key = sy-tabix.
+        lw_notifcaus-cause_sort_no = wa_tech-qurnum.
+        lw_notifcaus-causetext = wa_tech-urtxt.
+        lw_notifcaus-cause_codegrp = wa_tech-urgrp.
+        lw_notifcaus-cause_code = wa_tech-urcod.
+        lw_notifcaus-item_sort_no = wa_tech-fenum.
+        append lw_notifcaus to lt_notifcaus.
+      endif.
+*      Prepare text for causes
+      if wa_tech-cau_text ne space.
+        refresh : lt_text,
+              lt_tline.
+        clear : wa_tline,
+                lw_text,
+                wa_head,
+                lw_notiftxt.
+        call function 'CONVERT_STRING_TO_TABLE'
+          exporting
+            i_string         = wa_tech-cau_text
+            i_tabline_length = '128'
+          tables
+            et_table         = lt_text.
+        loop at lt_text into lw_text.
+          lw_notiftxt-objtype = 'QMUR'.
+          concatenate wa_tech-fenum lw_notifcaus-cause_key
+            into  lw_notiftxt-objkey .
+          lw_notiftxt-format_col = '*'.
+          lw_notiftxt-text_line = lw_text.
+          append lw_notiftxt to lt_notiftxt.
+        endloop.
+      endif.
+
+*  Prepare data for activities
+      if wa_tech-mngrp is not initial
+      and wa_tech-mncod is not initial.
+        lw_notifact-refobjectkey = wa_tech-qmnum.
+        lw_notifact-act_key = sy-tabix.
+        lw_notifact-act_sort_no = wa_tech-manum.
+        lw_notifact-act_codegrp = wa_tech-mngrp.
+        lw_notifact-act_code = wa_tech-mncod.
+        lw_notifact-acttext = wa_tech-matxt.
+        lw_notifact-item_sort_no = wa_tech-fenum.
+        append lw_notifact to lt_notifact.
+*   Prepare data for activity
+        if wa_tech-act_text ne space.
+          refresh : lt_text,
+              lt_tline.
+          clear : wa_tline,
+                  lw_text,
+                  wa_head,
+                  lw_notiftxt.
+          call function 'CONVERT_STRING_TO_TABLE'
+            exporting
+              i_string         = wa_tech-act_text
+              i_tabline_length = '128'
+            tables
+              et_table         = lt_text.
+          loop at lt_text into lw_text.
+            lw_notiftxt-objtype = 'QMMA'.
+            lw_notiftxt-objkey =  wa_tech-manum.
+            lw_notiftxt-format_col = '*'.
+            lw_notiftxt-text_line = lw_text.
+            append lw_notiftxt to lt_notiftxt.
+          endloop.
+        endif.
+      endif.
+    endloop.
+*    Pass indivdual activites
+    clear : lw_notifact.
+    loop at gt_act into wa_act where status = 'NEW'.
+*     Remove activities which have already been processed.
+      read table lt_uuids with key table_line = wa_act-uuid
+          transporting no fields.
+      if sy-subrc = 0.
+        delete gt_act.
+        continue.
+      endif.
+
+      lw_notifact-refobjectkey = wa_act-qmnum.
+      lw_notifact-act_key = sy-tabix.
+      lw_notifact-act_sort_no = wa_act-manum.
+      lw_notifact-act_codegrp = wa_act-mngrp.
+      lw_notifact-act_code = wa_act-mncod.
+      lw_notifact-acttext = wa_act-matxt.
+*      lw_notifact-item_sort_no = wa_tech-fenum.
+      append lw_notifact to lt_notifact.
+*      Save long text
+      call function 'CONVERSION_EXIT_ALPHA_INPUT'
+        exporting
+          input  = wa_act-qmnum
+        importing
+          output = wa_act-qmnum.
+
+      if wa_act-act_text ne space.
+        refresh : lt_text,
+             lt_tline.
+        clear : wa_tline,
+                lw_text,
+                wa_head,
+                lw_notiftxt.
+        call function 'CONVERT_STRING_TO_TABLE'
+          exporting
+            i_string         = wa_act-act_text
+            i_tabline_length = '128'
+          tables
+            et_table         = lt_text.
+        loop at lt_text into lw_text.
+          lw_notiftxt-objtype = 'QMMA'.
+          lw_notiftxt-objkey = wa_act-manum.
+          lw_notiftxt-format_col = '*'.
+          lw_notiftxt-text_line = lw_text.
+          append lw_notiftxt to lt_notiftxt.
+        endloop.
+      endif.
+    endloop.
+
+*    Call BAPI for SAVING
+    refresh : return.
+    if lt_notifitem[] is not initial or lt_notifact[] is not initial.
+      call function 'BAPI_ALM_NOTIF_DATA_ADD'
+        exporting
+          number     = wa_aufk-qmnum
+        tables
+          notfulltxt = lt_notiftxt
+          notitem    = lt_notifitem
+          notifcaus  = lt_notifcaus
+          notifactv  = lt_notifact
+          return     = return.
+      if sy-subrc eq 0 and return is initial.
+        call function 'BAPI_ALM_NOTIF_SAVE'
+          exporting
+            number = wa_tech-qmnum
+          tables
+            return = return.
+
+        if sy-subrc eq 0.
+          loop at gt_tech into wa_tech where not uuid is initial.
+*           Store processed entries.
+            clear ls_ypmnptrecpr.
+            ls_ypmnptrecpr-object_type   = 'AUFK'.
+            ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+            ls_ypmnptrecpr-guid          = wa_tech-uuid.
+            ls_ypmnptrecpr-record_date   = wa_tech-gendate.
+            ls_ypmnptrecpr-record_table  = 'TECH'.
+            insert ypmnptrecpr from ls_ypmnptrecpr.
+          endloop.
+
+          loop at gt_act into wa_act where not uuid is initial.
+*           Store processed entries.
+            clear ls_ypmnptrecpr.
+            ls_ypmnptrecpr-object_type   = 'AUFK'.
+            ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+            ls_ypmnptrecpr-guid          = wa_act-uuid.
+            ls_ypmnptrecpr-record_date   = wa_act-gendate.
+            ls_ypmnptrecpr-record_table  = 'ACT'.
+            insert ypmnptrecpr from ls_ypmnptrecpr.
+          endloop.
+
+          call function 'BAPI_TRANSACTION_COMMIT'
+            exporting
+              wait = 'X'.
+*          wa_message-aufnr = wa_tech-qmnum.
+          wa_message-aufnr   = wa_aufk-aufnr.
+          wa_message-vornr   = wa_aufk-vornr.
+          ls_return-number = '002'.
+          call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+            exporting
+              i_langu                 = wa_info-lang
+              i_msgid                 = gv_message_id
+              i_msgno                 = ls_return-number
+            importing
+              e_msg                   = wa_message-message
+            tables
+              et_return               = lt_return_msg
+            exceptions
+              msg_for_langu_not_found = 1
+              others                  = 2.
+          if sy-subrc <> 0.
+* Implement suitable error handling here
+          endif.
+*          wa_message-message = 'Notification saved successfully'. "custom message
+          wa_message-state   = 'Success'.
+          append wa_message to gt_message.
+        endif.
+      else.
+        read table return into ls_return with key type = 'E'.
+        if sy-subrc eq 0.
+          call function '/TDAG/CP_LB03N_MSG_TRANSLATE'
+            exporting
+              i_langu                 = wa_info-lang
+              i_msgid                 = ls_return-id
+              i_msgno                 = ls_return-number
+            importing
+              e_msg                   = ls_return-message
+            tables
+              et_return               = lt_return_msg
+            exceptions
+              msg_for_langu_not_found = 1
+              others                  = 2.
+          if sy-subrc <> 0.
+* Implement suitable error handling here
+          endif.
+
+          shift wa_tech-qmnum left deleting leading '0'.
+          wa_message-aufnr   = wa_aufk-aufnr.
+          wa_message-vornr   = wa_aufk-vornr.
+          wa_message-message = ls_return-message.
+          wa_message-state   = 'Error'.
+          append wa_message to gt_message.
+        endif.
+      endif.
+    endif.
+
+    loop at gt_attachments into ls_attachment where not uuid is initial.
+*     Remove attachments which have already been processed.
+      read table lt_uuids with key table_line = ls_attachment-uuid
+          transporting no fields.
+      if sy-subrc = 0.
+        delete gt_attachments.
+        continue.
+      endif.
+
+      check not:
+          ls_attachment-file_name is initial,
+          ls_attachment-file_data is initial.
+
+      refresh lt_gos_messages.
+      clear lv_file_data.
+
+      call function 'SCMS_BASE64_DECODE_STR'
+        exporting
+          input  = ls_attachment-file_data
+        importing
+          output = lv_file_data
+        exceptions
+          others = 1.
+
+      ls_lporb-instid = wa_aufk-qmnum.
+      ls_lporb-typeid = 'BUS2038'.
+
+      lt_gos_messages = cl_fitv_gos=>save(
+        iv_name        = ls_attachment-file_name
+        iv_content_hex = lv_file_data
+        is_lporb       = ls_lporb
+        iv_objtp       = 'EXT'
+      ).
+
+      loop at lt_gos_messages into ls_gos_message where type = 'E'.
+        clear wa_message.
+        wa_message-aufnr   = wa_aufk-aufnr.
+        wa_message-vornr   = wa_aufk-vornr.
+        wa_message-message = ls_gos_message-message.
+        wa_message-state   = 'Error'.
+        append wa_message to gt_message.
+      endloop.
+
+      if sy-subrc <> 0.
+*       Store processed entries.
+        clear ls_ypmnptrecpr.
+        ls_ypmnptrecpr-object_type   = 'AUFK'.
+        ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+        ls_ypmnptrecpr-guid          = ls_attachment-uuid.
+        ls_ypmnptrecpr-record_date   = ls_attachment-gendate.
+        ls_ypmnptrecpr-record_table  = 'ATT'.
+        insert ypmnptrecpr from ls_ypmnptrecpr.
+      endif.
+    endloop.
+
+    commit work and wait.
+** Prepare data for saving time entry
+** Get work center from work center id
+*  select single arbpl into lv_arbpl
+*        from crhd where objid = wa_aufk-arbid.
+*    if sy-subrc eq 0.
+*
+*    ENDIF.
+**    Get activity based on work center
+*    select single lstar from crco into lv_lstar
+*                  where objid = wa_aufk-arbid
+*                    and lstar ne space.
+*      if sy-subrc eq 0.
+*
+*      ENDIF.
+*    loop at gt_time into wa_time.
+**     Remove time entries which have already been processed.
+*      read table lt_uuids with key table_line = wa_time-uuid
+*          transporting no fields.
+*      if sy-subrc = 0.
+*        delete gt_time.
+*        continue.
+*      endif.
+*
+*      ls_time-orderid = wa_aufk-aufnr.
+*      ls_time-operation = wa_time-vornr.
+*      ls_time-act_work_2 = wa_time-ismnw.
+*      ls_time-fin_conf = wa_time-aueru.
+*      ls_time-pers_no = wa_time-pernr.
+*      ls_time-POSTG_DATE = sy-datum.
+*      ls_time-plant = wa_aufk-werks.
+*      ls_time-work_cntr = lv_arbpl.
+*      ls_time-act_type = lv_lstar.
+*      append ls_time to lt_time.
+*    endloop.
+*    if lt_time[] is not initial.
+*      set UPDATE TASK LOCAL.
+*      call function 'BAPI_ALM_CONF_CREATE' DESTINATION 'NONE'
+**     EXPORTING
+**       POST_WRONG_ENTRIES       = '0'
+**       TESTRUN                  =
+*        importing
+*          return        = ls_return
+*        tables
+*          timetickets   = lt_time
+*          detail_return = lt_return.
+*      if sy-subrc eq 0.
+*        read TABLE lt_return into ls_return with key type = 'E'.
+*        if sy-subrc ne 0.
+**          call function 'BAPI_TRANSACTION_COMMIT'
+**            EXPORTING
+**              WAIT          = 'X'.
+*          commit WORK AND WAIT.
+*
+*           if sy-subrc eq 0.
+*             loop at gt_time into wa_time where not uuid is initial.
+**              Store processed entries.
+*               clear ls_ypmnptrecpr.
+*               ls_ypmnptrecpr-object_type   = 'AUFK'.
+*               ls_ypmnptrecpr-object_number = wa_aufk-aufnr.
+*               ls_ypmnptrecpr-guid          = wa_time-uuid.
+*               ls_ypmnptrecpr-record_date   = wa_time-gendate.
+*               ls_ypmnptrecpr-record_table  = 'TIME'.
+*               insert ypmnptrecpr from ls_ypmnptrecpr.
+*             endloop.
+*             wa_message-aufnr   = wa_resb-aufnr.
+*             wa_message-message = 'Time entry saved successfully'.
+*             append wa_message to gt_message.
+*           endif.
+*        else.
+*           wa_message-aufnr   = wa_resb-aufnr.
+*          wa_message-message = ls_return-message.
+*          wa_message-state   = 'Error'.
+*          append wa_message to gt_message.
+*        endif.
+*      endif.
+*    endif.
+
+*   1/5/2018 - Update system status in the page header
+*              in case it's been changed.
+    get_system_status(
+      iv_work_order = wa_aufk-aufnr
+      iv_operation = wa_aufk-vornr
+    ).
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_CRAFTPERSON_CLASS->SEARCH_MATERIAL_TREX
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SEARCH_MATERIAL_TREX.
+  refresh gt_material_text.
+  gt_material_text = ycl_pm_npt_utilities=>search_material_trex(
+    iv_material = wa_trex_search-material
+    iv_material_short_text = wa_trex_search-short_text
+    iv_material_text = wa_trex_search-full_text
+  ).
+endmethod.
+ENDCLASS.

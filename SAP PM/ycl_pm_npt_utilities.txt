@@ -1,0 +1,1920 @@
+class YCL_PM_NPT_UTILITIES definition
+  public
+  create public .
+
+public section.
+
+  class-methods GET_WORK_ORDER_OUTPUT
+    importing
+      !IV_WORK_ORDER type AUFNR
+      !IV_OPERATION type VORNR
+    returning
+      value(RV_PDF_DATA) type STRING .
+  class-methods SEARCH_MATERIAL_TREX
+    importing
+      !IV_MATERIAL type STRING optional
+      !IV_MATERIAL_TEXT type STRING
+      !IV_MATERIAL_SHORT_TEXT type STRING optional
+      !IV_PLANT type WERKS_D optional
+    returning
+      value(RT_MATERIALS) type YPM_MATERIAL_SEARCH_RESULT_T .
+  class-methods GET_MIME_TYPE_FROM_EXTENSION
+    importing
+      !IV_EXTENSION type STRING
+    exporting
+      !EV_MIME_TYPE type STRING
+      !EV_FILE_ICON type STRING
+      !EV_FILE_ICON_COLOR type STRING .
+  class-methods GET_PEOPLE_IN_WORK_CENTER
+    importing
+      !IV_WORK_CENTER type ARBPL
+    returning
+      value(RT_PEOPLE) type YPM_PERSON_T .
+  class-methods GET_CATALOGS
+    importing
+      !IV_WORK_ORDER_TYPE type AUFART
+      !IV_PLANT type IWERK
+      !IV_HOST_NAME type STRING
+      !IV_NEPTUNE_APPLICATION type STRING
+    returning
+      value(RT_CATALOGS) type YPM_NPT_OCI_CATALOG_T .
+  class-methods GET_ALL_CATALOGS
+    returning
+      value(RT_CATALOGS) type YPM_NPT_OCI_CATALOG_T .
+  class-methods CONVERSION_IN
+    changing
+      !CV_VALUE type ANY .
+  class-methods CONVERSION_OUT
+    changing
+      !CV_VALUE type ANY .
+  class-methods PROCESS_OCI_ORDER
+    importing
+      !IV_OCI_JSON type STRING
+      !IV_WORK_ORDER type AUFNR
+      !IV_OPERATION type VORNR
+      !IV_CATALOG_ID type KATALOGID
+    returning
+      value(RT_OCI_MATERIALS) type YPM_NPT_RESBD_T .
+  class-methods GET_MAINTENANCE_CATALOGS
+    importing
+      !IV_WORK_ORDER type AUFNR
+    exporting
+      !ET_OBJECT_PART_CATALOG type YPM_NPT_CATALOG_CODE_T
+      !ET_DAMAGE_CATALOG type YPM_NPT_CATALOG_CODE_T
+      !ET_CAUSE_CATALOG type YPM_NPT_CATALOG_CODE_T
+      !ET_ACTIVITY_CATALOG type YPM_NPT_CATALOG_CODE_T .
+  class-methods CREATE_REQUIREMENTS
+    importing
+      !IV_WORK_ORDER type AUFNR
+      !IV_OPERATION type VORNR
+      !IT_ASSIGNMENTS type YPM_NPT_ASSIGNMENT_T
+    exceptions
+      POST_FAILURE .
+  class-methods GET_DMS_ATTACHMENTS
+    importing
+      !IV_WORK_ORDER type AUFNR
+    returning
+      value(RT_ATTACHMENTS) type YPM_NPT_DMS_ATTACHMENT_T .
+  class-methods GET_DMS_ATTACHMENT_DATA
+    importing
+      !IS_ATTACHMENT type YPM_NPT_DMS_ATTACHMENT
+    returning
+      value(RV_ATTACHMENT_DATA) type STRING .
+  class-methods GET_ACTIVITY_TYPES
+    importing
+      !IV_WORK_ORDER type AUFNR
+      !IV_OPERATION type VORNR
+    returning
+      value(RT_ACTIVITY_TYPES) type BSP_WD_DROPDOWN_TABLE .
+  class-methods READ_TEXT
+    importing
+      !IV_TDOBJECT type TDOBJECT
+      !IV_TDNAME type TDOBNAME
+      !IV_TDID type TDID
+      !IV_LF type FLAG optional
+    exporting
+      !EV_TEXT type STRING
+      !ET_TEXT_LINES type TEXT_LINES .
+  class-methods IDOC_FM
+    returning
+      value(RV_FM) type STRING .
+  class-methods GET_CHARACTERISTIC_VALUES
+    importing
+      !IV_CLASS type KLASSE_D .
+  class-methods SEARCH_FL_TREX
+    importing
+      !IV_PLANT type WERKS_D
+      !IV_FL_SEARCH type STRING
+    returning
+      value(RT_FUNCTIONAL_LOCATIONS) type YPM_FL_SEARCH_RESULT_T
+    raising
+      YCX_NPT_EXCEPTIONS .
+  class-methods SEARCH_EQUI_TREX
+    importing
+      !IV_PLANT type WERKS_D
+      !IV_EQUI_SEARCH type STRING
+    returning
+      value(RT_EQUIPMENT) type YPM_EQ_SEARCH_RESULT_T
+    raising
+      YCX_NPT_EXCEPTIONS .
+protected section.
+
+  class-methods GET_CATALOG_CODES
+    importing
+      !IT_RIWO020 type TAB_RIWO020
+      !IV_CATALOG_TYPE type QKATART
+    returning
+      value(RT_CATALOG) type YPM_NPT_CATALOG_CODE_T .
+private section.
+ENDCLASS.
+
+
+
+CLASS YCL_PM_NPT_UTILITIES IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>CONVERSION_IN
+* +-------------------------------------------------------------------------------------------------+
+* | [<-->] CV_VALUE                       TYPE        ANY
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method CONVERSION_IN.
+  call function 'CONVERSION_EXIT_ALPHA_INPUT'
+    exporting
+      input  = cv_value
+    importing
+      output = cv_value.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>CONVERSION_OUT
+* +-------------------------------------------------------------------------------------------------+
+* | [<-->] CV_VALUE                       TYPE        ANY
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method CONVERSION_OUT.
+  call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+    exporting
+      input  = cv_value
+    importing
+      output = cv_value.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>CREATE_REQUIREMENTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [--->] IT_ASSIGNMENTS                 TYPE        YPM_NPT_ASSIGNMENT_T
+* | [EXC!] POST_FAILURE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method CREATE_REQUIREMENTS.
+  data: lv_aufpl            type co_aufpl,
+        lv_aplzl            type co_aplzl,
+        lv_work_order       type aufnr,
+        lv_operation        type vornr,
+        lv_error_occurred   type flag,
+        ls_kbed             type kbed,
+        lt_kbedd            type table of kbedd,
+        ls_kbedd            type kbedd,
+        ls_kbedd_temp       type kbedd,
+        lt_kbed_quan        type table of cykbedquan,
+        ls_kbed_quan        type cykbedquan,
+        lt_afvgd            type table of afvgd,
+        ls_afvgd            type afvgd,
+        lv_max_split        type i,
+        lv_split            type i,
+        ls_assignment       type ypm_npt_assignment.
+
+  field-symbols: <kbedd> type kbedd.
+
+  lv_work_order = iv_work_order.
+  conversion_in( changing cv_value = lv_work_order ).
+
+  lv_operation = iv_operation.
+  conversion_in( changing cv_value = lv_operation ).
+
+  select single aufpl into lv_aufpl from afko
+      where aufnr = lv_work_order.
+
+  select single aplzl into lv_aplzl from afvc
+      where aufpl = lv_aufpl
+        and vornr = lv_operation.
+
+  select single *
+      into ls_kbed
+      from kbed
+      where aufpl = lv_aufpl
+        and aplzl = lv_aplzl
+        and split = 0
+        and kapid <> 0.
+
+  call function 'PM_ORDER_DATA_READ'
+    exporting
+      order_number = lv_work_order
+    tables
+      iafvgd       = lt_afvgd
+    exceptions
+      others = 1.
+
+  call function 'CY_BT_KBED_CREATE'
+    exporting
+      i_aufnr = lv_work_order
+      i_bedid = ls_kbed-bedid
+    exceptions
+      others = 1.
+
+  call function 'CY_BT_KBED_READ_WITH_KEY'
+    exporting
+      i_aufnr   = lv_work_order
+      i_bedid   = ls_kbed-bedid
+      i_bedzl   = ls_kbed-bedzl
+      i_canum   = ls_kbed-canum
+    importing
+      kbedd_exp = ls_kbedd
+    exceptions
+      others = 1.
+
+  call function 'CY_BT_KBED_OPR_TAB_GET'
+    exporting
+      i_bedid = ls_kbed-bedid
+      i_bedzl = ls_kbed-bedzl
+    tables
+      t_kbedd = lt_kbedd
+    exceptions
+      others = 1.
+
+  read table lt_afvgd into ls_afvgd with key vornr = lv_operation.
+
+  loop at lt_kbedd into ls_kbedd_temp.
+    if ls_kbedd_temp-split > lv_max_split.
+      lv_max_split = ls_kbedd_temp-split.
+    endif.
+
+    read table it_assignments into ls_assignment
+        with key canum = ls_kbedd_temp-canum.
+    if sy-subrc = 0.
+      if ls_assignment-change_rec = 'X'.
+        ls_kbedd_temp-arbei = ls_assignment-work_hours.
+        ls_kbedd_temp-dauno = ls_assignment-work_hours.
+
+        if not ls_assignment-split_date is initial.
+          ls_kbedd_temp-sstad = ls_assignment-split_date.
+        endif.
+      endif.
+    endif.
+
+    move-corresponding ls_kbedd_temp to ls_kbed_quan.
+    append ls_kbed_quan to lt_kbed_quan.
+  endloop.
+
+  lv_split = lv_max_split.
+  loop at it_assignments into ls_assignment where canum is initial.
+    clear ls_kbed_quan.
+    ls_kbed_quan-otype = 'P'.
+    ls_kbed_quan-pernr = ls_assignment-personnel_number.
+
+    if ls_assignment-split_date is initial.
+      ls_kbed_quan-sstad = ls_afvgd-ssavd.
+    else.
+      ls_kbed_quan-sstad = ls_assignment-split_date.
+    endif.
+
+    ls_kbed_quan-sstau = ls_afvgd-ssavz.
+    ls_kbed_quan-arbei = ls_assignment-work_hours.
+    ls_kbed_quan-arbeh = 'STD'.
+    ls_kbed_quan-dauno = ls_assignment-work_hours.
+
+    lv_split = lv_split + 1.
+    ls_kbed_quan-split = lv_split.
+
+    conversion_in( changing cv_value = ls_kbed_quan-pernr ).
+    append ls_kbed_quan to lt_kbed_quan.
+  endloop.
+
+  call function 'CX_KBED_INDIVIDUAL_CAPACITIES'
+    exporting
+      afvgd_imp         = ls_afvgd
+      kbedd_imp         = ls_kbedd
+      i_flg_arbei       = 'X'
+      i_flg_shift_order = 'X'
+    tables
+      t_kbedd           = lt_kbedd
+      t_kbed_quan       = lt_kbed_quan
+    exceptions
+      others = 1.
+
+* Remove records marked for deletion.
+  loop at lt_kbedd into ls_kbedd_temp.
+    read table it_assignments into ls_assignment
+        with key canum = ls_kbedd_temp-canum.
+    if sy-subrc = 0.
+      if ls_assignment-delete_rec = 'X'.
+        delete lt_kbedd.
+        continue.
+      endif.
+    endif.
+  endloop.
+
+* Re-number splits after record deletion.
+  lv_split = 1.
+  loop at lt_kbedd assigning <kbedd> where not canum = ls_kbedd-canum.
+    <kbedd>-split = lv_split.
+    lv_split = lv_split + 1.
+  endloop.
+
+* Send splits to SAP internal memory.
+  call function 'CY_BT_KBED_ASSIGN'
+    exporting
+      kbedd_imp = ls_kbedd
+      i_aufnr   = lv_work_order
+    tables
+      t_kbedd   = lt_kbedd.
+
+* Update the database with new split info.
+  call function 'CY_BT_VB_CHECK'
+    exporting
+      i_bedid_1 = ls_kbed-bedid
+      i_aufnr_1 = lv_work_order
+      i_aufpl   = lv_aufpl
+    importing
+      e_aend_flag = lv_error_occurred
+    exceptions
+      error_kbed_vb_check = 1.
+
+  if sy-subrc <> 0.
+    raise post_failure.
+  else.
+    commit work.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_ACTIVITY_TYPES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [<-()] RT_ACTIVITY_TYPES              TYPE        BSP_WD_DROPDOWN_TABLE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_ACTIVITY_TYPES.
+  data: lv_work_order  type aufnr,
+        lv_operation   type vornr,
+        lv_arbid       type cr_objid,
+        lv_work_center type arbpl,
+        lv_plant       type werks_d,
+        lv_planv       type ap_planv,
+        lv_plan_type   type plnty,
+        ls_rcr01       type rcr01,
+        lv_lmona       type periv,
+        lv_gjahr(4)    type n.
+
+  lv_work_order = iv_work_order.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+
+  lv_operation = iv_operation.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+* Get operation work center ID.
+  select single afvc~arbid afvc~werks afvc~plnty
+      into (lv_arbid,lv_plant,lv_plan_type)
+      from afko
+      inner join afvc on afko~aufpl = afvc~aufpl
+      where afko~aufnr = lv_work_order
+        and afvc~vornr = lv_operation.
+
+  if sy-subrc <> 0.
+*   Invalid order and/or operation number supplied.
+    return.
+  endif.
+
+* Get friendly work center ID.
+  select single arbpl
+      into lv_work_center
+      from crhd
+      where objty = 'A'
+        and objid = lv_arbid.
+
+  call function 'CR_WORKSTATION_READ_ROUTING'
+    exporting
+      arbpl = lv_work_center
+      werks = lv_plant
+      plnty = lv_plan_type
+      date  = sy-datum
+      vgwkz = 'X'
+    importing
+      works = ls_rcr01
+    exceptions
+      others = 1.
+
+  select single lmona into lv_lmona from tka01
+      where kokrs = ls_rcr01-kokrs.
+
+  if lv_lmona is initial.
+    lv_gjahr = sy-datum(4).
+  else.
+    call function 'G_PERIOD_GET'
+      exporting
+        date    = sy-datum
+        variant = lv_lmona
+      importing
+        year    = lv_gjahr
+      exceptions
+        others  = 1.
+  endif.
+
+  if lv_gjahr is initial.
+    lv_gjahr = sy-datum(4).
+  endif.
+
+  select cssl~lstar cslt~ltext
+      into table rt_activity_types
+      from cssl
+      inner join cslt on cssl~kokrs = cslt~kokrs
+                     and cssl~lstar = cslt~lstar
+      where cssl~kokrs = ls_rcr01-kokrs
+        and cssl~kostl = ls_rcr01-kostl
+        and cssl~gjahr = lv_gjahr
+        and cslt~spras = sy-langu
+        and cslt~datbi >= sy-datum
+      order by cssl~lstar.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_ALL_CATALOGS
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RT_CATALOGS                    TYPE        YPM_NPT_OCI_CATALOG_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_ALL_CATALOGS.
+  data: lv_suffix     type string,
+        lv_return_url type string.
+
+  field-symbols: <catalog> type ypm_npt_oci_catalog.
+
+  refresh rt_catalogs.
+
+  select org~auart org~iwerk org~oci_number org~katalogid text~katbez
+      into table rt_catalogs
+      from ioci_orgu as org
+      inner join tmw3text as text
+      on org~katalogid = text~katalog
+      where text~spras = sy-langu
+      order by org~auart org~iwerk org~oci_number.
+
+  loop at rt_catalogs assigning <catalog>.
+    clear: lv_suffix.
+
+    <catalog>-keyfield = <catalog>-work_order_type
+        && <catalog>-plant
+        && <catalog>-oci_number.
+
+    perform catalog_url in program ioci_show_html_new
+      using
+        <catalog>-catalog_id
+        space
+        space
+        space
+        space
+        space
+        space
+      changing
+        <catalog>-catalog_url
+        lv_suffix.
+
+    <catalog>-catalog_url =
+        <catalog>-catalog_url && `?` && lv_suffix.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_CATALOGS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER_TYPE             TYPE        AUFART
+* | [--->] IV_PLANT                       TYPE        IWERK
+* | [--->] IV_HOST_NAME                   TYPE        STRING
+* | [--->] IV_NEPTUNE_APPLICATION         TYPE        STRING
+* | [<-()] RT_CATALOGS                    TYPE        YPM_NPT_OCI_CATALOG_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CATALOGS.
+  data: lv_suffix     type string,
+        lv_return_url type string.
+
+  field-symbols: <catalog> type ypm_npt_oci_catalog.
+
+  refresh rt_catalogs.
+
+  select org~katalogid text~katbez
+      into table rt_catalogs
+      from ioci_orgu as org
+      inner join tmw3text as text
+      on org~katalogid = text~katalog
+      where org~auart = iv_work_order_type
+        and org~iwerk = iv_plant
+        and text~spras = sy-langu
+      order by org~oci_number.
+
+* The host name used here should be that of the
+* NW gateway server.
+  lv_return_url = `https://`
+      && iv_host_name
+      && iv_neptune_application
+      && `?key=OCI_RETURN`.
+
+  loop at rt_catalogs assigning <catalog>.
+    perform catalog_url in program ioci_show_html_new
+      using
+        <catalog>-catalog_id
+        space
+        space
+        space
+        space
+        space
+        space
+      changing
+        <catalog>-catalog_url
+        lv_suffix.
+
+    <catalog>-catalog_url =
+        <catalog>-catalog_url && `?` && lv_suffix
+        && `&HOOK_URL=` && lv_return_url.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Protected Method YCL_PM_NPT_UTILITIES=>GET_CATALOG_CODES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_RIWO020                     TYPE        TAB_RIWO020
+* | [--->] IV_CATALOG_TYPE                TYPE        QKATART
+* | [<-()] RT_CATALOG                     TYPE        YPM_NPT_CATALOG_CODE_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CATALOG_CODES.
+  types: begin of s_qpgr,
+           codegruppe type qcodegrp,
+           kurztext   type qtxt_code,
+         end of s_qpgr.
+
+  types: begin of s_qpcd,
+           katalogart type qkatart,
+           codegruppe type qcodegrp,
+           code       type qcode,
+           kurztext   type qtxt_code,
+           version    type qversnr,
+        end of s_qpcd.
+
+  data: lt_qpgr          type hashed table of s_qpgr
+                             with unique key codegruppe,
+        ls_qpgr          type s_qpgr,
+        lt_qpcd          type table of s_qpcd,
+        ls_qpcd          type s_qpcd,
+        lt_riwo020       type tab_riwo020,
+        ls_riwo020       type riwo020,
+        lt_codegroup_sel type table of rsdsselopt,
+        ls_codegroup_sel type rsdsselopt,
+        ls_catalog_out   type ypm_npt_catalog_code.
+
+  lt_riwo020[] = it_riwo020[].
+  delete lt_riwo020 where qkatart <> iv_catalog_type.
+  check not lt_riwo020[] is initial.
+
+* Fill the selection range for code groups.
+  loop at lt_riwo020 into ls_riwo020.
+    clear ls_codegroup_sel.
+    ls_codegroup_sel-sign = 'I'.
+    if ls_riwo020-qcodegrp ca '+*'.
+      ls_codegroup_sel-option = 'CP'.
+    else.
+      ls_codegroup_sel-option = 'EQ'.
+    endif.
+    ls_codegroup_sel-low = ls_riwo020-qcodegrp.
+    append ls_codegroup_sel to lt_codegroup_sel.
+  endloop.
+
+* Select the code groups.
+  select qpgr~codegruppe qpgt~kurztext
+      into table lt_qpgr
+      from qpgr
+      inner join qpgt on qpgr~katalogart = qpgt~katalogart
+                     and qpgr~codegruppe = qpgt~codegruppe
+      where qpgr~katalogart = iv_catalog_type
+        and qpgr~codegruppe in lt_codegroup_sel
+        and qpgr~inaktiv = ' '
+        and qpgr~status = '2'
+        and qpgt~sprache = sy-langu.
+
+  check sy-subrc = 0 and not lt_qpgr[] is initial.
+
+* Select the catalog codes.
+  select qpcd~katalogart qpcd~codegruppe qpcd~code qpct~kurztext qpcd~version
+      into table lt_qpcd
+      from qpcd
+      inner join qpct on qpcd~katalogart = qpct~katalogart
+                     and qpcd~codegruppe = qpct~codegruppe
+                     and qpcd~code = qpct~code
+                     and qpcd~version = qpct~version
+      for all entries in lt_qpgr
+      where qpcd~katalogart = iv_catalog_type
+        and qpcd~codegruppe = lt_qpgr-codegruppe
+        and qpcd~inaktiv    = ' '
+        and qpcd~geloescht  = ' '
+        and qpct~sprache    = sy-langu.
+
+* Ensure only the latest version is used.
+  sort lt_qpcd
+      by katalogart ascending
+         codegruppe ascending
+         code ascending
+         version descending.
+
+  delete adjacent duplicates from lt_qpcd
+      comparing katalogart codegruppe code.
+
+* Output catalog codes.
+  loop at lt_qpcd into ls_qpcd.
+    clear ls_qpgr.
+    read table lt_qpgr into ls_qpgr
+        with key codegruppe = ls_qpcd-codegruppe.
+
+    clear ls_catalog_out.
+    ls_catalog_out-catalog        = ls_qpcd-katalogart.
+    ls_catalog_out-code_group      = ls_qpcd-codegruppe.
+    ls_catalog_out-code_group_text = ls_qpgr-kurztext.
+    ls_catalog_out-code            = ls_qpcd-code.
+    ls_catalog_out-code_text       = ls_qpcd-kurztext.
+    insert ls_catalog_out into table rt_catalog.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_CHARACTERISTIC_VALUES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_CLASS                       TYPE        KLASSE_D
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_CHARACTERISTIC_VALUES.
+  data: lt_characteristics type table of bapi_char,
+        lt_char_values     type table of bapi_char_values,
+        lv_class           type klasse_d,
+        ls_return          type bapireturn1.
+
+  check not iv_class is initial.
+
+  call function 'BAPI_CLASS_GET_CHARACTERISTICS'
+    exporting
+      classnum        = iv_class
+      classtype       = '001'
+    importing
+      return          = ls_return
+    tables
+      characteristics = lt_characteristics
+      char_values     = lt_char_values.
+
+  break-point.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_DMS_ATTACHMENTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<-()] RT_ATTACHMENTS                 TYPE        YPM_NPT_DMS_ATTACHMENT_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_DMS_ATTACHMENTS.
+  types: begin of s_afvc,
+           aufpl type co_aufpl,
+           aplzl type co_aplzl,
+           vornr type vornr,
+           objky type objky,
+         end of s_afvc.
+
+  types: begin of s_drad,
+           dokar type dokar,
+           doknr type doknr,
+           dokvr type dokvr,
+           doktl type doktl_d,
+           objky type objky,
+         end of s_drad.
+
+  data: lv_work_order   type aufnr,
+        lt_afvc         type table of s_afvc,
+        lt_afvc_h       type hashed table of s_afvc with unique key objky,
+        ls_afvc_h       type s_afvc,
+        lt_drad         type table of s_drad,
+        ls_drad         type s_drad,
+        ls_return       type bapiret2,
+        lt_files        type table of cvapi_doc_file,
+        ls_file         type cvapi_doc_file,
+        ls_message      type messages,
+        lv_file_content type xstring,
+        ls_attachment   type ypm_npt_dms_attachment,
+        ls_rsds_path    type rsfilenm,
+        ls_rsds_file    type rsawbnobjnm.
+
+  field-symbols: <afvc> type s_afvc.
+
+  refresh rt_attachments.
+
+  lv_work_order = iv_work_order.
+  conversion_in( changing cv_value = lv_work_order ).
+
+  select afvc~aufpl afvc~aplzl afvc~vornr
+      into table lt_afvc
+      from afko
+      inner join afvc on afko~aufpl = afvc~aufpl
+      where afko~aufnr = lv_work_order.
+
+  check not lt_afvc[] is initial.
+
+  loop at lt_afvc assigning <afvc>.
+    <afvc>-objky = 'OV' && <afvc>-aufpl && <afvc>-aplzl.
+  endloop.
+
+  select dokar doknr dokvr doktl objky
+      into table lt_drad
+      from drad
+      for all entries in lt_afvc
+      where dokar = 'MNT'
+        and dokob = 'PMAFVC'
+        and objky = lt_afvc-objky.
+
+  insert lines of lt_afvc into table lt_afvc_h.
+
+  loop at lt_drad into ls_drad.
+    clear: ls_afvc_h.
+    refresh: lt_files.
+
+    read table lt_afvc_h into ls_afvc_h
+        with key objky = ls_drad-objky.
+
+    call function 'CVAPI_DOC_GETDETAIL'
+      exporting
+        pf_dokar = ls_drad-dokar
+        pf_doknr = ls_drad-doknr
+        pf_dokvr = ls_drad-dokvr
+        pf_doktl = ls_drad-doktl
+      tables
+        pt_files = lt_files
+      exceptions
+        not_found = 1
+        no_auth   = 2
+        error     = 3.
+
+    loop at lt_files into ls_file.
+      clear ls_attachment.
+      ls_attachment-operation = ls_afvc_h-vornr.
+      ls_attachment-dokar     = ls_drad-dokar.
+      ls_attachment-doknr     = ls_drad-doknr.
+      ls_attachment-dokvr     = ls_drad-dokvr.
+      ls_attachment-doktl     = ls_drad-doktl.
+      ls_attachment-loio_id   = ls_file-lo_objid.
+      ls_attachment-phio_id   = ls_file-ph_objid.
+
+      ls_rsds_path = ls_file-filename.
+      call function 'RSDS_SPLIT_PATH_TO_FILENAME'
+        exporting
+          i_filepath = ls_rsds_path
+        importing
+          e_filename = ls_rsds_file.
+      ls_attachment-filename = ls_rsds_file.
+
+      insert ls_attachment into table rt_attachments.
+    endloop.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_DMS_ATTACHMENT_DATA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_ATTACHMENT                  TYPE        YPM_NPT_DMS_ATTACHMENT
+* | [<-()] RV_ATTACHMENT_DATA             TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_DMS_ATTACHMENT_DATA.
+  data: ls_return      type bapiret2,
+        lv_attach_data type xstring.
+
+  clear rv_attachment_data.
+
+  cl_dms_document_util=>get_binary_content(
+    exporting
+      i_documenttype    = is_attachment-dokar
+      i_documentnumber  = is_attachment-doknr
+      i_documentversion = is_attachment-dokvr
+      i_documentpart    = is_attachment-doktl
+      i_loio_id         = is_attachment-loio_id
+      i_phio_id         = is_attachment-phio_id
+      i_contentprovide  = 'TBL'
+    importing
+      es_return         = ls_return
+      e_binary_content  = lv_attach_data
+  ).
+
+  if not lv_attach_data is initial.
+    call function 'SCMS_BASE64_ENCODE_STR'
+      exporting
+        input  = lv_attach_data
+      importing
+        output = rv_attachment_data.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_MAINTENANCE_CATALOGS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [<---] ET_OBJECT_PART_CATALOG         TYPE        YPM_NPT_CATALOG_CODE_T
+* | [<---] ET_DAMAGE_CATALOG              TYPE        YPM_NPT_CATALOG_CODE_T
+* | [<---] ET_CAUSE_CATALOG               TYPE        YPM_NPT_CATALOG_CODE_T
+* | [<---] ET_ACTIVITY_CATALOG            TYPE        YPM_NPT_CATALOG_CODE_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_MAINTENANCE_CATALOGS.
+  data: lt_riwo020           type tab_riwo020,
+        ls_riwo020           type riwo020,
+        lv_work_order        type aufnr,
+        lv_catalog_profile   type rbnr,
+        lv_notification_type type qmart.
+
+  refresh: et_object_part_catalog,
+           et_damage_catalog,
+           et_cause_catalog,
+           et_activity_catalog.
+
+  lv_work_order = iv_work_order.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+
+* Get the notification type and catalog profile from the notification.
+  select single qmel~qmart qmel~rbnr
+      into (lv_notification_type,lv_catalog_profile)
+      from afih
+      inner join qmel on afih~qmnum = qmel~qmnum
+      where afih~aufnr = lv_work_order.
+
+* Retrieve the catalog profile configuration.
+  call function 'CATALOGUE_SELECTION'
+    exporting
+      rbnr         = lv_catalog_profile
+      qmart        = lv_notification_type
+    tables
+      t_riwo020tab = lt_riwo020
+    exceptions
+      others = 1.
+
+* Only return catalogs with actual assignments.
+* A * in the code group field will cause all code groups
+* to be returned, which we don't want.
+  delete lt_riwo020 where qcodegrp = '*'.
+  check not lt_riwo020[] is initial.
+
+  et_object_part_catalog = get_catalog_codes(
+    it_riwo020      = lt_riwo020
+    iv_catalog_type = 'B'
+  ).
+
+  et_damage_catalog = get_catalog_codes(
+    it_riwo020      = lt_riwo020
+    iv_catalog_type = 'C'
+  ).
+
+  et_cause_catalog = get_catalog_codes(
+    it_riwo020      = lt_riwo020
+    iv_catalog_type = '5'
+  ).
+
+  et_activity_catalog = get_catalog_codes(
+    it_riwo020      = lt_riwo020
+    iv_catalog_type = 'A'
+  ).
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_MIME_TYPE_FROM_EXTENSION
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_EXTENSION                   TYPE        STRING
+* | [<---] EV_MIME_TYPE                   TYPE        STRING
+* | [<---] EV_FILE_ICON                   TYPE        STRING
+* | [<---] EV_FILE_ICON_COLOR             TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_MIME_TYPE_FROM_EXTENSION.
+  data: lv_extension(4) type c,
+        lv_mime_type    type w3conttype.
+
+  lv_extension = iv_extension.
+
+  call function 'SDOK_MIMETYPE_GET'
+    exporting
+      extension = lv_extension
+    importing
+      mimetype  = lv_mime_type.
+
+  ev_mime_type = lv_mime_type.
+
+  case ev_mime_type.
+    when 'application/vnd.ms-excel'.
+      ev_file_icon       = 'sap-icon://excel-attachment'.
+      ev_file_icon_color = 'green'.
+    when 'application/msword'.
+      ev_file_icon       = 'sap-icon://doc-attachment'.
+      ev_file_icon_color = 'blue'.
+    when 'application/pdf'.
+      ev_file_icon       = 'sap-icon://pdf-attachment'.
+      ev_file_icon_color = 'red'.
+    when 'application/vnd.ms-powerpoint'.
+      ev_file_icon       = 'sap-icon://ppt-attachment'.
+      ev_file_icon_color = 'red'.
+    when 'text/html'.
+      ev_file_icon = 'sap-icon://attachment-html'.
+    when 'text/plain'.
+      ev_file_icon = 'sap-icon://attachment-text-file'.
+    when others.
+      ev_file_icon = 'sap-icon://document'.
+  endcase.
+
+  if ev_mime_type cs 'image'.
+    ev_file_icon = 'sap-icon://attachment-photo'.
+  endif.
+
+  if ev_mime_type cs 'audio'.
+    ev_file_icon = 'sap-icon://attachment-audio'.
+  endif.
+
+  if ev_mime_type cs 'video'.
+    ev_file_icon = 'sap-icon://attachment-video'.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_PEOPLE_IN_WORK_CENTER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_CENTER                 TYPE        ARBPL
+* | [<-()] RT_PEOPLE                      TYPE        YPM_PERSON_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_PEOPLE_IN_WORK_CENTER.
+  data: lt_persons    type table of objec,
+        ls_person     type objec,
+        ls_person_out type ypm_person,
+        lt_hr_objects type table of hrobject,
+        ls_hr_object  type hrobject.
+
+  refresh rt_people.
+
+  ls_hr_object-plvar = '01'.
+  ls_hr_object-otype = 'A'.
+  ls_hr_object-objid = iv_work_center.
+  insert ls_hr_object into table lt_hr_objects.
+
+  call function 'HR_PERSON_OF_WORKCENTER_GET'
+    tables
+      persons    = lt_persons
+      hr_objects = lt_hr_objects
+    exceptions
+      no_persons_found = 1
+      invalid_plvar    = 2
+      invalid_arbpl    = 3
+      others           = 4.
+
+  loop at lt_persons into ls_person.
+    clear ls_person_out.
+    ls_person_out-personnel_number = ls_person-objid.
+    ls_person_out-short_name       = ls_person-short.
+    ls_person_out-full_name        = ls_person-stext.
+    insert ls_person_out into table rt_people.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>GET_WORK_ORDER_OUTPUT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [<-()] RV_PDF_DATA                    TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_WORK_ORDER_OUTPUT.
+  data: lv_pdf_data type xstring.
+
+  call function 'YPM_PRINT_WORK_ORDER'
+    destination 'NONE'
+    exporting
+      iv_work_order = iv_work_order
+      iv_operation  = iv_operation
+    importing
+      ev_pdf_data   = lv_pdf_data
+    exceptions
+      system_failure        = 1
+      communication_failure = 2
+      others                = 3.
+
+  if not lv_pdf_data is initial.
+    call function 'SCMS_BASE64_ENCODE_STR'
+      exporting
+        input  = lv_pdf_data
+      importing
+        output = rv_pdf_data.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>IDOC_FM
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RV_FM                          TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method IDOC_FM.
+  data: lt_edifct type table of edifct.
+
+  select * into table lt_edifct from edifct
+      where mestyp like 'Y%'
+         or mestyp like '/EMN%'
+         or mestyp like 'Z%'.
+  break-point.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>PROCESS_OCI_ORDER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_OCI_JSON                    TYPE        STRING
+* | [--->] IV_WORK_ORDER                  TYPE        AUFNR
+* | [--->] IV_OPERATION                   TYPE        VORNR
+* | [--->] IV_CATALOG_ID                  TYPE        KATALOGID
+* | [<-()] RT_OCI_MATERIALS               TYPE        YPM_NPT_RESBD_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method PROCESS_OCI_ORDER.
+  types: begin of s_param,
+           parameter(1000) type c,
+         end of s_param.
+
+  data: lv_catalog_json   type string,
+        lt_parameters     type table of s_param,
+        ls_parameter      type s_param,
+        lt_oci_fields     type tihttpnvp,
+        ls_oci_field      type ihttpnvp,
+        lt_fcom_tab       type fcom_xl_tab,
+        ls_fcom           type rihfcom_xl,
+        lr_eams_bo_order  type ref to cl_eams_bo_order,
+        ls_eams_cat_param type eams3_s_sp_ord_op_comp_cat,
+        lt_eams_messages  type /plmb/t_spi_msg,
+        lt_eams_node      type eams_t_bo_ord_id,
+        ls_eams_node      type eams_s_bo_ord_id,
+        ls_oci_material   type ypm_npt_resbd,
+        lv_work_order     type aufnr,
+        lv_operation      type vornr,
+        lt_stream         type table of w3_html,
+        lv_stream         type w3_html,
+        lt_item_type_text type hashed table of t418t with unique key postp,
+        ls_item_type_text type t418t,
+        lv_tabix          type i,
+        lv_tabix_c(3)     type c,
+        lv_text_name      type string,
+        lv_catalog_id     type katalogid,
+        lv_plant          type werks_d.
+
+  refresh rt_oci_materials.
+
+* Parse OCI POST data.
+  split iv_oci_json at '&'
+      into table lt_parameters.
+  loop at lt_parameters into ls_parameter.
+    clear ls_oci_field.
+    split ls_parameter at '=' into ls_oci_field-name ls_oci_field-value.
+    append ls_oci_field to lt_oci_fields.
+  endloop.
+
+  lv_work_order = iv_work_order.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_work_order ).
+
+  lv_operation = iv_operation.
+  ycl_pm_npt_utilities=>conversion_in( changing cv_value = lv_operation ).
+
+  lr_eams_bo_order = cl_eams_bo_order=>s_get_instance( ).
+
+* Retrieve order header to avoid a short dump when getting the components.
+  ls_eams_node-eams_aufnr = lv_work_order.
+  append ls_eams_node to lt_eams_node.
+  lr_eams_bo_order->get_order_header( lt_eams_node ).
+
+  lv_catalog_id = iv_catalog_id.
+*  translate lv_catalog_id to upper case.
+
+* Catalog configuration must be retrieved in its own method call as well.
+  ls_eams_cat_param-eams_aufnr = lv_work_order.
+  ls_eams_cat_param-eams_vornr = lv_operation.
+  lr_eams_bo_order->retreive_comp_catalog( ls_eams_cat_param ).
+  lr_eams_bo_order->get_catalog_cust( lv_catalog_id ).
+
+* Parse the OCI return data into the FCOM table.
+  lr_eams_bo_order->get_components_from_catalog(
+    exporting
+      it_oci_param = lt_oci_fields
+    importing
+      et_comp      = lt_fcom_tab
+    changing
+      ct_message   = lt_eams_messages
+  ).
+
+  if not lt_fcom_tab[] is initial.
+    select * into table lt_item_type_text
+        from t418t
+        where spras = sy-langu.
+  endif.
+
+  loop at lt_fcom_tab into ls_fcom.
+    lv_tabix = sy-tabix.
+    write lv_tabix to lv_tabix_c left-justified.
+
+    clear ls_oci_material.
+    ls_oci_material-matnr           = ls_fcom-matnr.
+    ls_oci_material-potx1           = ls_fcom-ktext.
+    ls_oci_material-werks           = ls_fcom-werks.
+    ls_oci_material-bdmng           = ls_fcom-menge.
+    ls_oci_material-meins           = ls_fcom-meinh.
+    ls_oci_material-matkl           = ls_fcom-matkl.
+    ls_oci_material-ekgrp           = ls_fcom-ekgrp.
+    ls_oci_material-ekorg           = ls_fcom-ekorg.
+    ls_oci_material-gpreis          = ls_fcom-preis.
+    ls_oci_material-idnlf           = ls_fcom-idnlf.
+    ls_oci_material-flief           = ls_fcom-flief.
+    ls_oci_material-lifnr           = ls_fcom-flief.
+    ls_oci_material-catalogid       = ls_fcom-catalogid.
+    ls_oci_material-catalog_prod_id = ls_fcom-catalog_prod_id.
+
+*   Handle items in the Eastman Internal catalog,
+*   which should be processed as regular stock items.
+    if ls_oci_material-lifnr = '0000999999'.
+      if ls_oci_material-matnr is initial.
+        ls_oci_material-matnr = ls_fcom-idnlf.
+      endif.
+      ls_oci_material-postp = 'L'.
+    else.
+      ls_oci_material-postp = ls_fcom-postp.
+    endif.
+
+    if not ls_oci_material-postp is initial.
+      read table lt_item_type_text into ls_item_type_text
+          with key postp = ls_oci_material-postp.
+      if sy-subrc = 0.
+        ls_oci_material-item_type_text = ls_item_type_text-ptext.
+      endif.
+    endif.
+
+*   SAP's class mangles the product long text. So we need to parse it from the raw response data.
+    lv_text_name = `NEW_ITEM-LONGTEXT_` && lv_tabix_c && `:132[]`.
+    read table lt_oci_fields into ls_oci_field with key name = lv_text_name.
+    if sy-subrc = 0.
+      ls_oci_material-long_text = ls_oci_field-value.
+    endif.
+
+*   Not getting currency back from SAP class. Get it manually.
+    lv_text_name = `NEW_ITEM-CURRENCY[` && lv_tabix_c && `]`.
+    read table lt_oci_fields into ls_oci_field with key name = lv_text_name.
+    if sy-subrc = 0.
+      ls_oci_material-waers = ls_oci_field-value.
+    endif.
+
+*   Get plant from work order header.
+    select single werks into lv_plant from aufk
+        where aufnr = lv_work_order.
+
+*   Get the purchasing organization.
+    select single ekorg into ls_oci_material-ekorg from t024w
+        where werks = lv_plant
+          and ekorg in ('IN01', 'IN04', 'IN05', 'IN07', 'IC01', 'IC02', 'IC04', 'IC05', 'IC07').
+
+*    if not ls_fcom-tline[] is initial.
+*      call function 'CONVERT_ITF_TO_STREAM_TEXT'
+*        tables
+*          itf_text    = ls_fcom-tline
+*          text_stream = lt_stream.
+*
+*      loop at lt_stream into lv_stream.
+*        ls_oci_material-long_text = ls_oci_material-long_text && lv_stream.
+*      endloop.
+*    endif.
+
+    insert ls_oci_material into table rt_oci_materials.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>READ_TEXT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_TDOBJECT                    TYPE        TDOBJECT
+* | [--->] IV_TDNAME                      TYPE        TDOBNAME
+* | [--->] IV_TDID                        TYPE        TDID
+* | [--->] IV_LF                          TYPE        FLAG(optional)
+* | [<---] EV_TEXT                        TYPE        STRING
+* | [<---] ET_TEXT_LINES                  TYPE        TEXT_LINES
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method READ_TEXT.
+  data: lt_lines     type table of tline,
+        ls_line      type tline,
+        lt_stream    type table of w3_html,
+        lv_stream    type w3_html,
+        lv_inc       type string,
+        lv_text_name type tdobname,
+        lv_obj       type string,
+        lv_object    type tdobject,
+        lv_id        type string,
+        lv_tdid      type tdid,
+        lv_leftover  type string,
+        lt_include   type text_lines,
+        lv_tabix     type i.
+
+  field-symbols: <line>     type tline,
+                 <inc_line> type tline.
+
+  clear ev_text.
+  refresh et_text_lines.
+
+  call function 'READ_TEXT'
+    exporting
+      id       = iv_tdid
+      language = sy-langu
+      name     = iv_tdname
+      object   = iv_tdobject
+    tables
+      lines    = lt_lines
+    exceptions
+      id                      = 1
+      language                = 2
+      name                    = 3
+      not_found               = 4
+      object                  = 5
+      reference_check         = 6
+      wrong_access_to_archive = 7
+      others                  = 8.
+
+  if sy-subrc = 0 and not lt_lines[] is initial.
+    loop at lt_lines assigning <line>.
+      lv_tabix = sy-tabix + 1.
+
+
+      if ( <line>-tdformat = '/*' or <line>-tdformat = '/:' )
+          and <line>-tdline cs 'INCLUDE'.
+
+        condense <line>-tdline.
+
+        <line>-tdformat = '*'.
+*       Manually include INCLUDE commands since the
+*       ITF conversion FM will just ignore them
+*       otherwise.
+        split <line>-tdline at space
+            into lv_inc lv_text_name lv_obj lv_object
+                 lv_id lv_tdid lv_leftover.
+
+        read_text(
+          exporting
+            iv_tdobject   = lv_object
+            iv_tdname     = lv_text_name
+            iv_tdid       = lv_tdid
+          importing
+            et_text_lines = lt_include
+        ).
+
+*       Replicate Eastman's include formatting from MM03.
+        loop at lt_include assigning <inc_line>.
+          <inc_line>-tdline = `*` && cl_abap_char_utilities=>horizontal_tab && <inc_line>-tdline.
+        endloop.
+
+        insert lines of lt_include into lt_lines
+            index lv_tabix.
+      endif.
+
+      if <line>-tdformat = '/*'.
+*       Some of Eastman's texts are stored using comments.
+*       We want to print such lines anyway.
+        <line>-tdformat = '*'.
+      endif.
+    endloop.
+
+    et_text_lines[] = lt_lines[].
+
+    call function 'CONVERT_ITF_TO_STREAM_TEXT'
+      exporting
+        lf          = iv_lf
+      tables
+        itf_text    = lt_lines
+        text_stream = lt_stream.
+
+    loop at lt_stream into lv_stream.
+      ev_text = ev_text && lv_stream.
+    endloop.
+  endif.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>SEARCH_EQUI_TREX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_PLANT                       TYPE        WERKS_D
+* | [--->] IV_EQUI_SEARCH                 TYPE        STRING
+* | [<-()] RT_EQUIPMENT                   TYPE        YPM_EQ_SEARCH_RESULT_T
+* | [!CX!] YCX_NPT_EXCEPTIONS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SEARCH_EQUI_TREX.
+  data: lt_query               type trext_query_entries,
+        ls_query               type trexs_query_entry,
+        lt_objects             type com_search_tt_object_type_key,
+        ls_object              type com_search_ts_object_type_key,
+        lt_req_attributes      type trext_attributes,
+        ls_req_attribute       type trexs_attribute,
+        lt_sort_attributes     type trext_sort_attributes,
+        ls_sort_attribute      type trexs_sort_attribute,
+        lt_result_items        type com_search_tt_result_item,
+        ls_result_item         type com_search_ts_result_item,
+        ls_attribute           type trexs_doc_attributes,
+        lv_max_records         type i value 1000,
+        ls_equipment           type ypm_eq_search_result.
+
+  call function 'ALM_AUTHORITY_CHECK'
+    exporting
+      i_tcode       = 'IL03'
+      i_tcode_check = 'X'
+      i_swerk       = iv_plant
+    exceptions
+      others = 1.
+
+  if sy-subrc <> 0.
+    raise exception type ycx_npt_exceptions
+      exporting
+        plant = iv_plant.
+  endif.
+
+  clear ls_query.
+  ls_query-value1       = iv_equi_search.
+  ls_query-rowtype      = 'TERM'.
+  ls_query-operator     = 'EQ'.
+  ls_query-content_type = 'A'.
+  ls_query-term_action  = 'F'.
+  append ls_query to lt_query.
+
+  clear ls_query.
+  ls_query-value1  = 'AND'.
+  ls_query-rowtype = 'OPERATOR'.
+  append ls_query to lt_query.
+
+  clear ls_query.
+  ls_query-location    = 'MAINTPLANT'.
+  ls_query-value1      = iv_plant.
+  ls_query-rowtype     = 'ATTRIBUTE'.
+  ls_query-operator    = 'EQ'.
+  ls_query-term_action = 'E'.
+  append ls_query to lt_query.
+
+  clear ls_object.
+  ls_object-busobj      = 'EQUI'.
+  ls_object-object_type = '1'.
+  append ls_object to lt_objects.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'BUSINESS_OBJECT'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'OBJECT_TYPE'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'OBJECT_ID'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'DESCRIPTION'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'MAINTPLANT'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'FUNCT_LOC'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'SORTFIELD'.
+  append ls_req_attribute to lt_req_attributes.
+
+* Test ALL attributes
+*  clear ls_req_attribute.
+*  ls_req_attribute-attr_name = '*'.
+*  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_sort_attribute.
+  ls_sort_attribute-attr_name = 'OBJECT_ID'.
+  ls_sort_attribute-sort      = '1'.
+  append ls_sort_attribute to lt_sort_attributes.
+
+  clear ls_sort_attribute.
+  ls_sort_attribute-attr_name = 'DESCRIPTION'.
+  ls_sort_attribute-sort      = '1'.
+  append ls_sort_attribute to lt_sort_attributes.
+
+  cl_com_se_search_iif=>search_objects(
+    exporting
+      it_query_entries   = lt_query
+      it_object_type     = lt_objects
+      it_req_attributes  = lt_req_attributes
+      it_sort_attributes = lt_sort_attributes
+      iv_result_to       = lv_max_records
+    importing
+      et_result_items    = lt_result_items
+    exceptions
+      others = 1
+  ).
+
+  loop at lt_result_items into ls_result_item.
+    clear ls_equipment.
+    ls_equipment-equipment = ls_result_item-object_id.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'description'.
+    if sy-subrc = 0.
+      ls_equipment-equipment_text = ls_attribute-value1.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'maintplant'.
+    if sy-subrc = 0.
+      ls_equipment-plant = ls_attribute-value1.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'funct_loc'.
+    if sy-subrc = 0.
+      ls_equipment-functional_location = ls_attribute-value1.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'sortfield'.
+    if sy-subrc = 0.
+      ls_equipment-sort_field = ls_attribute-value1.
+    endif.
+
+*   Get work center ID, tech ID, and WBS.
+    select single equz~tidnr equz~gewrk iloa~proid
+        into (ls_equipment-tech_id,
+              ls_equipment-work_center_id,
+              ls_equipment-wbs_element)
+        from equz
+        inner join iloa on equz~iloan = iloa~iloan
+        where equz~equnr = ls_equipment-equipment.
+
+    if sy-subrc <> 0.
+*     Object doesn't exist in SAP master data.
+      continue.
+    endif.
+
+*   Get work center information.
+    if not ls_equipment-work_center_id is initial.
+      select single crhd~arbpl crtx~ktext
+          into (ls_equipment-work_center,ls_equipment-work_center_text)
+          from crhd
+          inner join crtx on crhd~objty = crtx~objty
+                         and crhd~objid = crtx~objid
+          where crhd~objty = 'A'
+            and crhd~objid = ls_equipment-work_center_id.
+    endif.
+
+    append ls_equipment to rt_equipment.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>SEARCH_FL_TREX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_PLANT                       TYPE        WERKS_D
+* | [--->] IV_FL_SEARCH                   TYPE        STRING
+* | [<-()] RT_FUNCTIONAL_LOCATIONS        TYPE        YPM_FL_SEARCH_RESULT_T
+* | [!CX!] YCX_NPT_EXCEPTIONS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SEARCH_FL_TREX.
+  data: lt_query               type trext_query_entries,
+        ls_query               type trexs_query_entry,
+        lt_objects             type com_search_tt_object_type_key,
+        ls_object              type com_search_ts_object_type_key,
+        lt_req_attributes      type trext_attributes,
+        ls_req_attribute       type trexs_attribute,
+        lt_sort_attributes     type trext_sort_attributes,
+        ls_sort_attribute      type trexs_sort_attribute,
+        lt_result_items        type com_search_tt_result_item,
+        ls_result_item         type com_search_ts_result_item,
+        ls_attribute           type trexs_doc_attributes,
+        lv_max_records         type i value 1000,
+        ls_functional_location type ypm_fl_search_result.
+
+  call function 'ALM_AUTHORITY_CHECK'
+    exporting
+      i_tcode       = 'IL03'
+      i_tcode_check = 'X'
+      i_swerk       = iv_plant
+    exceptions
+      others = 1.
+
+  if sy-subrc <> 0.
+    raise exception type ycx_npt_exceptions
+      exporting
+        plant = iv_plant.
+  endif.
+
+  clear ls_query.
+  ls_query-value1       = iv_fl_search.
+  ls_query-rowtype      = 'TERM'.
+  ls_query-operator     = 'EQ'.
+  ls_query-content_type = 'A'.
+  ls_query-term_action  = 'F'.
+  append ls_query to lt_query.
+
+  clear ls_query.
+  ls_query-value1  = 'AND'.
+  ls_query-rowtype = 'OPERATOR'.
+  append ls_query to lt_query.
+
+  clear ls_query.
+  ls_query-location    = 'MAINTPLANT'.
+  ls_query-value1      = iv_plant.
+  ls_query-rowtype     = 'ATTRIBUTE'.
+  ls_query-operator    = 'EQ'.
+  ls_query-term_action = 'E'.
+  append ls_query to lt_query.
+
+  clear ls_object.
+  ls_object-busobj      = 'BUS0010'.
+  ls_object-object_type = '1'.
+  append ls_object to lt_objects.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'BUSINESS_OBJECT'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'OBJECT_TYPE'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'OBJECT_ID'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'DESCRIPTION'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'MAINTPLANT'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'WORK_CTR'.
+  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_req_attribute.
+  ls_req_attribute-attr_name = 'EXTERNAL_KEY'.
+  append ls_req_attribute to lt_req_attributes.
+
+* Test ALL attributes
+*  clear ls_req_attribute.
+*  ls_req_attribute-attr_name = '*'.
+*  append ls_req_attribute to lt_req_attributes.
+
+  clear ls_sort_attribute.
+  ls_sort_attribute-attr_name = 'OBJECT_ID'.
+  ls_sort_attribute-sort      = '1'.
+  append ls_sort_attribute to lt_sort_attributes.
+
+  clear ls_sort_attribute.
+  ls_sort_attribute-attr_name = 'DESCRIPTION'.
+  ls_sort_attribute-sort      = '1'.
+  append ls_sort_attribute to lt_sort_attributes.
+
+  cl_com_se_search_iif=>search_objects(
+    exporting
+      it_query_entries   = lt_query
+      it_object_type     = lt_objects
+      it_req_attributes  = lt_req_attributes
+      it_sort_attributes = lt_sort_attributes
+      iv_result_to       = lv_max_records
+    importing
+      et_result_items    = lt_result_items
+    exceptions
+      others = 1
+  ).
+
+  loop at lt_result_items into ls_result_item.
+    clear ls_functional_location.
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'external_key'.
+    if sy-subrc = 0.
+      ls_functional_location-functional_location = ls_attribute-value1.
+    else.
+      continue.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'description'.
+    if sy-subrc = 0.
+      ls_functional_location-functional_location_text = ls_attribute-value1.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'work_ctr'.
+    if sy-subrc = 0.
+      ls_functional_location-work_center_id = ls_attribute-value1.
+    endif.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'maintplant'.
+    if sy-subrc = 0.
+      ls_functional_location-plant = ls_attribute-value1.
+    endif.
+
+*   Get technical ID and description of work center.
+    if not ls_functional_location-work_center_id is initial.
+      select single crhd~arbpl crtx~ktext
+          into (ls_functional_location-work_center,ls_functional_location-work_center_text)
+          from crhd
+          inner join crtx on crhd~objty = crtx~objty
+                         and crhd~objid = crtx~objid
+          where crhd~objty = 'A'
+            and crhd~objid = ls_functional_location-work_center_id
+            and crtx~spras = sy-langu.
+    endif.
+
+*   Get WBS element.
+    if not ls_result_item-object_id is initial.
+      select single iloa~proid into ls_functional_location-wbs_element
+          from iflot
+          inner join iloa on iflot~iloan = iloa~iloan
+          where iflot~tplnr = ls_result_item-object_id.
+
+      if sy-subrc <> 0.
+*       Object doesn't exist in SAP master data.
+        continue.
+      endif.
+    endif.
+
+    append ls_functional_location to rt_functional_locations.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method YCL_PM_NPT_UTILITIES=>SEARCH_MATERIAL_TREX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_MATERIAL                    TYPE        STRING(optional)
+* | [--->] IV_MATERIAL_TEXT               TYPE        STRING
+* | [--->] IV_MATERIAL_SHORT_TEXT         TYPE        STRING(optional)
+* | [--->] IV_PLANT                       TYPE        WERKS_D(optional)
+* | [<-()] RT_MATERIALS                   TYPE        YPM_MATERIAL_SEARCH_RESULT_T
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SEARCH_MATERIAL_TREX.
+  data: lt_query           type trext_query_entries,
+        ls_query           type trexs_query_entry,
+        lt_object_types    type com_search_tt_object_type_key,
+        ls_object_type     type com_search_ts_object_type_key,
+        lt_req_attributes  type trext_attributes,
+        ls_req_attribute   type trexs_attribute,
+        lt_sort_attributes type trext_sort_attributes,
+        ls_sort_attribute  type trexs_sort_attribute,
+        lv_max_records     type i value 100,
+        lt_result_items    type com_search_tt_result_item,
+        ls_result_item     type com_search_ts_result_item,
+        ls_attribute       type trexs_doc_attributes,
+        lv_param_value     type xuvalue,
+        lv_plant           type werks_d,
+        ls_material        type ypm_material_search_result,
+        lv_short_text      type string,
+        lv_text_name       type tdobname,
+        lv_material        type string.
+
+  types: begin of s_matnr_meins,
+           material type matnr,
+           meins    type meins,
+         end of s_matnr_meins.
+
+  types: begin of s_marc,
+           matnr type matnr,
+           mmsta type mmsta,
+         end of s_marc.
+
+  data: lt_matnr_meins type hashed table of s_matnr_meins with unique key material,
+        lt_marc        type hashed table of s_marc with unique key matnr,
+        ls_marc        type s_marc.
+
+  field-symbols: <matnr_meins>  type s_matnr_meins,
+                 <material_out> type ypm_material_search_result.
+
+  refresh rt_materials.
+
+  clear ls_object_type.
+  ls_object_type-busobj      = 'BUS1001006'.
+  ls_object_type-object_type = '1'.
+  insert ls_object_type into table lt_object_types.
+
+  ls_req_attribute-attr_name = 'DESCRIPTION'.
+*  ls_req_attribute-attr_name = '*'.
+  insert ls_req_attribute into table lt_req_attributes.
+
+  ls_sort_attribute-attr_name = 'OBJECT_ID'.
+  ls_sort_attribute-sort      = '1'.
+  insert ls_sort_attribute into table lt_sort_attributes.
+
+  if not iv_material_short_text is initial.
+    lv_short_text = iv_material_short_text.
+*    replace '*' in lv_short_text with ''.
+    lv_short_text = `*` && lv_short_text && `*`.
+    translate lv_short_text to upper case.
+
+    clear ls_query.
+    ls_query-location = 'MAKTG'.
+    ls_query-value1   = lv_short_text.
+    ls_query-rowtype  = 'ATTRIBUTE'.
+    ls_query-operator = 'EQ'.
+    ls_query-term_action = 'E'.
+    append ls_query to lt_query.
+
+    clear ls_query.
+    ls_query-value1  = 'AND'.
+    ls_query-rowtype = 'OPERATOR'.
+    append ls_query to lt_query.
+  endif.
+
+  if not iv_material_text is initial.
+*   Search by free text.
+    clear ls_query.
+    ls_query-value1       = iv_material_text.
+    ls_query-rowtype      = 'TERM'.
+    ls_query-operator     = 'EQ'.
+    ls_query-content_type = 'A'.
+    ls_query-term_action  = 'L'.
+    append ls_query to lt_query.
+
+    clear ls_query.
+    ls_query-value1  = 'AND'.
+    ls_query-rowtype = 'OPERATOR'.
+    append ls_query to lt_query.
+  endif.
+
+  if not iv_material is initial.
+    lv_material = iv_material.
+    replace '&' in lv_material with ''.
+    replace '*' in lv_material with ''.
+    condense lv_material.
+    lv_material = `*` && lv_material && `*`.
+
+    clear ls_query.
+    ls_query-location    = 'EXTERNAL_KEY'.
+    ls_query-value1      = lv_material.
+    ls_query-rowtype     = 'ATTRIBUTE'.
+    ls_query-operator    = 'EQ'.
+    ls_query-term_action = 'E'.
+    append ls_query to lt_query.
+
+    clear ls_query.
+    ls_query-value1  = 'AND'.
+    ls_query-rowtype = 'OPERATOR'.
+    append ls_query to lt_query.
+  endif.
+
+* Restrict search to material type STOR.
+  clear ls_query.
+  ls_query-location    = 'MATL_TYPE'.
+  ls_query-value1      = 'STOR'.
+  ls_query-rowtype     = 'ATTRIBUTE'.
+  ls_query-operator    = 'EQ'.
+  ls_query-term_action = 'E'.
+  append ls_query to lt_query.
+
+  if not iv_plant is initial.
+    lv_plant = iv_plant.
+  else.
+*   Search only within the user's plant.
+    select single parva into lv_param_value from usr05
+        where bname = sy-uname
+          and parid = 'IWK'.
+    lv_plant = lv_param_value.
+  endif.
+
+  if lv_plant is initial.
+    return.
+  endif.
+
+  clear ls_query.
+  ls_query-value1  = 'AND'.
+  ls_query-rowtype = 'OPERATOR'.
+  append ls_query to lt_query.
+
+  clear ls_query.
+  ls_query-location    = 'PLANT'.
+  ls_query-value1      = lv_plant.
+  ls_query-rowtype     = 'ATTRIBUTE'.
+  ls_query-operator    = 'EQ'.
+  ls_query-term_action = 'E'.
+  append ls_query to lt_query.
+
+  cl_com_se_search_iif=>search_objects(
+    exporting
+      it_query_entries   = lt_query
+      it_object_type     = lt_object_types
+      it_req_attributes  = lt_req_attributes
+      it_sort_attributes = lt_sort_attributes
+      iv_result_to       = lv_max_records
+    importing
+      et_result_items    = lt_result_items
+    exceptions
+      others = 1
+  ).
+
+  loop at lt_result_items into ls_result_item.
+    clear ls_material.
+
+    ls_material-material = ls_result_item-object_id.
+
+    read table ls_result_item-attributes into ls_attribute
+        with key attr_name = 'description'.
+    if sy-subrc = 0.
+      ls_material-description = ls_attribute-value1.
+    endif.
+
+    insert ls_material into table rt_materials.
+  endloop.
+
+  if not rt_materials[] is initial.
+    select matnr meins into table lt_matnr_meins from mara
+        for all entries in rt_materials
+        where matnr = rt_materials-material
+          and lvorm = ' '.
+
+    select matnr mmsta into table lt_marc from marc
+        for all entries in rt_materials
+        where matnr = rt_materials-material
+          and werks = lv_plant.
+  endif.
+
+  loop at rt_materials assigning <material_out>.
+    read table lt_matnr_meins assigning <matnr_meins>
+        with key material = <material_out>-material.
+    if sy-subrc = 0.
+      <material_out>-unit_of_measure = <matnr_meins>-meins.
+    else.
+*     Material doesn't actually exist.
+      delete rt_materials.
+      continue.
+    endif.
+
+*   5/21/2018 - Exclude materials unless they have a
+*               status of "A" or "U'.
+    read table lt_marc into ls_marc
+        with key matnr = <material_out>-material.
+    if sy-subrc <> 0
+        or ( ls_marc-mmsta <> 'A' and ls_marc-mmsta <> 'U' ).
+      delete rt_materials.
+      continue.
+    endif.
+
+*   Material PO Text
+    lv_text_name = <material_out>-material.
+    read_text(
+      exporting
+        iv_tdid     = 'BEST'
+        iv_tdname   = lv_text_name
+        iv_tdobject = 'MATERIAL'
+      importing
+        ev_text     = <material_out>-po_text
+    ).
+
+*   Material MRP Text
+    lv_text_name = <material_out>-material && ` ` && lv_plant.
+    read_text(
+      exporting
+        iv_tdid     = 'LTXT'
+        iv_tdname   = lv_text_name
+        iv_tdobject = 'MDTXT'
+      importing
+        ev_text     = <material_out>-mrp_text
+    ).
+
+    if not <material_out>-po_text is initial
+        or not <material_out>-mrp_text is initial.
+      <material_out>-text_available = 'true'.
+    else.
+      <material_out>-text_available = 'false'.
+    endif.
+*  Get valuation class for material
+    select single BKLAS from mbew into <material_out>-BKLAS
+                             where matnr = <material_out>-material.
+
+    call function 'CONVERSION_EXIT_ALPHA_OUTPUT'
+      exporting
+        input  = <material_out>-material
+      importing
+        output = <material_out>-material.
+  endloop.
+endmethod.
+ENDCLASS.

@@ -1,0 +1,699 @@
+class YCL_PM_TIME_REC definition
+  public
+  create public .
+
+public section.
+
+  interfaces /NEPTUNE/IF_NAD_SERVER .
+
+  types: begin of s_search,
+           search type string,
+         end of s_search.
+
+  types: begin of s_search_result,
+           key   type string,
+           value type string,
+         end of s_search_result.
+
+  types: begin of s_report,
+           posting_date       type string,
+           work_center        type string,
+           work_center_text   type string,
+           personnel_number   type string,
+           employee_name      type string,
+           work_order         type string,
+           operation          type string,
+           order_operation    type string,
+           final_confirmation type string,
+           pm_hours           type string,
+           hr_hours           type string,
+           activity_type      type string,
+           operation_text     type string,
+           key                type string,
+           parent             type string,
+           discrepancy        type string,
+         end of s_report.
+
+  data: begin of wa_program_state,
+          program_state   type string,
+          program_message type string,
+        end of wa_program_state.
+
+  types: begin of s_filter,
+          work_center      type string,
+          date_range       type string,
+          personnel_number type string_table,
+          only_bad         type string,
+          only_me          type string,
+        end of s_filter.
+
+  data: wa_filter type s_filter.
+
+  data: gt_search_results type table of s_search_result,
+        wa_search         type s_search,
+        gt_report         type table of s_report,
+        gt_pernr_filter   type table of pernr_d.
+protected section.
+
+  methods GET_TIME_REPORT .
+  methods SEARCH_WORK_CENTERS .
+  methods GET_PERSONNEL_NUMBERS .
+private section.
+ENDCLASS.
+
+
+
+CLASS YCL_PM_TIME_REC IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method YCL_PM_TIME_REC->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method /NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX.
+  case ajax_id.
+    when 'GET_TIME_REPORT'.
+      get_time_report( ).
+    when 'SEARCH_WORK_CENTERS'.
+      wa_search-search = ajax_value.
+      search_work_centers( ).
+    when 'SEARCH_PEOPLE'.
+      get_personnel_numbers( ).
+  endcase.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_TIME_REC->GET_PERSONNEL_NUMBERS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_PERSONNEL_NUMBERS.
+  data: ls_search_result type s_search_result,
+        lv_plant         type werks_d,
+        lt_work_centers  type table of arbpl,
+        lv_work_center   type arbpl,
+        lt_people        type table of object_person_assignment,
+        ls_person        type object_person_assignment.
+
+  refresh gt_search_results.
+
+  select single parva into lv_plant from usr05
+      where bname = sy-uname
+        and parid = 'IWK'.
+  if sy-subrc <> 0.
+*  Can't search people without a plant.
+   return.
+  endif.
+
+  if wa_filter-work_center is initial.
+*   Work center is required to search employees.
+    return.
+  endif.
+
+  split wa_filter-work_center at ',' into table lt_work_centers.
+
+  loop at lt_work_centers into lv_work_center.
+    refresh lt_people.
+
+    call function 'CR_PERSONS_OF_WORKCENTER'
+      exporting
+        arbpl       = lv_work_center
+        werks       = lv_plant
+      tables
+        out_persons = lt_people
+      exceptions
+        others = 1.
+
+    loop at lt_people into ls_person.
+      clear ls_search_result.
+      ls_search_result-key   = ls_person-pernr.
+      ls_search_result-value = ls_person-stext.
+      ycl_pm_npt_utilities=>conversion_out( changing cv_value = ls_search_result-key ).
+      condense ls_search_result-key.
+      append ls_search_result to gt_search_results.
+    endloop.
+  endloop.
+
+  sort gt_search_results by key.
+  delete adjacent duplicates from gt_search_results comparing key.
+  sort gt_search_results by value.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_TIME_REC->GET_TIME_REPORT
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method GET_TIME_REPORT.
+  types: begin of s_afru,
+           budat type dats,
+           arbid type objektid,
+           werks type werks_d,
+           ismnw type ismnw,
+           ismne type arbeite,
+           aufnr type aufnr,
+           vornr type vornr,
+           pernr type pernr_d,
+           aueru type aueru_vs,
+           learr type learr,
+           stzhl type co_stzhl,
+         end of s_afru.
+
+  types: begin of s_2002,
+           pernr type pernr_d,
+           endda type dats,
+           abrst type abrst,
+         end of s_2002.
+
+  types: begin of s_wc_map,
+           arbid type objektid,
+           arbpl type arbpl,
+           ktext type cr_ktext,
+         end of s_wc_map.
+
+  types: begin of s_wo_map,
+           aufnr type aufnr,
+           vornr type vornr,
+           ltxa1 type ltxa1,
+         end of s_wo_map.
+
+  data: lt_work_centers    type table of arbpl,
+        lv_work_center     type arbpl,
+        ls_work_center_id  type s_wc_map,
+        lr_work_centers    type range of objektid,
+        lt_wc_map_temp     type table of s_wc_map,
+        lt_work_center_ids type hashed table of s_wc_map
+                               with unique key arbpl,
+        lvr_work_center    like line of lr_work_centers,
+        lt_afru            type sorted table of s_afru
+                               with non-unique key pernr arbid budat,
+        ls_afru            type s_afru,
+        lt_2002            type hashed table of s_2002
+                               with unique key pernr endda,
+        ls_2002            type s_2002,
+        lv_begin_date_s    type string,
+        lv_end_date_s      type string,
+        lv_begin_date      type dats,
+        lv_end_date        type dats,
+        lt_people          type table of object_person_assignment,
+        ls_person          type object_person_assignment,
+        lt_people_temp     type table of object_person_assignment,
+        lt_people_npt      type ypm_person_t,
+        ls_person_npt      type ypm_person,
+        lr_pernr           type range of pernr_d,
+        lvr_pernr          like line of lr_pernr,
+        lr_pernr_filter    type range of pernr_d,
+        lt_pernr_filter    type table of pernr_d,
+        lv_pernr_filter    type pernr_d,
+        lv_date            type dats,
+        lv_date_c(10)      type c,
+        ls_report          type s_report,
+        lv_plant           type werks_d,
+        lv_work_order      type aufnr,
+        lv_operation       type vornr,
+        lt_wo_map          type hashed table of s_wo_map
+                               with unique key aufnr vornr,
+        ls_wo_map          type s_wo_map,
+        lt_aufnr           type hashed table of aufnr with unique key table_line,
+        lv_pm_hours(10)    type p decimals 2,
+        lv_hr_hours(10)    type p decimals 2,
+        lv_percent_diff    type f,
+        lv_compare_amt     type f,
+        lv_date_iterator   type dats,
+        lt_zes             type table of pc2b6,
+        ls_zes             type pc2b6,
+        lv_person_index    type i.
+
+  field-symbols: <wc_summary>     type s_report,
+                 <person_summary> type s_report,
+                 <date_summary>   type s_report,
+                 <report>         type s_report,
+                 <pa2002>         type s_2002.
+
+  select single parva into lv_plant from usr05
+      where bname = sy-uname
+        and parid = 'IWK'.
+  if sy-subrc <> 0.
+*   Can't list work centers.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Plant parameter is not maintained on your user ID.'.
+    return.
+  endif.
+
+* Build work center selection range.
+  check not wa_filter-work_center is initial.
+
+  split wa_filter-work_center at ',' into table lt_work_centers.
+
+  select crhd~objid crhd~arbpl crtx~ktext into table lt_wc_map_temp
+      from crhd
+      inner join crtx on crhd~objty = crtx~objty
+                     and crhd~objid = crtx~objid
+      for all entries in lt_work_centers
+      where crhd~objty = 'A'
+        and crhd~arbpl = lt_work_centers-table_line
+        and crhd~werks = lv_plant
+        and crtx~spras = sy-langu.
+
+  sort lt_wc_map_temp by arbpl.
+  delete adjacent duplicates from lt_wc_map_temp comparing arbpl.
+  insert lines of lt_wc_map_temp into table lt_work_center_ids.
+
+  loop at lt_work_center_ids into ls_work_center_id.
+    clear lvr_work_center.
+    lvr_work_center-sign   = 'I'.
+    lvr_work_center-option = 'EQ'.
+    lvr_work_center-low    = ls_work_center_id-arbid.
+    append lvr_work_center to lr_work_centers.
+  endloop.
+
+* Process date range input.
+  split wa_filter-date_range at '-' into lv_begin_date_s lv_end_date_s.
+  condense: lv_begin_date_s,
+            lv_end_date_s.
+
+  if lv_begin_date_s cn '0123456789/' or lv_end_date_s cn '0123456789/'.
+*   Invalid date specification.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'Invalid characters specified in date range.'.
+    return.
+  endif.
+
+  try.
+    cl_abap_datfm=>conv_date_ext_to_int(
+      exporting
+        im_datext   = lv_begin_date_s
+        im_datfmdes = '2'
+      importing
+        ex_datint   = lv_begin_date
+    ).
+
+    cl_abap_datfm=>conv_date_ext_to_int(
+      exporting
+        im_datext   = lv_end_date_s
+        im_datfmdes = '2'
+      importing
+        ex_datint   = lv_end_date
+    ).
+
+    catch cx_root.
+      wa_program_state-program_state   = 'Error'.
+      wa_program_state-program_message = 'Invalid characters specified in date range.'.
+      return.
+  endtry.
+
+* Select work order confirmations.
+  select budat arbid werks ismnw ismne aufnr vornr pernr
+         aueru learr stzhl
+      into table lt_afru
+      from afru
+      where budat >= lv_begin_date
+        and budat <= lv_end_date
+        and arbid in lr_work_centers.
+
+* Get operation short texts.
+  loop at lt_afru into ls_afru.
+    read table lt_aufnr with key table_line = ls_afru-aufnr
+        transporting no fields.
+    if sy-subrc <> 0.
+      insert ls_afru-aufnr into table lt_aufnr.
+    endif.
+  endloop.
+
+  if not lt_aufnr[] is initial.
+    select afko~aufnr afvc~vornr afvc~ltxa1
+        into table lt_wo_map
+        from afko
+        inner join afvc on afko~aufpl = afvc~aufpl
+        for all entries in lt_aufnr
+        where afko~aufnr = lt_aufnr-table_line.
+  endif.
+
+* Get the people in all selected work centers.
+  loop at lt_work_centers into lv_work_center.
+    refresh lt_people_temp.
+    call function 'CR_PERSONS_OF_WORKCENTER'
+      exporting
+        arbpl       = lv_work_center
+        werks       = lv_plant
+      tables
+        out_persons = lt_people_temp
+      exceptions
+        others = 1.
+
+    loop at lt_people_temp into ls_person.
+      clear ls_person_npt.
+      ls_person_npt-work_center      = lv_work_center.
+      ls_person_npt-personnel_number = ls_person-pernr.
+      ls_person_npt-full_name        = ls_person-stext.
+      append ls_person_npt to lt_people_npt.
+    endloop.
+
+    append lines of lt_people_temp to lt_people.
+  endloop.
+
+  refresh lr_pernr_filter.
+  if wa_filter-only_me = 'true'.
+*   Filter records to only show the user's own personnel number.
+    select single pernr into lvr_pernr-low
+        from pa0105
+        where begda <= sy-datum
+          and endda >= sy-datum
+          and subty = '0001'
+          and usrid = sy-uname.
+    if sy-subrc = 0.
+      lvr_pernr-sign = 'I'.
+      lvr_pernr-option = 'EQ'.
+      append lvr_pernr to lr_pernr_filter.
+    else.
+      wa_program_state-program_state   = 'Error'.
+      wa_program_state-program_message = 'No personnel number is associated with your user ID.'.
+      return.
+    endif.
+  elseif not wa_filter-personnel_number[] is initial.
+*   Filter records by selected personnel numbers.
+    loop at wa_filter-personnel_number into lv_pernr_filter.
+      clear lvr_pernr.
+      lvr_pernr-sign   = 'I'.
+      lvr_pernr-option = 'EQ'.
+      lvr_pernr-low    = lv_pernr_filter.
+      ycl_pm_npt_utilities=>conversion_in( changing cv_value = lvr_pernr-low ).
+      append lvr_pernr to lr_pernr_filter.
+    endloop.
+  endif.
+
+  delete: lt_people_npt where not personnel_number in lr_pernr_filter,
+          lt_people where not pernr in lr_pernr_filter.
+
+* Build personnel number selection range.
+  loop at lt_people into ls_person.
+    read table lr_pernr with key low = ls_person-pernr
+        transporting no fields.
+    if sy-subrc <> 0.
+      clear lvr_pernr.
+      lvr_pernr-sign   = 'I'.
+      lvr_pernr-option = 'EQ'.
+      lvr_pernr-low    = ls_person-pernr.
+      append lvr_pernr to lr_pernr.
+    endif.
+  endloop.
+
+  if lr_pernr[] is initial.
+*   No personnel numbers were selected.
+    wa_program_state-program_state   = 'Error'.
+    wa_program_state-program_message = 'No employees were found in the chosen work centers.'.
+    return.
+  endif.
+
+* Select infotype 2001 entries.
+*  select pernr endda sum( stdaz ) into table lt_2002
+*      from pa2002
+*      where endda >= lv_begin_date
+*        and endda <= lv_end_date
+*        and pernr in lr_pernr
+*        group by pernr endda.
+
+* Get time from payroll instead.
+  lv_date_iterator = lv_begin_date.
+  while lv_date_iterator <= lv_end_date.
+    loop at lr_pernr into lvr_pernr.
+      refresh lt_zes.
+
+      call function 'HR_TIME_RESULTS_GET'
+        exporting
+          get_pernr = lvr_pernr-low
+          get_kdate = lv_date_iterator
+        tables
+          get_zes   = lt_zes
+        exceptions
+          others = 1.
+
+      clear ls_2002.
+      ls_2002-pernr = lvr_pernr-low.
+      ls_2002-endda = lv_date_iterator.
+      insert ls_2002 into table lt_2002 assigning <pa2002>.
+
+      loop at lt_zes into ls_zes
+          where ztart = '9100' or ztart(2) = '93'.
+        <pa2002>-abrst = <pa2002>-abrst + ls_zes-anzhl.
+      endloop.
+    endloop.
+    lv_date_iterator = lv_date_iterator + 1.
+  endwhile.
+
+  clear lv_work_center.
+  loop at lt_people_npt into ls_person_npt.
+    if ls_person_npt-work_center <> lv_work_center.
+      insert initial line into table gt_report
+          assigning <wc_summary>.
+      <wc_summary>-work_center = ls_person_npt-work_center.
+      <wc_summary>-key = `W` && ls_person_npt-work_center.
+      lv_work_center = ls_person_npt-work_center.
+
+      read table lt_work_center_ids into ls_work_center_id
+          with key arbpl = ls_person_npt-work_center.
+      <wc_summary>-work_center_text = ls_work_center_id-ktext.
+    endif.
+
+    insert initial line into table gt_report
+        assigning <person_summary>.
+    <person_summary>-personnel_number = ls_person_npt-personnel_number.
+    <person_summary>-employee_name = ls_person_npt-full_name.
+    <person_summary>-key = `P` && ls_person_npt-work_center && ls_person_npt-personnel_number.
+    <person_summary>-parent = `W` && ls_person_npt-work_center.
+
+    lv_date = lv_begin_date.
+    while lv_date <= lv_end_date.
+      insert initial line into table gt_report
+          assigning <date_summary>.
+      write lv_date to lv_date_c.
+      <date_summary>-posting_date = lv_date_c.
+      <date_summary>-key = `D` && ls_person_npt-work_center && ls_person_npt-personnel_number && lv_date_c.
+      <date_summary>-parent = `P` && ls_person_npt-work_center && ls_person_npt-personnel_number.
+
+      read table lt_2002 into ls_2002
+          with key pernr = ls_person_npt-personnel_number
+                   endda = lv_date.
+      if sy-subrc = 0.
+        <date_summary>-hr_hours = ls_2002-abrst.
+        <person_summary>-hr_hours = <person_summary>-hr_hours + ls_2002-abrst.
+        <wc_summary>-hr_hours = <wc_summary>-hr_hours + ls_2002-abrst.
+      endif.
+
+      loop at lt_afru into ls_afru
+          where arbid = ls_work_center_id-arbid
+            and pernr = ls_person_npt-personnel_number
+            and budat = lv_date.
+
+        if not ls_afru-stzhl is initial.
+          ls_afru-ismnw = ls_afru-ismnw * -1.
+        endif.
+
+        <date_summary>-pm_hours = <date_summary>-pm_hours + ls_afru-ismnw.
+
+*       Don't include today's work in the summary line.
+        if lv_date <> sy-datum.
+          <person_summary>-pm_hours = <person_summary>-pm_hours + ls_afru-ismnw.
+          <wc_summary>-pm_hours = <wc_summary>-pm_hours + ls_afru-ismnw.
+        endif.
+
+        clear ls_wo_map.
+        read table lt_wo_map into ls_wo_map
+            with key aufnr = ls_afru-aufnr
+                     vornr = ls_afru-vornr.
+
+        clear ls_report.
+        ls_report-work_order     = ls_afru-aufnr.
+        ls_report-operation      = ls_afru-vornr.
+        ls_report-pm_hours       = ls_afru-ismnw.
+        ls_report-key            = `O` && ls_person_npt-work_center && ls_person_npt-personnel_number
+                                   && lv_date_c && ls_report-work_order && ls_report-operation.
+        ls_report-parent         = `D` && ls_person_npt-work_center && ls_person_npt-personnel_number && lv_date_c.
+        ls_report-operation_text = ls_wo_map-ltxa1.
+        ls_report-activity_type  = ls_afru-learr.
+
+        if not ls_afru-aueru is initial.
+          ls_report-final_confirmation = 'sap-icon://accept'.
+        endif.
+        append ls_report to gt_report.
+      endloop.
+
+      if <date_summary>-pm_hours is initial.
+        <date_summary>-pm_hours = '0.0'.
+      endif.
+
+      if <date_summary>-hr_hours is initial.
+        <date_summary>-hr_hours = '0.0'.
+      endif.
+
+*      D.Rempe - 4/12/2018 - discrepancies shouldn't be calculated until all data is summarized.
+*      if lv_date <> sy-datum.
+*        if <date_summary>-pm_hours co '0123456789. ' and <date_summary>-hr_hours co '0123456789. '.
+*          lv_pm_hours = <date_summary>-pm_hours.
+*          lv_hr_hours = <date_summary>-hr_hours.
+*          if lv_pm_hours > lv_hr_hours.
+*            lv_compare_amt = lv_pm_hours.
+*          else.
+*            lv_compare_amt = lv_hr_hours.
+*          endif.
+*          if lv_compare_amt <> 0.
+*            lv_percent_diff = abs( lv_pm_hours - lv_hr_hours ) / lv_compare_amt.
+*            if lv_percent_diff > '0.015'. "1.5%
+*              <date_summary>-discrepancy = 'true'.
+*              <person_summary>-discrepancy = 'true'.
+*              <wc_summary>-discrepancy = 'true'.
+*            endif.
+*          endif.
+*        endif.
+*      endif.
+
+      lv_date = lv_date + 1.
+    endwhile.
+  endloop.
+
+* Remove report lines where no hours were posted.
+  delete gt_report
+      where ( not posting_date is initial or not work_order is initial )
+        and ( pm_hours is initial or pm_hours = '0.0' )
+        and ( hr_hours is initial or hr_hours = '0.0' ).
+
+* 4/12/2018 - New discrepancy calculation logic.
+  loop at gt_report assigning <report>.
+    check <report>-key(1) = 'P'.
+    if <report>-pm_hours co '0123456789. ' and <report>-hr_hours co '0123456789. '.
+      lv_pm_hours = <report>-pm_hours.
+      lv_hr_hours = <report>-hr_hours.
+
+      if lv_pm_hours > lv_hr_hours.
+        lv_compare_amt = lv_pm_hours.
+      else.
+        lv_compare_amt = lv_hr_hours.
+      endif.
+      if lv_compare_amt <> 0.
+        lv_percent_diff = abs( lv_pm_hours - lv_hr_hours ) / lv_compare_amt.
+        if lv_percent_diff > '0.015'. "1.5%
+          <report>-discrepancy = 'true'.
+          read table gt_report assigning <wc_summary>
+              with key key = <report>-parent.
+          if sy-subrc = 0.
+            <wc_summary>-discrepancy = 'true'.
+          endif.
+          loop at gt_report assigning <date_summary>
+              where parent = <report>-key.
+            if <date_summary>-pm_hours co '0123456789. ' and <date_summary>-hr_hours co '0123456789. '.
+              lv_pm_hours = <date_summary>-pm_hours.
+              lv_hr_hours = <date_summary>-hr_hours.
+
+              if lv_pm_hours > lv_hr_hours.
+                lv_compare_amt = lv_pm_hours.
+              else.
+                lv_compare_amt = lv_hr_hours.
+              endif.
+              if lv_compare_amt <> 0.
+                lv_percent_diff = abs( lv_pm_hours - lv_hr_hours ) / lv_compare_amt.
+                if lv_percent_diff > '0.015'. "1.5%
+                  <date_summary>-discrepancy = 'true'.
+                endif.
+              endif.
+            endif.
+          endloop.
+        endif.
+      endif.
+    endif.
+  endloop.
+
+  if wa_filter-only_bad = 'true'.
+*   Remove person lines with no issues.
+    loop at gt_report assigning <report>.
+      lv_person_index = sy-tabix.
+
+      check <report>-key(1) = 'P'.
+      if <report>-discrepancy <> 'true'.
+        delete gt_report where parent = <report>-key.
+        delete gt_report index lv_person_index.
+        continue.
+      endif.
+    endloop.
+  endif.
+
+  loop at gt_report assigning <report>.
+*   Delete work centers which have no descendants.
+    if <report>-key(1) = 'W'.
+      read table gt_report with key parent = <report>-key
+          transporting no fields.
+      if sy-subrc <> 0.
+        delete gt_report.
+        continue.
+      endif.
+    endif.
+
+    ycl_pm_npt_utilities=>conversion_out( changing cv_value = <report>-personnel_number ).
+
+    if <report>-discrepancy is initial.
+      <report>-discrepancy = 'false'.
+    endif.
+
+    if not <report>-work_order is initial.
+      lv_work_order = <report>-work_order.
+      lv_operation = <report>-operation.
+      ycl_pm_npt_utilities=>conversion_out( changing cv_value = lv_work_order ).
+      ycl_pm_npt_utilities=>conversion_out( changing cv_value = lv_operation ).
+      <report>-order_operation = lv_work_order && `-` && lv_operation.
+    endif.
+
+    if <report>-key(1) <> 'O'.
+      if <report>-pm_hours is initial.
+        <report>-pm_hours = '0.0'.
+      endif.
+
+      if <report>-hr_hours is initial.
+        <report>-hr_hours = '0.0'.
+      endif.
+    endif.
+  endloop.
+endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method YCL_PM_TIME_REC->SEARCH_WORK_CENTERS
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+method SEARCH_WORK_CENTERS.
+  data: lv_search_string(100) type c,
+        lv_plant              type werks_d.
+
+  refresh gt_search_results.
+
+  select single parva into lv_plant from usr05
+      where bname = sy-uname
+        and parid = 'IWK'.
+  if sy-subrc <> 0.
+*   Can't list work centers.
+    return.
+  endif.
+
+  check not wa_search-search is initial.
+  check strlen( wa_search-search ) >= 3.
+
+  replace '*' in wa_search-search with ''.
+  replace '%' in wa_search-search with ''.
+  lv_search_string = `%` && wa_search-search && `%`.
+  translate lv_search_string to upper case.
+
+  select crhd~arbpl crtx~ktext into table gt_search_results
+      from crtx
+      inner join crhd on crtx~objty = crhd~objty
+                     and crtx~objid = crhd~objid
+      where crtx~spras = sy-langu
+        and crhd~werks = lv_plant
+        and ( crtx~ktext_up like lv_search_string
+           or crhd~arbpl like lv_search_string )
+      order by crhd~arbpl.
+endmethod.
+ENDCLASS.
