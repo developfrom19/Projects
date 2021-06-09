@@ -1,0 +1,1031 @@
+CLASS zcl_nad_ewm_putaway DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+
+    INTERFACES /neptune/if_nad_server .
+    INTERFACES /neptune/if_restapi .
+
+    TYPES:
+*--------------------------------------------------------------------*
+      BEGIN OF ty_hu,
+        itmno     TYPE i,
+        lgnum     TYPE /scwm/lgnum,
+        huident   TYPE /scwm/de_huident,
+        nlpla     TYPE  /scwm/ltap_nlpla,
+        highlight TYPE string,
+        act_type  TYPE  /scwm/de_actty,
+*        hu_type   TYPE string,
+      END OF ty_hu .
+    TYPES:
+      BEGIN OF ty_qty_splits,
+        papos   TYPE /scwm/ltap_hu_papos,
+        tanum   TYPE /scwm/tanum,
+        huident TYPE /scwm/de_huident,
+        nista   TYPE  /scwm/de_rf_ch_nista,
+        nsola   TYPE  /scwm/de_rf_nsola,
+        meins   TYPE /scwm/de_base_uom,
+      END OF ty_qty_splits .
+    TYPES:
+      BEGIN OF ty_ptwy_outbox,
+        uuid         TYPE string,
+        status       TYPE string,
+        message      TYPE string,
+        message_type TYPE string,
+        timestamp    TYPE string,
+        type(1)      TYPE c,
+        busy         TYPE boolean.
+        INCLUDE      TYPE  /scwm/s_rf_ptwy.
+    TYPES:END OF ty_ptwy_outbox .
+    TYPES:
+      BEGIN OF ty_hu_db,
+        huident    TYPE /scwm/de_huident,
+        sguid_hu   TYPE /scwm/guid_hu,
+        meins      TYPE /scwm/de_base_uom,
+        vsolm      TYPE /scwm/ltap_vsolm,
+        vlenr      TYPE /scwm/ltap_vlenr,
+        nltyp      TYPE   /scwm/ltap_nltyp,
+        nlber      TYPE  /scwm/ltap_nlber,
+        nlpla      TYPE  /scwm/ltap_nlpla,
+        matid      TYPE  /scwm/de_matid,
+        nsola      TYPE /scwm/de_rf_nsola,
+        who        TYPE /scwm/de_who,
+        srsrc      TYPE  /scwm/de_srsrc,
+        batchid    TYPE  /scwm/de_batchid,
+        matnr      TYPE /scwm/de_matnr,
+        maktx      TYPE /scwm/de_desc40,
+        tanum      TYPE /scwm/tanum,
+        entitled   TYPE  /scwm/de_entitled,
+        nlenr      TYPE  /scwm/de_rf_nlenr,
+        nlpla_orig TYPE  /scwm/de_rf_nlpla_orig,
+        nlenr_orig TYPE  /scwm/de_rf_nlenr_orig,
+        altme      TYPE  /scwm/de_rf_altme,
+        pathseq    TYPE  /scwm/de_sort,
+        procty     TYPE  /scwm/de_procty,
+        trart      TYPE  /scwm/lvs_trart,
+      END OF ty_hu_db .
+    TYPES:
+      BEGIN OF ty_outbox_ack,
+        huident TYPE /scwm/de_huident,
+        message TYPE string,
+        type    TYPE string,
+        busy    TYPE boolean,
+        uuid    TYPE string,
+      END OF ty_outbox_ack .
+    TYPES:
+      BEGIN OF ty_bins_db,
+        lgnum	    TYPE /scwm/lgnum,
+        lgpla	    TYPE /scwm/lgpla,
+        lgtyp     TYPE 	/scwm/lgtyp,
+        lgber	    TYPE /scwm/lgber,
+        lptyp	    TYPE /scwm/lvs_lptyp,
+        fixbintyp	TYPE /scwm/de_fixbintyp,
+        huobl     TYPE /scwm/de_hu_obligatory,
+      END OF ty_bins_db .
+    TYPES:
+      BEGIN OF ty_mat_fixedbins,
+        lgnum	   TYPE /scwm/lgnum,
+        matid	   TYPE /scwm/de_matid,
+        entitled TYPE /scwm/de_entitled,
+        lgpla	   TYPE /scwm/lgpla,
+        lgtyp	   TYPE /scwm/lgtyp,
+        matnr	   TYPE /scwm/de_matnr,
+        key      TYPE string,
+      END OF ty_mat_fixedbins .
+    TYPES:
+      BEGIN OF ty_stock_qty_db,
+        key     TYPE string,
+        lgnum   TYPE  /scwm/lgnum,
+        lgtyp	  TYPE /scwm/lgtyp,
+        lgpla   TYPE  /scwm/lgpla,
+        huident TYPE  /scwm/de_huident,
+        matid   TYPE  /scwm/de_matid,
+        batchid TYPE  /scwm/de_batchid,
+      END OF ty_stock_qty_db .
+    TYPES:
+*    TYPES:
+**--------------------------------------------------------------------*
+*      BEGIN OF ty_put,
+*        who TYPE /scwm/de_rf_who,
+*      END OF ty_put .
+      BEGIN OF ty_who,
+        lgnum      TYPE /scwm/lgnum,
+        who        TYPE /scwm/de_who,
+        created_at TYPE /scwm/de_created_dt,
+        vlpla      TYPE /scwm/de_rf_vlpla,
+        refdocno   TYPE /scdl/dl_refdocno,
+      END OF ty_who .
+    TYPES:
+      BEGIN OF ty_exc,
+        exccode TYPE /scwm/de_exccode,
+      END OF ty_exc .
+    TYPES:
+      BEGIN OF ty_messagetext,
+        type         TYPE sy-msgty,
+        message(250) TYPE c,
+      END OF ty_messagetext .
+    TYPES:
+      BEGIN OF ty_mat_bins,
+        lgpla   TYPE /scwm/lagp-lgpla,
+        lgtyp   TYPE /scwm/lagp-lgtyp,
+        lgber   TYPE /scwm/lagp-lgtyp,
+        matid   TYPE /scwm/aqua-matid,
+        quan    TYPE /scwm/aqua-quan,
+        batchid TYPE /scwm/aqua-batchid,
+        unit    TYPE /scwm/aqua-unit,
+        key     TYPE string,
+      END OF ty_mat_bins .
+
+    TYPES:BEGIN OF ty_eew,
+            huident TYPE  /scwm/de_huident.
+        INCLUDE TYPE  ylodlv_head_eew.
+    TYPES:END OF ty_eew.
+
+    DATA go_putaway TYPE REF TO zcl_putaway .
+    DATA:
+      gt_mat_bins TYPE STANDARD TABLE OF ty_mat_bins .
+    DATA:
+      gt_t331 TYPE STANDARD TABLE OF /scwm/t331 .
+    DATA gs_t331 TYPE /scwm/t331 .
+    DATA:
+      gt_stock_qty_db TYPE STANDARD TABLE OF ty_stock_qty_db .
+    DATA gs_messagetext TYPE ty_messagetext .
+    DATA:
+      gt_bins_db  TYPE STANDARD TABLE OF ty_bins_db .
+    DATA:
+*    DATA:
+*      gt_qty_splits TYPE STANDARD TABLE OF ty_qty_splits .
+      gt_mat_fixedbins_db TYPE STANDARD TABLE OF ty_mat_fixedbins .
+    DATA gs_lagp_validate TYPE /scwm/lagp .
+    DATA:
+      gt_ptwy_outbox      TYPE STANDARD TABLE OF ty_ptwy_outbox .
+    DATA:
+      gt_ptwy_hold_outbox TYPE STANDARD TABLE OF ty_ptwy_outbox .
+    DATA gs_outbox_ack TYPE ty_ptwy_outbox .
+    DATA:
+      gt_hu_db           TYPE STANDARD TABLE OF ty_hu_db .
+    DATA:
+      gt_hu TYPE STANDARD TABLE OF ty_hu .
+    DATA gs_hu TYPE ty_hu .
+    DATA gs_exc TYPE ty_exc .
+    DATA gs_who TYPE ty_who .
+    DATA:
+      gt_who TYPE STANDARD TABLE OF ty_who .
+*    DATA gs_put TYPE ty_put .
+    DATA gt_ptwy TYPE /scwm/tt_rf_ptwy .
+    DATA:
+      gs_ptwy1 LIKE LINE OF gt_ptwy .
+    DATA gs_ptwy2 TYPE /scwm/s_rf_ptwy .
+    DATA gs_ptwy TYPE /scwm/s_rf_ptwy .
+    DATA gs_dest_hu TYPE /scwm/s_rf_ptwy .
+*  data GS_WHSE type /SCWM/WHO .
+    DATA gs_message TYPE /neptune/message .
+*    DATA gv_message TYPE string .
+*    DATA gv_type TYPE char1 .
+*    DATA gv_area TYPE string .
+    DATA gs_resource TYPE /scwm/s_rsrc .
+    DATA gs_admin TYPE /scwm/s_rf_admin .
+*    DATA gv_text TYPE string .
+    DATA gv_lgnum TYPE /scwm/lgnum .
+    DATA gt_rf_exc TYPE /scwm/tt_rf_exc .
+    DATA gs_rf_exc TYPE /scwm/s_rf_exc .
+
+
+
+
+    DATA: gt_head_eew TYPE STANDARD TABLE OF ty_eew,
+          gs_head_eew TYPE ty_eew.
+
+    METHODS constructor .
+    METHODS get_db_downloadlist .
+    METHODS get_dest_hu
+      IMPORTING
+        !ajax_value TYPE string OPTIONAL .
+    METHODS save_hu
+      IMPORTING
+        !ajax_value TYPE string OPTIONAL .
+    METHODS validate_bin .
+    METHODS suggest_bin .
+    METHODS validate_dhu .
+    METHODS initial_data .
+    METHODS unassign_who
+      IMPORTING
+        !iv_ajax_value TYPE string
+        !iv_wo_split   TYPE char1 OPTIONAL
+        !iv_store_hu   TYPE char1 OPTIONAL
+        !iv_nlpla      TYPE string OPTIONAL .
+    METHODS get_return_hu
+      IMPORTING
+        !iv_who TYPE /scwm/de_who .
+  PROTECTED SECTION..
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_NAD_EWM_PUTAWAY IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_AJAX
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] AJAX_ID                        TYPE        STRING
+* | [--->] AJAX_VALUE                     TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAVIGATION                     TYPE        /NEPTUNE/AJAX_NAVIGATION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_ajax.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_REQUEST
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] KEY_ID                         TYPE        STRING(optional)
+* | [--->] KEY                            TYPE        STRING
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAV_TO                         TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_request.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_RESPONSE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] EVENT_ID                       TYPE        STRING
+* | [--->] EVENT_KEY                      TYPE        STRING
+* | [--->] KEY_ID                         TYPE        STRING(optional)
+* | [--->] KEY                            TYPE        STRING
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_response.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SUBMIT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] EVENT_ID                       TYPE        STRING
+* | [--->] EVENT_VALUE                    TYPE        STRING(optional)
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* | [--->] REQUEST                        TYPE        /NEPTUNE/DATA_REQUEST
+* | [<-->] NAV_TO                         TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_submit.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_IN
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING(optional)
+* | [--->] SYNC_ID                        TYPE        STRING(optional)
+* | [--->] LASTSYNCDATE                   TYPE        STRING(optional)
+* | [--->] IT_SYNC_DATA                   TYPE        /NEPTUNE/SYNC_DATA_TT(optional)
+* | [<---] EX_STATUS                      TYPE        /NEPTUNE/SYNC_HEADER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_sync_in.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->/NEPTUNE/IF_NAD_SERVER~HANDLE_ON_SYNC_OUT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] APPLID                         TYPE        STRING
+* | [--->] LASTSYNCDATE                   TYPE        STRING
+* | [--->] SERVER                         TYPE REF TO /NEPTUNE/CL_NAD_SERVER
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /neptune/if_nad_server~handle_on_sync_out.
+    get_db_downloadlist( ).
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+    CREATE OBJECT go_putaway.
+
+    IF gs_resource IS INITIAL.
+*User data
+      go_putaway->get_user_data(
+       CHANGING
+         cs_resource = gs_resource
+         cs_message  = gs_messagetext ).
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->GET_DB_DOWNLOADLIST
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_db_downloadlist.
+
+    DATA:
+      lt_ordim_o    TYPE  /scwm/tt_ordim_o,
+      ls_ordim_o    LIKE LINE OF lt_ordim_o,
+      lv_charg      TYPE  /scwm/de_charg,
+      ls_hu_db      TYPE ty_hu_db,
+      ls_mat_global TYPE  /scwm/s_material_global,
+      lr_matid      TYPE  rseloption,
+      ls_matid      LIKE LINE OF lr_matid,
+      lt_mat_bins   TYPE STANDARD TABLE OF ty_mat_bins,
+      ls_mat_bins   LIKE LINE OF lt_mat_bins,
+      lr_procty     TYPE rseloption,
+      ls_r_procty   LIKE LINE OF lr_procty,
+      ls_r_cat      TYPE rsdsselopt,
+      lr_cat        TYPE rseloption.
+
+    DATA: lv_uname TYPE sy-uname.
+
+*User Data
+    go_putaway->get_user_data(
+      CHANGING
+        cs_resource = gs_resource
+        cs_message  = gs_messagetext ).
+
+
+*Warehouse Process Types
+    go_putaway->get_procty(
+     EXPORTING
+       iv_lgnum    = gs_resource-lgnum
+       iv_act_type = 'PTWY'
+     IMPORTING
+       er_procty   = lr_procty ).
+
+
+*To integrate Cross Dock HU in putaway
+    ls_r_procty-sign = 'I'.
+    ls_r_procty-option = 'EQ'.
+    ls_r_procty-low = 'P230'.
+    APPEND ls_r_procty TO lr_procty.
+    CLEAR ls_r_procty.
+    ls_r_procty-sign = 'I'.
+    ls_r_procty-option = 'EQ'.
+    ls_r_procty-low = 'P290'.
+    APPEND ls_r_procty TO lr_procty.
+    CLEAR ls_r_procty.
+    ls_r_procty-sign = 'I'.
+    ls_r_procty-option = 'EQ'.
+    ls_r_procty-low = 'P295'.
+    APPEND ls_r_procty TO lr_procty.
+    CLEAR ls_r_procty.
+    ls_r_procty-sign = 'I'.
+    ls_r_procty-option = 'EQ'.
+    ls_r_procty-low = 'P296'.
+    APPEND ls_r_procty TO lr_procty.
+    CLEAR ls_r_procty.
+
+
+*WT Putaway relevant
+    go_putaway->get_wt_on_procty(
+      EXPORTING
+        ir_procty  = lr_procty
+        iv_lgnum   = gs_resource-lgnum
+      IMPORTING
+        et_ordim_o = lt_ordim_o ).
+
+    SORT lt_ordim_o BY vlenr.
+    DELETE lt_ordim_o WHERE vlenr IS INITIAL.
+
+*Preparing HU data
+
+    LOOP AT lt_ordim_o INTO ls_ordim_o.
+      lv_uname = sy-uname.
+
+      IF ls_ordim_o-srsrc IS INITIAL OR ls_ordim_o-srsrc EQ lv_uname  .
+
+        IF ls_ordim_o-trart EQ 2.
+*Get EEW data of outbound delivery header
+          CALL FUNCTION 'Y_L_OUTB_GET_EEW_DATA'
+            EXPORTING
+              iv_open_task  = 'X'
+              iv_lgnum      = ls_ordim_o-lgnum
+              iv_whoid      = ls_ordim_o-who
+            IMPORTING
+              ev_aufnr      = gs_head_eew-aufnr
+              ev_rsnum      = gs_head_eew-rsnum
+              ev_wempf      = gs_head_eew-wempf
+            EXCEPTIONS
+              error_message = 1.
+
+          gs_head_eew-huident = ls_ordim_o-nlenr.
+
+          APPEND gs_head_eew TO gt_head_eew.
+          CLEAR gs_head_eew.
+
+        ENDIF.
+
+
+        IF ls_ordim_o-matid IS NOT INITIAL.
+          TRY.
+              CALL FUNCTION '/SCWM/MATERIAL_READ_SINGLE'
+                EXPORTING
+                  iv_matid      = ls_ordim_o-matid
+                  iv_langu      = sy-langu
+                  iv_entitled   = ls_ordim_o-entitled
+                  iv_lgnum      = gv_lgnum
+                IMPORTING
+                  es_mat_global = ls_mat_global.
+            CATCH /scwm/cx_md.
+
+          ENDTRY.
+
+          IF ls_ordim_o-batchid IS NOT INITIAL.
+
+            TRY.
+                CALL FUNCTION '/SCWM/BATCH_GET'
+                  EXPORTING
+                    iv_lgnum    = gv_lgnum
+                    iv_entitled = ls_ordim_o-entitled
+                    iv_matid    = ls_ordim_o-matid
+                    iv_batchid  = ls_ordim_o-batchid
+                  IMPORTING
+                    ev_charg    = lv_charg.
+              CATCH /scwm/cx_core.
+
+            ENDTRY.
+          ENDIF.
+        ENDIF.
+
+        MOVE-CORRESPONDING ls_ordim_o TO ls_hu_db.
+        ls_hu_db-huident = ls_ordim_o-vlenr.
+
+        ls_hu_db-matnr = ls_mat_global-matnr.
+        ls_hu_db-maktx = ls_mat_global-maktx.
+*        ls_hu_db-batchid = lv_charg.
+
+        ls_matid-sign = 'I'.
+        ls_matid-option = 'EQ'.
+        ls_matid-low = ls_hu_db-matid.
+        APPEND ls_matid TO lr_matid.
+
+        APPEND ls_hu_db TO gt_hu_db.
+        CLEAR:ls_hu_db.
+      ENDIF.
+    ENDLOOP.
+
+
+*Get Bin Suggestions for products in HU
+    SORT lr_matid BY low ASCENDING.
+    DELETE ADJACENT DUPLICATES FROM lr_matid COMPARING low.
+
+
+    ls_r_cat-sign = 'I'.
+    ls_r_cat-option = 'EQ'.
+    ls_r_cat-low = 'U3'.
+    APPEND ls_r_cat TO lr_cat.
+
+
+    go_putaway->bin_suggestions(
+     EXPORTING
+       iv_lgnum    = gs_resource-lgnum
+       ir_matid    = lr_matid
+       ir_cat      = lr_cat
+     IMPORTING
+       et_mat_bins = lt_mat_bins ).
+
+    LOOP AT lt_mat_bins INTO ls_mat_bins.
+      CALL FUNCTION 'GENERAL_GET_RANDOM_STRING'
+        EXPORTING
+          number_chars  = 10
+        IMPORTING
+          random_string = ls_mat_bins-key.
+      APPEND ls_mat_bins TO gt_mat_bins.
+      CLEAR ls_mat_bins.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->GET_DEST_HU
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_dest_hu.
+
+    DATA : lt_nested_hu TYPE /scwm/tt_rf_nested_hu,
+           lv_line      TYPE i,
+           lv_cd_hu     TYPE /scwm/de_huident,
+           ls_head_eew  TYPE ylodlv_head_eew.
+
+
+    CHECK ajax_value IS NOT INITIAL.
+
+*FM to get resource application and presentation parameters
+    go_putaway->get_user_data(
+     CHANGING
+       cs_resource = gs_resource
+       cs_message  = gs_messagetext ).
+
+
+    CHECK gs_resource IS NOT INITIAL.
+
+    MOVE-CORRESPONDING gs_resource TO gs_admin.
+
+
+    go_putaway->get_hu_info(
+     EXPORTING
+       iv_huident   = ajax_value
+     IMPORTING
+       ev_cd_hu     = lv_cd_hu
+     CHANGING
+       cs_ptwy      = gs_ptwy
+       cs_admin     = gs_admin
+       ct_ptwy      = gt_ptwy
+       ct_nested_hu = lt_nested_hu
+       cs_message   = gs_messagetext ).
+
+
+
+*Check whether enteredHU is cross-dock
+
+    IF lv_cd_hu IS NOT INITIAL.
+
+      go_putaway->get_cd_hu_info(
+       EXPORTING
+         iv_huident  = lv_cd_hu
+         is_resource = gs_resource
+       IMPORTING
+         es_dlv_head_eew = ls_head_eew
+       CHANGING
+         cs_ptwy     = gs_ptwy
+         cs_message  = gs_messagetext ).
+
+
+      IF ls_head_eew IS NOT INITIAL.
+        MOVE-CORRESPONDING ls_head_eew TO gs_head_eew.
+        gs_head_eew-huident = lv_cd_hu.
+      ENDIF.
+
+    ENDIF.
+
+
+    IF gs_messagetext-type NE 'E'.
+      REPLACE ALL OCCURRENCES OF ',' IN gs_ptwy-nista WITH ''.
+      CONDENSE gs_ptwy-nista.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->GET_RETURN_HU
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WHO                         TYPE        /SCWM/DE_WHO
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_return_hu.
+    SELECT SINGLE vlpla FROM /scwm/ordim_c
+      INTO gs_messagetext-message
+      WHERE lgnum EQ gs_resource-lgnum
+      AND who EQ iv_who.
+
+    IF sy-subrc EQ 0.
+      gs_messagetext-type = 'I'.
+
+    ELSE.
+      gs_messagetext-type = 'E'.
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->INITIAL_DATA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD initial_data.
+
+
+    CREATE OBJECT go_putaway.
+
+     go_putaway->get_user_data(
+      CHANGING
+        cs_resource = gs_resource
+        cs_message  = gs_messagetext ).
+
+
+***FM to Get resource application and presentation parameters
+**    CALL FUNCTION '/SCWM/RSRC_USER_DEF_SET_GET'
+**      CHANGING
+**        resource = gs_resource.
+
+    CHECK gs_resource IS NOT INITIAL.
+
+*  Storage Type config
+    go_putaway->get_t331_data(
+      EXPORTING
+        iv_lgnum = gs_resource-lgnum
+      IMPORTING
+        et_t331  = gt_t331 ).
+
+
+**
+**    SELECT * FROM /scwm/t331 INTO TABLE gt_t331
+**     WHERE lgnum EQ gs_resource-lgnum.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->SAVE_HU
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] AJAX_VALUE                     TYPE        STRING(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD save_hu.
+
+    go_putaway->get_user_data(
+     CHANGING
+       cs_resource = gs_resource
+       cs_message  = gs_messagetext ).
+
+
+    IF gs_messagetext-type eq 'E'.
+      return.
+    ENDIF.
+
+
+    go_putaway->confirm_putaway_wt(
+         EXPORTING
+           iv_tanum    = gs_ptwy-tanum
+           is_resource = gs_resource
+           is_ptwy2    = gs_ptwy2
+         CHANGING
+           cs_message  = gs_messagetext ).
+
+
+*Outbox Sync (for sending acknowledgement)
+    IF ajax_value IS NOT INITIAL.
+      gs_outbox_ack-huident = gs_ptwy-huident.
+      gs_outbox_ack-uuid = ajax_value.
+      gs_outbox_ack-matnr = gs_ptwy-matnr.
+      gs_outbox_ack-message = gs_messagetext-message.
+      gs_outbox_ack-type = gs_messagetext-type.
+      gs_outbox_ack-busy = ''. "Hide Busy
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->SUGGEST_BIN
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD suggest_bin.
+    DATA: lr_lgtyp TYPE  rseloption,
+          ls_matid TYPE rsdsselopt,
+          lr_matid TYPE rseloption,
+          ls_cat   TYPE rsdsselopt,
+          lr_cat   TYPE rseloption.
+
+
+    ls_matid-sign = 'I'.
+    ls_matid-option = 'EQ'.
+    ls_matid-low = gs_ptwy2-matid.
+    APPEND ls_matid TO lr_matid.
+
+
+    ls_cat-sign = 'I'.
+    ls_cat-option = 'EQ'.
+    ls_cat-low = 'U3'.
+    APPEND ls_cat TO lr_cat.
+
+     go_putaway->bin_suggestions(
+      EXPORTING
+        iv_lgnum    = gs_resource-lgnum
+        ir_matid    = lr_matid
+        ir_cat      = lr_cat
+      IMPORTING
+        et_mat_bins = gt_mat_bins ).
+
+
+    DELETE gt_mat_bins WHERE lgpla EQ gs_ptwy2-nlpla.
+
+    SORT gt_mat_bins BY lgtyp.
+
+    IF gt_mat_bins IS NOT INITIAL.
+      gs_messagetext-type = 'S'.
+    ELSE.
+      gs_messagetext-type = 'E'.
+    ENDIF.
+
+
+*    DATA : lt_lgpla   TYPE  /scwm/tt_lgpla,
+*           ls_exc     TYPE /scwm/s_rf_exc,
+*           lr_root    TYPE REF TO cx_root,
+*           ls_message TYPE /neptune/message.
+
+
+**    CALL FUNCTION '/SCWM/T301M_READ_SINGLE'
+**      EXPORTING
+**        iv_lgnum    = gs_resource-lgnum
+**        iv_lgtypgrp = 'OUTB'
+**      IMPORTING
+**        er_lgtyp    = lr_lgtyp
+**      EXCEPTIONS
+**        not_found   = 1
+**        OTHERS      = 2.
+**
+*** Get list of suggested bin based on HU material
+**    SELECT a~lgpla a~lgtyp a~lgber b~matid b~quan b~batchid b~unit FROM /scwm/lagp AS a
+**      INNER JOIN /scwm/aqua AS b
+**      ON a~lgpla = b~lgpla
+**      INTO TABLE gt_mat_bins
+**      WHERE a~lgnum EQ gs_resource-lgnum
+**      AND a~skzua EQ space
+**      AND a~lgtyp IN lr_lgtyp
+**      AND b~matid EQ gs_ptwy2-matid.
+
+
+
+
+******    *Recommended Bins
+*****    APPEND gs_ptwy1 TO gt_ptwy. "Empty row append in internal table
+*****
+*****    IF gs_resource IS NOT INITIAL.
+*****      MOVE-CORRESPONDING gs_resource TO gs_admin.
+*****    ENDIF.
+*****
+*****    MOVE: 'CHBD' TO gs_exc-exccode,
+*****          '04'   TO ls_exc-exec_step.
+*****
+*****    TRANSLATE gs_exc-exccode TO UPPER CASE.
+*****
+*****    MOVE: gs_exc-exccode TO ls_exc-iprcode,
+*****          gs_exc-exccode TO ls_exc-exccode.
+*****
+*****    APPEND ls_exc TO gs_ptwy2-exc_tab.
+*****    MOVE gs_ptwy2-exc_tab TO gt_rf_exc.
+*****
+*****    MOVE gs_ptwy2-nlpla TO gs_ptwy2-nlpla_orig.
+*****    CLEAR gs_ptwy2-nlpla.
+*****
+*****
+*****    TRY.
+*****        CALL FUNCTION '/SCWM/RF_PT_MAT_DEST_PROP_PBO'
+*****          CHANGING
+*****            cs_ptwy       = gs_ptwy2
+*****            cs_admin      = gs_admin
+*****            ct_ptwy       = gt_ptwy
+*****            ct_lgpla      = lt_lgpla
+*****          EXCEPTIONS
+*****            error_message = 1.
+*****
+*****      CATCH cx_root INTO lr_root.
+*****    ENDTRY.
+*****
+*****    IF gs_ptwy2-nlpla IS NOT INITIAL.
+*****      gs_messagetext-type = 'Success'.
+*****      gs_messagetext-message = gs_ptwy2-nlpla.
+*****    ELSE.
+*****      gs_messagetext-type = 'Error'.
+*****
+*****      CALL METHOD me->prepare_message
+*****        EXPORTING
+*****          iv_msgid = sy-msgid
+*****          iv_msgno = sy-msgno
+*****          iv_msgv1 = sy-msgv1
+*****          iv_msgv2 = sy-msgv2
+*****          iv_msgv3 = sy-msgv3
+*****          iv_msgv4 = sy-msgv4
+*****          iv_msgty = sy-msgty.
+*****    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->UNASSIGN_WHO
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_AJAX_VALUE                  TYPE        STRING
+* | [--->] IV_WO_SPLIT                    TYPE        CHAR1(optional)
+* | [--->] IV_STORE_HU                    TYPE        CHAR1(optional)
+* | [--->] IV_NLPLA                       TYPE        STRING(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD unassign_who.
+
+    DATA: lt_who TYPE  /scwm/tt_who_int,
+          ls_who TYPE /scwm/s_who_int,
+          lv_who TYPE  /scwm/de_who.
+
+
+    DATA: lo_picking TYPE REF TO zcl_picking.
+
+    lv_who = iv_ajax_value.
+
+
+    IF iv_store_hu EQ abap_true.
+
+      gs_ptwy-nlpla = iv_nlpla.
+      TRANSLATE gs_ptwy-nlpla TO UPPER CASE.
+
+      go_putaway->store_hu(
+         EXPORTING
+           is_resource = gs_resource
+           is_ptwy     = gs_ptwy
+         CHANGING
+           cs_message  = gs_messagetext ).
+
+      IF gs_messagetext-type EQ 'E'.
+        RETURN.
+      ENDIF.
+    ENDIF.
+
+
+    IF iv_wo_split EQ abap_true.
+      CREATE OBJECT lo_picking.
+
+      lo_picking->split_wo_onback(
+       EXPORTING
+         iv_lgnum    = gs_resource-lgnum
+         iv_who      = lv_who
+         is_resource = gs_resource
+         iv_split_only = 'X' ).
+    ENDIF.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->VALIDATE_BIN
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD validate_bin.
+    DATA: ls_message TYPE /neptune/message,
+          lv_nlpla   TYPE /scwm/de_rf_nlpla.
+
+
+     go_putaway->bin_validation(
+      EXPORTING
+        iv_lgnum   = gs_resource-lgnum
+        iv_lgpla   = gs_ptwy2-nlpla_orig "value is entered on input while (changing bin) applying CHBD-
+      IMPORTING
+        es_bin     = gs_lagp_validate
+      CHANGING
+        cs_message = gs_messagetext ).
+
+    IF gs_messagetext-type EQ 'E'.
+      RETURN.
+    ENDIF.
+
+
+    lv_nlpla = gs_ptwy2-nlpla_orig.
+
+    gs_ptwy2-nlpla_orig = gs_ptwy2-nlpla. "Set actual(old) bin value as original value
+    gs_ptwy2-nlpla = lv_nlpla."Set entered bin value as new bin value
+
+    go_putaway->exc_chbd(
+      EXPORTING
+        is_resource = gs_resource
+      IMPORTING
+        es_dest_hu  = gs_dest_hu
+      CHANGING
+        cs_ptwy2    = gs_ptwy2
+        cs_message  = gs_messagetext ).
+
+
+
+
+
+
+
+*
+**Validate Entered Destination bin
+*    SELECT SINGLE * FROM /scwm/lagp INTO gs_lagp_validate
+*                                    WHERE lgnum EQ gs_resource-lgnum
+*                                   AND lgpla EQ
+
+
+*    IF sy-subrc NE 0.
+*      ls_message-type = 'Error'.
+*      ls_message-id = '/SCWM/RF_EN'.
+*      ls_message-number = '045'.
+*      ls_message-message_v1 = gs_ptwy2-nlpla_orig.
+*  ELSE.
+*For this validation purpose interchanging the destination bin values
+*    lv_nlpla = gs_ptwy2-nlpla_orig.
+*
+*    gs_ptwy2-nlpla_orig = gs_ptwy2-nlpla. "Set actual(old) bin value as original value
+*    gs_ptwy2-nlpla = lv_nlpla."Set entered bin value as new bin value
+*
+*    CALL METHOD me->exc_chbd
+*      IMPORTING
+*        es_message = ls_message.
+
+*  ENDIF.
+
+*  IF ls_message IS NOT INITIAL.
+*    gs_messagetext-type = 'Error'.
+*
+*
+*    CALL METHOD me->prepare_message
+*      EXPORTING
+*        iv_msgid = ls_message-id
+*        iv_msgno = ls_message-number
+*        iv_msgv1 = ls_message-message_v1
+*        iv_msgv2 = ls_message-message_v2
+*        iv_msgv3 = ls_message-message_v3
+*        iv_msgv4 = ls_message-message_v4
+*        iv_msgty = ls_message-type.
+**         iv_ack_outbox = 'X'
+**         iv_ajax_value = ajax_value.
+*  ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_NAD_EWM_PUTAWAY->VALIDATE_DHU
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD validate_dhu.
+    DATA: ls_message  TYPE /neptune/message,
+          ls_hu_valid TYPE /scwm/huhdr-huident,
+          lv_hu       TYPE /scwm/huhdr-huident.
+
+
+    go_putaway->hu_validation(
+      EXPORTING
+        iv_lgnum   = gs_resource-lgnum
+      CHANGING
+        cs_huident = gs_ptwy2-rfhu
+        cs_message = gs_messagetext ).
+
+    IF gs_messagetext-type EQ 'E'.
+      RETURN.
+    ENDIF.
+
+
+    go_putaway->exc_chhu(
+      EXPORTING
+        is_resource = gs_resource
+      CHANGING
+        cs_ptwy2    = gs_ptwy2
+        cs_message  = gs_messagetext ).
+
+
+
+*    lv_hu = gs_ptwy2-rfhu.
+*
+*
+*
+**Validate Entered Destination Handling Unit
+*    CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+*      EXPORTING
+*        input  = lv_hu
+*      IMPORTING
+*        output = lv_hu.
+*
+*    SELECT SINGLE huident FROM /scwm/huhdr INTO ls_hu_valid
+*                                    WHERE lgnum EQ gs_resource-lgnum
+*                                   AND huident EQ lv_hu. "value is entered on input while (changing bin) applying CHBD-
+*
+*
+*    IF sy-subrc NE 0.
+*      ls_message-type = 'Error'.
+*      ls_message-id = '/SCWM/HU_WM'.
+*      ls_message-number = '015'.
+*    ELSE.
+**Passing Converted HU to scanned field for FM processing
+*      gs_ptwy2-rfhu = lv_hu.
+*
+*
+*      CALL METHOD me->exc_chhu
+*        IMPORTING
+*          es_message = ls_message.
+*    ENDIF.
+*
+*
+*    IF ls_message IS NOT INITIAL.
+*      gs_messagetext-type = 'Error'.
+*
+*      CALL METHOD me->prepare_message
+*        EXPORTING
+*          iv_msgid = ls_message-id
+*          iv_msgno = ls_message-number
+*          iv_msgv1 = ls_message-message_v1
+*          iv_msgv2 = ls_message-message_v2
+*          iv_msgv3 = ls_message-message_v3
+*          iv_msgv4 = ls_message-message_v4
+*          iv_msgty = ls_message-type.
+**             iv_ack_outbox = 'X'
+**             iv_ajax_value = ajax_value.
+*    ENDIF.
+  ENDMETHOD.
+ENDCLASS.

@@ -1,0 +1,2092 @@
+class ZCL_PICKING definition
+  public
+  final
+  create public .
+
+public section.
+
+  types:
+    BEGIN OF ty_pick_wo_h,
+        procty   TYPE /scwm/de_procty,
+        trart    TYPE  /scwm/lvs_trart,
+        act_type TYPE /scwm/de_actty,
+        aarea    TYPE  /scwm/de_aarea.
+        INCLUDE TYPE /scwm/s_who_int.
+    TYPES:END OF ty_pick_wo_h .
+  types:
+    BEGIN OF ty_pick_wo_i,
+        uuid           TYPE string,
+        rf_state       TYPE /scwm/de_state,
+        new_wt         TYPE char1,
+        comb_tanum_txt TYPE string,
+        shiphu         TYPE /scwm/de_rf_nlenr.
+        INCLUDE TYPE /scwm/s_rf_ordim_confirm.
+        INCLUDE TYPE ylodlv_head_eew.
+    TYPES:END OF ty_pick_wo_i .
+  types:
+    BEGIN OF ty_messagetext,
+        type         TYPE sy-msgty,
+        message(250) TYPE c,
+      END OF ty_messagetext .
+  types:
+    BEGIN OF ty_queue,
+        queue TYPE /scwm/t346t-queue,
+        text  TYPE /scwm/t346t-text,
+      END OF ty_queue .
+  types:
+    BEGIN OF ty_queue_who,
+        who   TYPE /scwm/de_who,
+        queue TYPE /scwm/de_queue,
+        rsrc  TYPE /scwm/de_rsrc,
+      END OF ty_queue_who .
+  types:
+    BEGIN OF ty_ver_profile,
+        key TYPE string,
+        who TYPE /scwm/de_who.
+        INCLUDE TYPE /scwm/tvprf_cnt.
+    TYPES END OF :ty_ver_profile .
+  types:
+    tt_ver_profile TYPE STANDARD TABLE OF ty_ver_profile .
+  types:
+    tt_queue_who TYPE STANDARD TABLE OF ty_queue_who .
+  types:
+    tt_queue TYPE STANDARD TABLE OF ty_queue .
+  types:
+    tt_pick_wo_i TYPE STANDARD TABLE OF ty_pick_wo_i .
+  types:
+    tt_pick_wo_h TYPE STANDARD TABLE OF ty_pick_wo_h .
+
+  data GS_MESSAGE type TY_MESSAGETEXT .
+  constants GC_WME type /SCWM/DE_HUAPPL value 'WME' ##NO_TEXT.
+  constants GC_NW72 type /SCWM/LGNUM value 'NW72' ##NO_TEXT.
+
+  methods PREPARE_MESSAGE
+    importing
+      !IV_MSGID type SY-MSGID optional
+      !IV_MSGNO type SY-MSGNO optional
+      !IV_MSGV1 type SY-MSGV1 optional
+      !IV_MSGV2 type SY-MSGV2 optional
+      !IV_MSGV3 type SY-MSGV3 optional
+      !IV_MSGV4 type SY-MSGV4 optional
+      !IV_MSGTY type SYST_MSGTY optional
+      !IR_ERROR type ref to CX_ROOT optional
+    exporting
+      !ES_MESSAGE type TY_MESSAGETEXT .
+  methods CONFIRM_PICKING_WT
+    importing
+      !IT_PICK_WO_I type TT_PICK_WO_I
+      value(IS_PICK_WO_I) type TY_PICK_WO_I
+      !IS_PICK_WO_H type TY_PICK_WO_H
+      !IT_ALL_ORDIM_CONFIRM type /SCWM/TT_RF_ORDIM_CONFIRM
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+    exporting
+      !ES_MESSAGE type TY_MESSAGETEXT .
+  methods CONFIRM_STAGING_WT
+    importing
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+      value(IS_PICK_WO_H) type TY_PICK_WO_H
+      value(IS_PICK_WO_I) type TY_PICK_WO_I
+      value(IT_PICK_WO_I) type TT_PICK_WO_I
+    exporting
+      !EV_SOURCEHU type /SCWM/DE_RF_VLENR
+      !ES_MESSAGE type TY_MESSAGETEXT .
+  methods GET_OB_BINS
+    importing
+      !IV_LGNUM type /SCWM/DE_RF_LGNUM
+    exporting
+      !ET_OB_BINS type /SCWM/LAGP_TT .
+  methods GET_QUEUES
+    importing
+      !IV_LGNUM type /SCWM/DE_RF_LGNUM
+      !IV_ACT_TYPE type /SCWM/DE_ACTTY
+    exporting
+      !ET_QUEUE type TT_QUEUE .
+  methods GET_WO_BY_QUEUE
+    importing
+      !IR_QUEUE type RSELOPTION
+      !IV_LGNUM type /SCWM/DE_RF_LGNUM
+      !IR_SEL_TYPE type RSELOPTION
+      !IR_RSRC type RSELOPTION
+      !IV_RSRC_TYPE type /SCWM/DE_RSRC_TYPE
+    exporting
+      !ET_QUEUE_WHO type TT_QUEUE_WHO .
+  methods GET_WT_RF_STATE
+    importing
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+      value(IS_ORDIM_CONFIRM) type /SCWM/S_RF_ORDIM_CONFIRM
+    exporting
+      !EV_STATE type /SCWM/DE_STATE .
+  methods GET_WO_INFO
+    importing
+      !IV_WHO type ANY
+    exporting
+      !ES_PICK_WO_H type TY_PICK_WO_H
+      !ET_ORDIM_CONFIRM type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ET_ALL_TASKS_RF type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ES_EEW_H type YLODLV_HEAD_EEW
+      !ES_MESSAGE type TY_MESSAGETEXT
+      !ET_PICK_HUS type /SCWM/TT_RF_PICK_HUS
+    changing
+      !CS_RESOURCE type /SCWM/S_RSRC .
+  methods SPLIT_WO_ONBACK
+    importing
+      !IV_LGNUM type /SCWM/LGNUM
+      !IV_WHO type /SCWM/DE_WHO
+      !IS_RESOURCE type /SCWM/S_RSRC
+      !IV_SPLIT_ONLY type CHAR1 optional
+      !IV_UNASSIGN_ONLY type CHAR1 optional
+    changing
+      !CS_MESSAGE type TY_MESSAGETEXT optional .
+  methods VERIFICATION_PROFILE
+    importing
+      !IV_LGNUM type /SCWM/LGNUM
+      !IV_WHO type /SCWM/DE_WHO
+      !IV_PROCTY type /SCWM/DE_PROCTY
+      !IV_TRART type /SCWM/LVS_TRART
+      !IV_ACT_TYPE type /SCWM/DE_ACTTY
+      !IV_AAREA type /SCWM/DE_AAREA
+    exporting
+      !ET_VER_PROFILE type TT_VER_PROFILE .
+  PROTECTED SECTION.
+private section.
+
+  methods GET_PICKING_WT
+    importing
+      !IT_SOURCE_OPEN_TASKS type /SCWM/TT_ORDIM_O
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+      value(IS_WHO) type /SCWM/S_WHO_INT
+      value(IS_SELECTION) type /SCWM/S_RF_SELECTION
+    exporting
+      !EV_ERROR_FLAG type CHAR1
+      !ET_ORDIM_CONFIRM_CPMT type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ET_ORDIM_CONFIRM type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ES_EEW_H type YLODLV_HEAD_EEW
+    changing
+      !CT_PICK_HUS type /SCWM/TT_RF_PICK_HUS
+      !CS_WME_VERIF type /SCWM/S_WME_VERIF .
+  methods GET_STAGING_WT
+    importing
+      value(IS_WHO) type /SCWM/S_WHO_INT
+      !IT_SOURCE_OPEN_TASKS type /SCWM/TT_ORDIM_O
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+    exporting
+      !EV_ERROR_FLAG type CHAR1
+      !ET_ORDIM_CONFIRM_PLHU type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ET_ORDIM_CONFIRM_PLMT type /SCWM/TT_RF_ORDIM_CONFIRM
+      !ES_EEW_H type YLODLV_HEAD_EEW
+    changing
+      !CS_WME_VERIF type /SCWM/S_WME_VERIF optional
+      !CT_PICK_HUS type /SCWM/TT_RF_PICK_HUS .
+  methods CREATE_PICKHU
+    importing
+      !IS_PICK_WO_I type TY_PICK_WO_I
+      !IS_PICK_WO_H type TY_PICK_WO_H
+      value(IS_RESOURCE) type /SCWM/S_RSRC
+    exporting
+      !ET_PICK_HUS type /SCWM/TT_RF_PICK_HUS
+    changing
+      !CS_MESSAGE type TY_MESSAGETEXT .
+ENDCLASS.
+
+
+
+CLASS ZCL_PICKING IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->CONFIRM_PICKING_WT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_PICK_WO_I                   TYPE        TT_PICK_WO_I
+* | [--->] IS_PICK_WO_I                   TYPE        TY_PICK_WO_I
+* | [--->] IS_PICK_WO_H                   TYPE        TY_PICK_WO_H
+* | [--->] IT_ALL_ORDIM_CONFIRM           TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [<---] ES_MESSAGE                     TYPE        TY_MESSAGETEXT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD confirm_picking_wt.
+
+
+    DATA: ls_main_data          TYPE  /scwm/s_hu_main_data,
+          ls_selection          TYPE  /scwm/s_rf_selection,
+          ls_ordim_confirm      TYPE  /scwm/s_rf_ordim_confirm,
+          ls_ordim_confirm_cmpt TYPE /scwm/s_rf_ordim_confirm,
+          ls_who                TYPE  /scwm/s_who_int,
+          lt_pick_hus           TYPE  /scwm/tt_rf_pick_hus,
+          lt_ordim_confirm      TYPE  /scwm/tt_rf_ordim_confirm,
+          ls_wme_verif          TYPE  /scwm/s_wme_verif,
+          lt_nested_hu          TYPE  /scwm/tt_rf_nested_hu,
+          ls_nested_hu          TYPE  /scwm/s_rf_nested_hu,
+          lt_sernr              TYPE  /scwm/tt_rf_sernr,
+          lt_sernr_diff         TYPE  /scwm/tt_rf_sernr,
+          ls_sn                 TYPE  /scwm/s_rf_sn,
+          lt_sernr_lsck         TYPE  /scwm/tt_rf_sernr,
+          ls_temp_ordim_confirm LIKE LINE OF it_pick_wo_i,
+          ls_pick_hus           LIKE LINE OF lt_pick_hus,
+          ls_exc_tab            LIKE LINE OF ls_ordim_confirm-exc_tab,
+          lv_exec_step          TYPE  /scwm/de_exec_step,
+          lt_guid_hu            TYPE  /scwm/tt_guid_hu,
+          ls_guid_hu            LIKE LINE OF lt_guid_hu,
+          ls_comb_tanums        LIKE LINE OF ls_ordim_confirm-comb_tanums,
+          lv_vlenr              TYPE /scwm/de_rf_vlenr,
+          lv_line               TYPE i,
+          lv_line_count         TYPE i,
+          lv_tanum_msg          TYPE sy-msgv1,
+          lt_ver_profile        TYPE tt_ver_profile,
+          ls_ver_profile        LIKE LINE OF lt_ver_profile.
+
+    DATA: lv_time_stamp    TYPE tzntstmps,
+          lt_change        TYPE /scwm/tt_to_change_att_int,
+          ls_change        LIKE LINE OF lt_change,
+          lt_field_value_c TYPE /scwm/tt_changed,
+          ls_field_value_c LIKE LINE OF lt_field_value_c,
+          lt_pick_wo_i     TYPE tt_pick_wo_i,
+          ls_pick_wo_i     TYPE ty_pick_wo_i,
+          lcx_root         TYPE REF TO cx_root,
+          lv_rf_state      TYPE /scwm/de_state.
+
+
+*Move data
+    lt_pick_wo_i[] = it_pick_wo_i[].
+    ls_pick_wo_i = is_pick_wo_i.
+
+    lv_tanum_msg = ls_pick_wo_i-tanum. "Storing TANUM for success message preparation
+
+*--------------------------------------------------------------------*User Entries
+    IF ls_pick_wo_i-vlenr_verif IS NOT INITIAL.
+
+      lv_vlenr =  ls_pick_wo_i-vlenr_verif.
+* Add leading zeros
+      CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+        EXPORTING
+          input  = lv_vlenr
+        IMPORTING
+          output = lv_vlenr.
+
+      ls_pick_wo_i-vlenr = lv_vlenr.
+
+      MODIFY lt_pick_wo_i FROM ls_pick_wo_i
+                            TRANSPORTING vlenr
+                            WHERE tanum EQ ls_pick_wo_i-tanum.
+    ENDIF.
+
+*--------------------------------------------------------------------*Check for Pick Hu's
+
+    IF ls_pick_wo_i-pickhu IS NOT INITIAL.
+
+      CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+        EXPORTING
+          input  = ls_pick_wo_i-pickhu
+        IMPORTING
+          output = ls_pick_wo_i-pickhu.
+
+*Global Variables setup for RF FM's
+
+      /scwm/cl_wm_packing=>/scwm/if_pack~gv_lgnum = is_resource-lgnum.
+      /scwm/cl_pack_tm=>gv_appl = gc_wme.
+
+
+      ls_main_data-appl = gc_wme.
+      ls_main_data-lgnum = is_resource-lgnum.
+
+      TRY .
+          CALL FUNCTION '/SCWM/HU_GT_FILL'
+            EXPORTING
+              iv_appl      = gc_wme
+              is_main_data = ls_main_data
+            EXCEPTIONS
+              error        = 1
+              OTHERS       = 2.
+        CATCH cx_root INTO lcx_root.
+          me->prepare_message( ir_error = lcx_root ).
+          es_message = gs_message.
+          RETURN.
+      ENDTRY.
+
+*Get Verification profile to check whether CD picking activity or not
+      CALL METHOD me->verification_profile
+        EXPORTING
+          iv_lgnum       = is_resource-lgnum
+          iv_who         = ls_pick_wo_i-who
+          iv_procty      = ls_pick_wo_i-procty
+          iv_trart       = ls_pick_wo_i-trart
+          iv_act_type    = ls_pick_wo_i-act_type
+          iv_aarea       = ls_pick_wo_i-aarea
+        IMPORTING
+          et_ver_profile = lt_ver_profile.
+
+*ZNP5 is verification profile for CD picking
+*      READ TABLE lt_ver_profile INTO ls_ver_profile WITH KEY verprf = 'ZNP5'.
+
+      READ TABLE lt_ver_profile INTO ls_ver_profile WITH KEY valid_obj = 'PICKHU'.
+
+      IF sy-subrc EQ 0.
+*--------------------------------------------------------------------*Pick HU preparation
+*Create or Get List of Pick HU for WO
+        CALL METHOD me->create_pickhu
+          EXPORTING
+            is_pick_wo_i = ls_pick_wo_i
+            is_pick_wo_h = is_pick_wo_h
+            is_resource  = is_resource
+          IMPORTING
+            et_pick_hus  = lt_pick_hus
+          CHANGING
+            cs_message   = es_message.
+
+        IF es_message-type EQ 'E'.
+          RETURN.
+        ENDIF.
+      ENDIF.
+
+    ENDIF.
+
+*--------------------------------------------------------------------*Warehouse Tasks prepartion
+*Seperating Data into different Strucures to process FM
+
+    LOOP AT lt_pick_wo_i INTO ls_temp_ordim_confirm.
+
+* Get Line number of processng WT in internal table
+      lv_line_count = lv_line_count + 1.
+      IF ls_temp_ordim_confirm-tanum EQ ls_pick_wo_i-tanum.
+        lv_line = lv_line_count.
+      ENDIF.
+
+
+      MOVE-CORRESPONDING ls_temp_ordim_confirm TO ls_ordim_confirm.
+
+      CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+        EXPORTING
+          input  = ls_ordim_confirm-pickhu
+        IMPORTING
+          output = ls_ordim_confirm-pickhu.
+
+
+      APPEND ls_ordim_confirm TO lt_ordim_confirm.
+
+*Add remaining WT's which are combined with present WT and append to lt_ordim_confirm
+      IF ls_ordim_confirm-comb_tanums IS NOT INITIAL.
+
+        LOOP AT ls_ordim_confirm-comb_tanums INTO ls_comb_tanums
+                                             WHERE comb_tanum NE ls_ordim_confirm-tanum.
+
+          READ TABLE it_all_ordim_confirm INTO ls_ordim_confirm_cmpt
+                                          WITH KEY tanum = ls_comb_tanums-comb_tanum.
+
+          IF sy-subrc EQ 0."*Apply exceptions set to other WT
+            ls_ordim_confirm_cmpt-exc_tab = ls_ordim_confirm-exc_tab.
+            APPEND ls_ordim_confirm_cmpt TO lt_ordim_confirm.
+          ENDIF.
+
+          CLEAR: ls_ordim_confirm_cmpt,
+                  ls_comb_tanums.
+        ENDLOOP.
+      ENDIF.
+
+      CLEAR: ls_ordim_confirm,
+             ls_temp_ordim_confirm.
+
+
+    ENDLOOP.
+
+
+    MOVE-CORRESPONDING:  is_pick_wo_h TO ls_who,
+                         is_pick_wo_h TO ls_wme_verif,
+                         ls_pick_wo_i TO ls_ordim_confirm. " for FM processing
+
+
+    CLEAR ls_pick_wo_i.
+
+
+*--------------------------------------------------------------------*Apply Exception Codes
+    IF ls_ordim_confirm-exc_tab IS NOT INITIAL.
+
+      LOOP AT ls_ordim_confirm-exc_tab INTO ls_exc_tab .
+
+*      READ TABLE ls_ordim_confirm-exc_tab INTO ls_exc_tab INDEX 1.
+
+        lv_exec_step = ls_exc_tab-exec_step.
+
+        CALL FUNCTION '/SCWM/RF_PICK_SET_GLOBVAR'
+          EXPORTING
+            iv_buscon    = 'TPI'
+            iv_exec_step = lv_exec_step.
+
+
+        IF ls_exc_tab-exccode EQ 'SPLT' AND ls_ordim_confirm-parti IS NOT INITIAL.
+
+*Changing QTY as in app it should always show fixed Qty on applying SPLT
+          ls_ordim_confirm-nista = ls_ordim_confirm-nista_verif.
+          ls_ordim_confirm-vsola = ls_ordim_confirm-nista_verif.
+
+          MODIFY lt_ordim_confirm FROM ls_ordim_confirm
+                  TRANSPORTING nista vsola
+                  WHERE tanum EQ ls_ordim_confirm-tanum .
+
+*Apply Reason for SPLT in WT as standard FM doesn't support.
+          ls_field_value_c-fieldname = 'REASON'.
+          ls_field_value_c-value_c = 'AUTO'.
+          APPEND ls_field_value_c TO lt_field_value_c.
+
+
+        ENDIF.
+
+        IF ls_exc_tab-exccode EQ 'SKIP' OR
+           ls_exc_tab-exccode EQ 'BIDF' OR
+            ls_exc_tab-exccode EQ 'DAMF' OR
+            ls_exc_tab-exccode EQ 'DAMP' OR
+            ls_exc_tab-exccode EQ 'BIDP'.
+
+
+* Apply reasons for BIDF or BIDP or SKIP as standard FM doesn't support
+          IF ls_exc_tab-exccode EQ 'SKIP' OR
+             ls_exc_tab-exccode EQ 'BIDF' OR
+             ls_exc_tab-exccode EQ 'BIDP' AND ls_ordim_confirm-reason IS NOT INITIAL.
+            ls_field_value_c-fieldname = 'REASON'.
+            ls_field_value_c-value_c = ls_ordim_confirm-reason.
+            APPEND ls_field_value_c TO lt_field_value_c.
+
+          ENDIF.
+
+*Setting these parameter values creates new WT
+          ls_ordim_confirm-difty = 1.  "Difference to Source Storage Bin
+          ls_ordim_confirm-bind = abap_true. "Bin Denial
+
+
+          IF ls_ordim_confirm-comb_tanums IS INITIAL.
+
+            MODIFY lt_ordim_confirm FROM ls_ordim_confirm
+                                    TRANSPORTING difty bind
+                                    WHERE tanum EQ ls_ordim_confirm-tanum .
+
+          ELSEIF ls_ordim_confirm-comb_tanums IS NOT INITIAL.
+*Handling Exceptions for combined WT
+            LOOP AT ls_ordim_confirm-comb_tanums INTO ls_comb_tanums.
+
+*Set full difference and main QTY to zero for Below exceptions
+              IF ls_exc_tab-exccode EQ 'BIDF' OR
+                  ls_exc_tab-exccode EQ 'DAMF' OR
+                  ls_exc_tab-exccode EQ 'SKIP'.
+
+                CONDENSE ls_comb_tanums-vsola_chr.
+                ls_ordim_confirm-ndifa = ls_comb_tanums-vsola_chr.
+                ls_ordim_confirm-nista = ''.
+
+              ENDIF.
+
+*Apply DIFTY BIND values to all rows of table
+              MODIFY lt_ordim_confirm FROM ls_ordim_confirm
+                                   TRANSPORTING difty bind ndifa nista
+                                   WHERE tanum EQ ls_comb_tanums-comb_tanum .
+              CLEAR: ls_comb_tanums.
+
+            ENDLOOP.
+
+
+*Set Partial differences and distribute QTY in WT
+            IF ls_exc_tab-exccode EQ 'BIDP' OR
+               ls_exc_tab-exccode EQ 'DAMP'.
+
+
+              CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+                EXPORTING
+                  iv_line = lv_line.
+
+              /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'SAVE'.
+
+              TRY.
+                  CALL FUNCTION '/SCWM/RF_PICK_DIFF_PAI'
+                    CHANGING
+                      tt_ordim_confirm = lt_ordim_confirm
+                      ordim_confirm    = ls_ordim_confirm
+                      ct_sernr_diff    = lt_sernr_diff
+                      cs_sn            = ls_sn
+                    EXCEPTIONS
+                      error_message    = 1.
+                CATCH cx_root INTO lcx_root.
+                  me->prepare_message( ir_error = lcx_root ).
+                  es_message = gs_message.
+                  RETURN.
+              ENDTRY.
+
+            ENDIF.
+          ENDIF.
+        ENDIF.
+      ENDLOOP.
+    ENDIF.
+
+*Updates Reason in the table - commit will happen on success of WT confirm
+    IF lt_field_value_c IS NOT INITIAL.
+
+      GET TIME STAMP FIELD lv_time_stamp.
+
+      ls_change-tanum = ls_ordim_confirm-tanum.
+      ls_change-tt_changed[] = lt_field_value_c[].
+
+      APPEND ls_change TO lt_change.
+
+      CALL FUNCTION '/SCWM/TO_CHANGE_ATT_UPD'
+        EXPORTING
+          iv_tstmp      = lv_time_stamp
+          iv_lgnum      = ls_who-lgnum
+          it_change     = lt_change
+        EXCEPTIONS
+          error_message = 1.
+    ENDIF.
+
+*--------------------------------------------------------------------*RF setup and Check
+    CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+      EXPORTING
+        iv_line = lv_line.
+
+    /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'ENTERF'.
+
+    ls_selection-who = ls_who-who.
+
+
+*RF-Check
+    CALL FUNCTION '/SCWM/RF_PICK_HU_CLOSE_CHECK'
+      CHANGING
+        selection        = ls_selection
+        resource         = is_resource
+        who              = ls_who
+        ordim_confirm    = ls_ordim_confirm
+        tt_ordim_confirm = lt_ordim_confirm
+        tt_nested_hu     = lt_nested_hu
+        t_rf_pick_hus    = lt_pick_hus
+      EXCEPTIONS
+        error_message    = 1.
+
+    IF sy-subrc NE 0.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = sy-msgty.
+
+      RETURN.
+    ENDIF.
+
+*populate wme struture as downloaded offline data doen't have this info
+*    IF ls_wme_verif IS INITIAL.
+    ls_wme_verif-aarea = ls_ordim_confirm-aarea.
+    ls_wme_verif-trart = ls_ordim_confirm-trart.
+    ls_wme_verif-act_type = ls_ordim_confirm-act_type.
+    ls_wme_verif-procty = ls_ordim_confirm-procty.
+    ls_wme_verif-lgnum = ls_ordim_confirm-lgnum.
+
+
+*--------------------------------------------------------------------*Final Confirmation and Commit
+    IF ls_ordim_confirm-combqty IS NOT INITIAL. "Confirm Combined WT Source
+
+      CALL FUNCTION '/SCWM/RF_PICK_PICPMT_PAI'
+        CHANGING
+          selection        = ls_selection
+          resource         = is_resource
+          who              = ls_who
+          ordim_confirm    = ls_ordim_confirm
+          tt_ordim_confirm = lt_ordim_confirm
+          tt_nested_hu     = lt_nested_hu
+          t_rf_pick_hus    = lt_pick_hus
+          ct_sernr         = lt_sernr
+          ct_sernr_diff    = lt_sernr_diff
+          cs_sn            = ls_sn
+          wme_verif        = ls_wme_verif
+          ct_sernr_lsck    = lt_sernr_lsck
+        EXCEPTIONS
+          error_message    = 1.
+
+
+    ELSE.
+
+
+      me->get_wt_rf_state(
+       EXPORTING
+         is_resource      = is_resource
+         is_ordim_confirm = ls_ordim_confirm
+       IMPORTING
+         ev_state         = lv_rf_state ).
+
+
+      IF lv_rf_state EQ 'MTTO'.
+
+        CALL FUNCTION '/SCWM/RF_PICK_PIMTTO_PAI' ""Confirm Single WT Source
+          CHANGING
+            selection        = ls_selection
+            resource         = is_resource
+            who              = ls_who
+            ordim_confirm    = ls_ordim_confirm
+            tt_ordim_confirm = lt_ordim_confirm
+            tt_nested_hu     = lt_nested_hu
+            t_rf_pick_hus    = lt_pick_hus
+            ct_sernr         = lt_sernr
+            ct_sernr_diff    = lt_sernr_diff
+            cs_sn            = ls_sn
+            wme_verif        = ls_wme_verif
+            ct_sernr_lsck    = lt_sernr_lsck
+          EXCEPTIONS
+            error_message    = 1.
+
+      ELSEIF lv_rf_state EQ 'HUTO'.
+
+        CALL FUNCTION '/SCWM/RF_PICK_PIHUTO_PAI'
+          CHANGING
+            selection        = ls_selection
+            resource         = is_resource
+            who              = ls_who
+            ordim_confirm    = ls_ordim_confirm
+            nested_hu        = ls_nested_hu
+            tt_ordim_confirm = lt_ordim_confirm
+            tt_nested_hu     = lt_nested_hu
+            t_rf_pick_hus    = lt_pick_hus
+            wme_verif        = ls_wme_verif
+          EXCEPTIONS
+            error_message    = 1.
+      ENDIF.
+    ENDIF.
+
+    IF sy-subrc NE 0.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = sy-msgty.
+    ELSE.
+*Prepare Success Message
+      COMMIT WORK AND WAIT. "For Updating Exceptions Reason in WT.
+
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = 'ZEWM_PICKING'
+          iv_msgno = 006
+          iv_msgv1 = lv_tanum_msg
+          iv_msgty = 'S'.
+    ENDIF.
+
+    es_message = gs_message.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->CONFIRM_STAGING_WT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [--->] IS_PICK_WO_H                   TYPE        TY_PICK_WO_H
+* | [--->] IS_PICK_WO_I                   TYPE        TY_PICK_WO_I
+* | [--->] IT_PICK_WO_I                   TYPE        TT_PICK_WO_I
+* | [<---] EV_SOURCEHU                    TYPE        /SCWM/DE_RF_VLENR
+* | [<---] ES_MESSAGE                     TYPE        TY_MESSAGETEXT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD confirm_staging_wt.
+
+
+    TYPES:BEGIN OF ty_open_tasks,
+            srsrc TYPE  /scwm/de_srsrc,
+            drsrc	TYPE /scwm/de_drsrc,
+            kquan	TYPE /scwm/de_kquan,
+            vsola TYPE /scwm/ltap_vsola,
+          END OF ty_open_tasks.
+
+
+    DATA: ls_selection          TYPE  /scwm/s_rf_selection,
+          ls_ordim_confirm      TYPE  /scwm/s_rf_ordim_confirm,
+          ls_who                TYPE  /scwm/s_who_int,
+          lt_pick_hus           TYPE  /scwm/tt_rf_pick_hus,
+          lt_ordim_confirm      TYPE  /scwm/tt_rf_ordim_confirm,
+          ls_wme_verif          TYPE  /scwm/s_wme_verif,
+          lt_nested_hu          TYPE  /scwm/tt_rf_nested_hu,
+          lt_sernr              TYPE  /scwm/tt_rf_sernr,
+          lt_sernr_diff         TYPE  /scwm/tt_rf_sernr,
+          ls_temp_ordim_confirm LIKE LINE OF it_pick_wo_i,
+          ls_nested_hu          TYPE  /scwm/s_rf_nested_hu,
+          ls_pick_hus           LIKE LINE OF lt_pick_hus,
+          lv_state              TYPE /scwm/de_state,
+          lv_exec_step          TYPE  /scwm/de_exec_step,
+          lt_whohu              TYPE /scwm/tt_whohu_int,
+          ls_whohu              LIKE LINE OF lt_whohu,
+          lv_rsrc               TYPE /scwm/de_rsrc,
+          ls_exc_tab            LIKE LINE OF ls_ordim_confirm-exc_tab,
+          lv_line               TYPE i,
+          lv_line_count         TYPE i,
+          lv_sourcehu           TYPE /scwm/de_rf_vlenr,
+          lv_desthu             TYPE /scwm/de_rf_rfhu_long,
+          lv_tanum_msg          TYPE sy-msgv1,
+          ls_open_tasks         TYPE ty_open_tasks.
+
+
+    lv_tanum_msg = is_pick_wo_i-tanum.
+
+
+
+    IF is_pick_wo_i-rfhu IS NOT INITIAL. "RFHU Field - User Enters Dest HU if empty
+
+      CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+        EXPORTING
+          input  = is_pick_wo_i-rfhu
+        IMPORTING
+          output = is_pick_wo_i-rfhu.
+
+      ev_sourcehu = is_pick_wo_i-rfhu.
+    ELSE.
+
+      CALL FUNCTION 'CONVERSION_EXIT_HUID_INPUT'
+        EXPORTING
+          input  = is_pick_wo_i-pickhu
+        IMPORTING
+          output = is_pick_wo_i-pickhu.
+
+      ev_sourcehu = is_pick_wo_i-pickhu.
+    ENDIF.
+
+
+*User Entry
+    IF is_pick_wo_i-nlpla_verif IS NOT INITIAL .
+      is_pick_wo_i-nlpla = is_pick_wo_i-nlpla_verif .
+    ENDIF.
+
+    MODIFY it_pick_wo_i FROM is_pick_wo_i TRANSPORTING
+                                            nlpla rfhu pickhu exc_tab
+                                WHERE tanum EQ is_pick_wo_i-tanum.
+
+
+
+
+*--------------------------------------------------------------------*
+*Get All HU's for current WO and resource - For FM processing
+    lv_rsrc = sy-uname.
+
+    TRY .
+        CALL FUNCTION '/SCWM/WHO_SELECT'
+          EXPORTING
+            iv_lgnum = is_resource-lgnum
+            iv_who   = is_pick_wo_h-who
+            iv_rsrc  = lv_rsrc
+          IMPORTING
+            et_whohu = lt_whohu.
+
+      CATCH /scwm/cx_core .
+
+    ENDTRY.
+
+
+    IF lt_whohu IS NOT INITIAL.
+      LOOP AT lt_whohu INTO ls_whohu WHERE huident IS NOT INITIAL.
+        MOVE-CORRESPONDING ls_whohu TO ls_pick_hus.
+        APPEND ls_pick_hus TO lt_pick_hus.
+        CLEAR: ls_pick_hus.
+      ENDLOOP.
+    ENDIF.
+
+*Seperating Data into different Strucures to process FM
+*Warehouse Tasks
+    LOOP AT it_pick_wo_i INTO ls_temp_ordim_confirm.
+      MOVE-CORRESPONDING ls_temp_ordim_confirm TO ls_ordim_confirm.
+
+      lv_line_count = lv_line_count + 1.
+      IF ls_temp_ordim_confirm-tanum EQ is_pick_wo_i-tanum.
+        lv_line = lv_line_count.
+      ENDIF.
+
+
+      APPEND ls_ordim_confirm TO lt_ordim_confirm.
+      CLEAR: ls_ordim_confirm,
+             ls_temp_ordim_confirm.
+    ENDLOOP.
+
+*Header Data
+    MOVE-CORRESPONDING:  is_pick_wo_h TO ls_who,
+                         is_pick_wo_h TO ls_wme_verif,
+                         is_pick_wo_i TO ls_ordim_confirm. "moving current Record for FM processing
+
+
+*Capture State
+
+    CALL METHOD me->get_wt_rf_state
+      EXPORTING
+        is_resource      = is_resource
+        is_ordim_confirm = ls_ordim_confirm
+      IMPORTING
+        ev_state         = lv_state.
+
+
+    CLEAR is_pick_wo_i.
+
+*fcode and RF-line
+    CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+      EXPORTING
+        iv_line = lv_line.
+
+    /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'ENTERF'.
+    ls_selection-who = ls_who-who.
+
+*Apply Exceptions
+
+    IF ls_ordim_confirm-exc_tab IS NOT INITIAL.
+
+      READ TABLE ls_ordim_confirm-exc_tab INTO ls_exc_tab INDEX 1.
+
+      lv_exec_step = ls_exc_tab-exec_step.
+
+      CALL FUNCTION '/SCWM/RF_PICK_SET_GLOBVAR'
+        EXPORTING
+          iv_buscon    = 'TPI'
+          iv_exec_step = lv_exec_step.
+    ENDIF.
+
+
+*populate wme struture as downloaded offline data doen't have this info
+
+    ls_wme_verif-aarea = ls_ordim_confirm-aarea.
+    ls_wme_verif-trart = ls_ordim_confirm-trart.
+    ls_wme_verif-act_type = ls_ordim_confirm-act_type.
+    ls_wme_verif-procty = ls_ordim_confirm-procty.
+    ls_wme_verif-lgnum = ls_ordim_confirm-lgnum.
+
+    IF ls_ordim_confirm-srsrc_o IS INITIAL OR
+          ls_ordim_confirm-drsrc_o IS INITIAL OR
+          ls_ordim_confirm-nlenr_o IS INITIAL OR
+          ls_ordim_confirm-kquan_chr IS INITIAL OR
+          ls_ordim_confirm-vsola_chr IS INITIAL.
+
+      SELECT SINGLE srsrc
+             drsrc
+             kquan
+             vsola
+        FROM /scwm/ordim_o INTO ls_open_tasks
+        WHERE tanum EQ ls_ordim_confirm-tanum
+        AND lgnum EQ ls_ordim_confirm-lgnum.
+
+      IF sy-subrc EQ 0.
+
+        ls_ordim_confirm-srsrc_o = ls_open_tasks-srsrc.
+        ls_ordim_confirm-drsrc_o = ls_open_tasks-drsrc.
+*        ls_ordim_confirm-nlenr_o = ls_open_tasks-nlenr.
+        ls_ordim_confirm-kquan_chr = ls_open_tasks-kquan.
+        ls_ordim_confirm-vsola_chr = ls_open_tasks-vsola.
+
+
+        MODIFY lt_ordim_confirm FROM ls_ordim_confirm TRANSPORTING
+                                        srsrc_o drsrc_o nlenr_o kquan_chr vsola_chr
+                                WHERE tanum EQ ls_ordim_confirm-tanum.
+
+      ENDIF.
+    ENDIF.
+
+
+*--------------------------------------------------------------------*PLMT
+    IF lv_state EQ 'PLMT'.
+      /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-step = 'PIPLMT'.
+
+      CALL FUNCTION '/SCWM/RF_PICK_PIPLMT_PAI'
+        CHANGING
+          selection        = ls_selection
+          resource         = is_resource
+          who              = ls_who
+          ordim_confirm    = ls_ordim_confirm
+          nested_hu        = ls_nested_hu
+          tt_ordim_confirm = lt_ordim_confirm
+          tt_nested_hu     = lt_nested_hu
+          t_rf_pick_hus    = lt_pick_hus
+          ct_sernr         = lt_sernr
+          ct_sernr_diff    = lt_sernr_diff
+          wme_verif        = ls_wme_verif
+        EXCEPTIONS
+          error_message    = 1.
+
+*--------------------------------------------------------------------*PLHU
+    ELSEIF lv_state EQ 'PLHU'.
+
+      /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-step = 'PIPLHU'.
+
+      CALL FUNCTION '/SCWM/RF_PICK_PIPLHU_PAI'
+        CHANGING
+          selection        = ls_selection
+          resource         = is_resource
+          who              = ls_who
+          ordim_confirm    = ls_ordim_confirm
+          nested_hu        = ls_nested_hu
+          tt_ordim_confirm = lt_ordim_confirm
+          tt_nested_hu     = lt_nested_hu
+          t_rf_pick_hus    = lt_pick_hus
+          wme_verif        = ls_wme_verif
+        EXCEPTIONS
+          error_message    = 1.
+
+    ENDIF.
+
+    IF sy-subrc NE 0.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = sy-msgty.
+
+    ELSE.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = 'ZEWM_PICKING'
+          iv_msgno = 007
+          iv_msgv1 = lv_tanum_msg
+          iv_msgty = 'S'.
+    ENDIF.
+    es_message = gs_message.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_PICKING->CREATE_PICKHU
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_PICK_WO_I                   TYPE        TY_PICK_WO_I
+* | [--->] IS_PICK_WO_H                   TYPE        TY_PICK_WO_H
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [<---] ET_PICK_HUS                    TYPE        /SCWM/TT_RF_PICK_HUS
+* | [<-->] CS_MESSAGE                     TYPE        TY_MESSAGETEXT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD create_pickhu.
+
+
+    TYPES:BEGIN OF ty_pmtyp,
+            pmtyp TYPE /scwm/thunr-pmtyp,
+          END OF ty_pmtyp.
+
+
+    TYPES:BEGIN OF ty_matid,
+            matid TYPE /sapapo/matpack-matid,
+          END OF ty_matid.
+
+
+    DATA: ls_who             TYPE  /scwm/s_who_int,
+          ls_rsrc_type       TYPE  /scwm/s_trsrc_typ,
+          lt_pick_hus        TYPE /scwm/tt_rf_pick_hus,
+          ls_ordim_confirm   TYPE  /scwm/s_rf_ordim_confirm,
+          ls_main_data       TYPE  /scwm/s_hu_main_data,
+          lt_huident         TYPE  /scwm/tt_huident,
+          ls_huident         LIKE LINE OF lt_huident,
+          ls_temp_pick_hus_l LIKE LINE OF lt_pick_hus,
+*            ls_temp_pick_hus_g LIKE LINE OF gt_pick_hus,
+          ls_nestpt          TYPE /scwm/s_rf_nested,
+          lcx_root           TYPE REF TO cx_root,
+          lv_entered_hu      TYPE /scwm/de_huident,
+          lv_huexist_in_wo   TYPE boolean,
+          lv_txt             TYPE string,
+          lt_huref           TYPE  /scwm/tt_huref_int,
+          lt_whohu           TYPE /scwm/tt_whohu_int,
+          lt_huitm           TYPE  /scwm/tt_huitm_int,
+          ls_huitm           LIKE LINE OF lt_huitm,
+          ls_whohu           LIKE LINE OF lt_whohu.
+
+    DATA:lv_nrrangenr TYPE nriv-nrrangenr,
+         lt_pmtyp     TYPE STANDARD TABLE OF ty_pmtyp,
+         lt_matid     TYPE STANDARD TABLE OF ty_matid,
+         ls_matid     TYPE ty_matid,
+         lv_rsrc      TYPE /scwm/de_rsrc.
+
+
+    lv_entered_hu = is_pick_wo_i-pickhu.
+
+
+    CHECK lv_entered_hu IS NOT INITIAL.
+
+    CONDENSE lv_entered_hu.
+    TRANSLATE lv_entered_hu TO UPPER CASE.
+
+
+*--------------------------------------------------------------------*
+*Get All HU's for current WO and resource - store in GT_PICK_HUS
+    lv_rsrc = sy-uname.
+
+    TRY .
+        CALL FUNCTION '/SCWM/WHO_SELECT'
+          EXPORTING
+            iv_lgnum = is_resource-lgnum
+            iv_who   = is_pick_wo_h-who
+            iv_rsrc  = lv_rsrc
+          IMPORTING
+            et_whohu = lt_whohu.
+      CATCH /scwm/cx_core.
+
+    ENDTRY.
+
+
+
+    IF lt_whohu IS NOT INITIAL.
+      LOOP AT lt_whohu INTO ls_whohu WHERE huident IS NOT INITIAL.
+
+* Check if entered PickHu already exists in system and is part of WO for current resource
+        IF ls_whohu-huident EQ lv_entered_hu.
+          lv_huexist_in_wo = 'X'.
+        ENDIF.
+
+        MOVE-CORRESPONDING ls_whohu TO ls_temp_pick_hus_l.
+        APPEND ls_temp_pick_hus_l TO et_pick_hus.
+        CLEAR ls_temp_pick_hus_l.
+      ENDLOOP.
+
+
+    ENDIF.
+
+
+    CALL FUNCTION '/SCWM/HU_READ'
+      EXPORTING
+        iv_appl    = gc_wme
+        iv_lgnum   = is_resource-lgnum
+        iv_huident = lv_entered_hu
+      IMPORTING
+        et_huref   = lt_huref
+        et_huitm   = lt_huitm
+      EXCEPTIONS
+        deleted    = 1
+        not_found  = 2
+        error      = 3
+        OTHERS     = 4.
+
+    IF sy-subrc EQ 0.
+*validation - Check Entered HU is being used in other WO or not
+      IF lt_huref IS NOT INITIAL AND lv_huexist_in_wo IS INITIAL.
+
+        sy-msgv1 = lv_entered_hu.
+
+        CALL METHOD me->prepare_message
+          EXPORTING
+            iv_msgid = '/SCWM/HU_WM'
+            iv_msgno = 008
+            iv_msgv1 = sy-msgv1
+            iv_msgty = 'E'.
+
+        cs_message = gs_message.
+        RETURN.
+      ENDIF.
+
+* validation - For NW72 Same Pick HU can be valid if product is same
+      IF lv_huexist_in_wo EQ 'X' AND
+         is_resource-lgnum EQ gc_nw72 AND
+         lt_huitm IS NOT INITIAL.
+
+
+        READ TABLE lt_huitm INTO ls_huitm WITH KEY matid = is_pick_wo_i-matid.
+        IF sy-subrc NE 0.
+          cs_message-type = 'E'.
+          cs_message-message = lv_entered_hu && ' is assigned to a different product'.
+          RETURN.
+        ENDIF.
+      ENDIF.
+    ENDIF.
+
+*If HU exists no-need to create new HU
+    IF lv_huexist_in_wo EQ 'X'.
+      RETURN.
+    ENDIF.
+
+
+*--------------------------------------------------------------------*
+*Create HU
+*--------------------------------------------------------------------*
+
+*Get Number Range
+    SELECT SINGLE nrrangenr FROM nriv INTO lv_nrrangenr
+      WHERE object EQ '/SCWM/HUID'
+      AND subobject EQ is_resource-lgnum
+      AND fromnumber LT lv_entered_hu
+      AND tonumber GT lv_entered_hu.
+
+    IF sy-subrc EQ 0 AND  lv_nrrangenr IS NOT INITIAL  .
+*Get All Material Types for number range
+
+      SELECT pmtyp FROM /scwm/thunr
+        INTO TABLE lt_pmtyp
+        WHERE lgnum EQ is_resource-lgnum
+        AND int_nr EQ lv_nrrangenr.
+
+      IF sy-subrc EQ 0 AND lt_pmtyp IS NOT INITIAL .
+
+* Get Materials belonging to material types
+        SELECT DISTINCT matid FROM /sapapo/matpack      "#EC CI_NOFIELD
+          INTO TABLE lt_matid
+          FOR ALL ENTRIES IN lt_pmtyp
+          WHERE pmtyp EQ lt_pmtyp-pmtyp.
+
+        IF sy-subrc EQ 0.
+*By Default select the first record as packaging Material
+          READ TABLE lt_matid INTO ls_matid INDEX 1.
+*Get GUID and Matnr from matid
+          SELECT SINGLE matnr FROM /sapapo/matkey
+            INTO ls_nestpt-pmat
+            WHERE matid EQ ls_matid-matid.
+
+          IF sy-subrc EQ 0.
+
+            CALL FUNCTION '/SCMB/MDL_KEYC_BY_MATNR_SNL'
+              EXPORTING
+                iv_matnr = ls_nestpt-pmat
+              IMPORTING
+                ev_matid = ls_nestpt-pmat_guid.
+
+          ENDIF.
+          ls_nestpt-rfhu = lv_entered_hu.
+        ELSE.
+          cs_message-message = 'No corresponding packaging material found for entered HU'.
+        ENDIF.
+      ELSE.
+        cs_message-message = 'Material type not maintained for entered HU ' && lv_entered_hu.
+      ENDIF.
+    ELSE.
+      cs_message-message = 'No number range found for entered HU ' && lv_entered_hu.
+    ENDIF.
+
+    IF cs_message-message IS NOT INITIAL.
+      cs_message-type = 'E'.
+      RETURN.
+    ENDIF.
+
+
+
+*Setting up Global Variables - for Create HU FM processing
+
+    MOVE-CORRESPONDING:  is_pick_wo_h TO ls_who,
+                         is_pick_wo_i TO ls_ordim_confirm. "moving current Record for FM processing
+
+
+    /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'ENTER'.
+
+    TRY.
+        CALL FUNCTION '/SCWM/RF_PICK_PIHUIN_HUCR'
+          CHANGING
+            who           = ls_who
+            resource      = is_resource
+            rsrc_type     = ls_rsrc_type
+            t_rf_pick_hus = lt_pick_hus
+            nestpt        = ls_nestpt
+            ordim_confirm = ls_ordim_confirm
+          EXCEPTIONS
+            error_message = 1.
+
+      CATCH cx_root INTO lcx_root.
+        me->prepare_message( ir_error = lcx_root ).
+        cs_message = gs_message.
+        RETURN.
+    ENDTRY.
+
+
+
+    IF sy-subrc NE 0.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = sy-msgty.
+
+      cs_message = gs_message.
+
+      RETURN.
+    ENDIF.
+
+    et_pick_hus[] = lt_pick_hus[].
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->GET_OB_BINS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_LGNUM                       TYPE        /SCWM/DE_RF_LGNUM
+* | [<---] ET_OB_BINS                     TYPE        /SCWM/LAGP_TT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_ob_bins.
+
+    DATA ls_ob_bins LIKE LINE OF et_ob_bins.
+
+*For time being hardcoding the storage types
+    IF iv_lgnum EQ 'NW71'.
+
+      SELECT * FROM /scwm/lagp INTO TABLE et_ob_bins
+       WHERE lgnum EQ iv_lgnum
+       AND lgtyp IN ('MWOB', 'MWKT','MAIL' ).
+
+      IF sy-subrc EQ 0.
+        SORT et_ob_bins BY lgtyp.
+      ENDIF.
+
+
+    ELSEIF iv_lgnum EQ 'NW72'.
+
+      SELECT * FROM /scwm/lagp INTO TABLE et_ob_bins
+         WHERE lgnum EQ iv_lgnum
+         AND lgtyp LIKE 'OB%'.
+
+    ENDIF.
+
+    IF sy-subrc EQ 0.
+      SORT et_ob_bins BY lgtyp.
+    ENDIF.
+
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_PICKING->GET_PICKING_WT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_SOURCE_OPEN_TASKS           TYPE        /SCWM/TT_ORDIM_O
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [--->] IS_WHO                         TYPE        /SCWM/S_WHO_INT
+* | [--->] IS_SELECTION                   TYPE        /SCWM/S_RF_SELECTION
+* | [<---] EV_ERROR_FLAG                  TYPE        CHAR1
+* | [<---] ET_ORDIM_CONFIRM_CPMT          TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ET_ORDIM_CONFIRM               TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ES_EEW_H                       TYPE        YLODLV_HEAD_EEW
+* | [<-->] CT_PICK_HUS                    TYPE        /SCWM/TT_RF_PICK_HUS
+* | [<-->] CS_WME_VERIF                   TYPE        /SCWM/S_WME_VERIF
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_picking_wt.
+    DATA:
+      lt_nested_hu          TYPE  /scwm/tt_rf_nested_hu,
+      ls_rsrc_type          TYPE  /scwm/s_trsrc_typ,
+      ls_ordim_confirm      LIKE LINE OF et_ordim_confirm,
+      ls_nestpt             TYPE  /scwm/s_rf_nested,
+      ls_pick_hus           TYPE  /scwm/s_rf_pick_hus,
+*      lt_pick_hus           TYPE  /scwm/tt_rf_pick_hus,
+      ls_temp_pick_hus      LIKE LINE OF ct_pick_hus,
+      ls_source_conf_tasks  LIKE LINE OF it_source_open_tasks,
+      lt_temp_ordim_confirm TYPE /scwm/tt_rf_ordim_confirm,
+      lv_count              TYPE i VALUE 1,
+      lv_rf_state           TYPE /scwm/de_state.
+
+
+    CHECK it_source_open_tasks IS NOT INITIAL.
+
+
+    LOOP AT it_source_open_tasks INTO ls_source_conf_tasks WHERE vlpla IS NOT INITIAL.
+      MOVE-CORRESPONDING ls_source_conf_tasks TO ls_ordim_confirm.
+
+      ls_ordim_confirm-seqno = sy-tabix.
+
+      APPEND ls_ordim_confirm TO et_ordim_confirm.
+      CLEAR: ls_source_conf_tasks,
+             ls_ordim_confirm.
+    ENDLOOP.
+
+
+    LOOP AT et_ordim_confirm INTO ls_ordim_confirm.
+
+
+      me->get_wt_rf_state(
+       EXPORTING
+         is_resource      = is_resource
+         is_ordim_confirm = ls_ordim_confirm
+       IMPORTING
+         ev_state         = lv_rf_state ).
+
+
+      IF lv_rf_state EQ 'HUTO'.
+
+        CALL FUNCTION 'Y_L_RFSCR_PIHUTO_PBO'
+          CHANGING
+            ordim_confirm    = ls_ordim_confirm
+            tt_ordim_confirm = et_ordim_confirm
+            wme_verif        = cs_wme_verif
+            dlv_head_eew     = es_eew_h
+          EXCEPTIONS
+            error_message    = 1.
+
+        IF sy-subrc NE 0.
+          CONTINUE.
+        ENDIF.
+
+      ELSEIF lv_rf_state EQ 'MTTO'.
+        CALL FUNCTION 'Y_L_RFSCR_PIHUIN_PBO'
+          CHANGING
+            selection     = is_selection
+            resource      = is_resource
+            rsrc_type     = ls_rsrc_type
+            who           = is_who
+            ordim_confirm = ls_ordim_confirm
+            rf_pick_hus   = ls_pick_hus
+            t_rf_pick_hus = ct_pick_hus
+            nestpt        = ls_nestpt
+            dlv_head_eew  = es_eew_h
+          EXCEPTIONS
+            error_message = 1.
+
+        IF sy-subrc NE 0.
+          CONTINUE.
+        ENDIF.
+
+*Below 2 FM's get Source Confirmation tasks
+        /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'NEXT'.
+
+        CALL FUNCTION '/SCWM/RF_PICK_PIHUIN_PAI'
+          CHANGING
+            resource         = is_resource
+            rsrc_type        = ls_rsrc_type
+            ordim_confirm    = ls_ordim_confirm
+            who              = is_who
+            t_rf_pick_hus    = ct_pick_hus
+            tt_ordim_confirm = et_ordim_confirm
+          EXCEPTIONS
+            error_message    = 1.
+
+        IF sy-subrc NE 0.
+          CONTINUE.
+        ENDIF.
+
+        APPEND ls_ordim_confirm TO et_ordim_confirm_cpmt.
+
+        /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'INIT'.
+
+        CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+          EXPORTING
+            iv_line = lv_count.
+
+        CALL FUNCTION '/SCWM/RF_PICK_PIMTTO_PBO'
+          CHANGING
+            ordim_confirm    = ls_ordim_confirm
+            tt_ordim_confirm = et_ordim_confirm
+            tt_nested_hu     = lt_nested_hu
+            wme_verif        = cs_wme_verif
+            resource         = is_resource
+            t_rf_pick_hus    = ct_pick_hus
+            who              = is_who
+          EXCEPTIONS
+            error_message    = 1.
+
+        IF sy-subrc NE 0.
+          CONTINUE.
+        ENDIF.
+
+      ENDIF.
+*Combine similar WT
+      IF ls_ordim_confirm-comb_tanums IS NOT INITIAL.
+
+        CALL FUNCTION '/SCWM/RF_PICK_PICPMT_PBO'
+          CHANGING
+            ordim_confirm    = ls_ordim_confirm
+            tt_ordim_confirm = et_ordim_confirm
+            tt_nested_hu     = lt_nested_hu
+            wme_verif        = cs_wme_verif
+            resource         = is_resource
+            t_rf_pick_hus    = ct_pick_hus
+            who              = is_who
+          EXCEPTIONS
+            error_message    = 1.
+
+
+        IF sy-subrc NE 0.
+*          ev_error_flag = 'X'.
+          CONTINUE.
+        ENDIF.
+      ENDIF.
+
+*Collect all WT in temp internal table
+      APPEND ls_ordim_confirm TO lt_temp_ordim_confirm.
+      lv_count = lv_count + 1.
+    ENDLOOP.
+
+
+*Removing Combined WT's.
+*Combined WT data is stored in et_source_open_tasks_rf table
+    IF lt_temp_ordim_confirm IS NOT INITIAL.
+      SORT lt_temp_ordim_confirm BY tanum.
+
+      DELETE ADJACENT DUPLICATES FROM lt_temp_ordim_confirm COMPARING tanum.
+
+      REFRESH et_ordim_confirm.
+
+      APPEND LINES OF lt_temp_ordim_confirm TO et_ordim_confirm.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->GET_QUEUES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_LGNUM                       TYPE        /SCWM/DE_RF_LGNUM
+* | [--->] IV_ACT_TYPE                    TYPE        /SCWM/DE_ACTTY
+* | [<---] ET_QUEUE                       TYPE        TT_QUEUE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_queues.
+    SELECT a~queue b~text FROM /scwm/t346l AS a
+                          INNER JOIN /scwm/t346t AS b
+                          ON a~queue = b~queue
+                          INTO TABLE et_queue
+                          WHERE a~lgnum EQ iv_lgnum
+                          AND a~act_type EQ iv_act_type
+                          AND b~spras EQ sy-langu.
+
+    SORT et_queue BY queue.
+    DELETE ADJACENT DUPLICATES FROM et_queue COMPARING queue.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_PICKING->GET_STAGING_WT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_WHO                         TYPE        /SCWM/S_WHO_INT
+* | [--->] IT_SOURCE_OPEN_TASKS           TYPE        /SCWM/TT_ORDIM_O
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [<---] EV_ERROR_FLAG                  TYPE        CHAR1
+* | [<---] ET_ORDIM_CONFIRM_PLHU          TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ET_ORDIM_CONFIRM_PLMT          TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ES_EEW_H                       TYPE        YLODLV_HEAD_EEW
+* | [<-->] CS_WME_VERIF                   TYPE        /SCWM/S_WME_VERIF(optional)
+* | [<-->] CT_PICK_HUS                    TYPE        /SCWM/TT_RF_PICK_HUS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_staging_wt.
+
+    DATA:
+*          lt_pick_hus           TYPE /scwm/tt_rf_pick_hus,
+      ls_ordim_confirm      TYPE  /scwm/s_rf_ordim_confirm,
+*      ls_temp_ordim_confirm LIKE LINE OF gt_pick_wo_i_d,
+      ls_source_conf_tasks  LIKE LINE OF it_source_open_tasks,
+      lt_temp_ordim_confirm TYPE /scwm/tt_rf_ordim_confirm,
+      lv_count              TYPE i VALUE 1.
+
+
+*--------------------------------------------------------------------*
+*Tasks for which source already confirmed
+
+    LOOP AT it_source_open_tasks INTO ls_source_conf_tasks WHERE vlpla IS INITIAL.
+      MOVE-CORRESPONDING ls_source_conf_tasks TO ls_ordim_confirm.
+      IF ls_ordim_confirm-flghuto EQ 'X'.
+        APPEND ls_ordim_confirm TO et_ordim_confirm_plhu.
+      ELSE.
+        APPEND ls_ordim_confirm TO et_ordim_confirm_plmt.
+      ENDIF.
+      CLEAR: ls_source_conf_tasks.
+    ENDLOOP.
+
+    /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'INIT'.
+
+*--------------------------------------------------------------------*Check for PLMT tasks
+
+
+    LOOP AT et_ordim_confirm_plmt INTO ls_ordim_confirm.
+
+      CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+        EXPORTING
+          iv_line = lv_count.
+
+      CALL FUNCTION '/SCWM/RF_PICK_PIPLMT_PBO'
+        CHANGING
+          ordim_confirm    = ls_ordim_confirm
+          tt_ordim_confirm = et_ordim_confirm_plmt
+          wme_verif        = cs_wme_verif
+          t_rf_pick_hus    = ct_pick_hus
+          who              = is_who
+        EXCEPTIONS
+          error_message    = 1.
+
+      IF sy-subrc NE 0.
+        ev_error_flag = 'X'.
+        CONTINUE.
+      ENDIF.
+
+      APPEND ls_ordim_confirm TO lt_temp_ordim_confirm.
+      lv_count = lv_count + 1.
+    ENDLOOP.
+
+    IF lt_temp_ordim_confirm IS NOT INITIAL.
+      REFRESH et_ordim_confirm_plmt.
+      DELETE ADJACENT DUPLICATES FROM lt_temp_ordim_confirm COMPARING tanum.
+      APPEND LINES OF lt_temp_ordim_confirm TO et_ordim_confirm_plmt.
+      REFRESH lt_temp_ordim_confirm.
+
+
+      lv_count = 1. "Reset Count
+
+    ENDIF.
+*--------------------------------------------------------------------*Check for PLHU tasks
+
+    LOOP AT et_ordim_confirm_plhu INTO ls_ordim_confirm .
+
+      CALL METHOD /scwm/cl_rf_bll_srvc=>set_line
+        EXPORTING
+          iv_line = lv_count.
+
+      CALL FUNCTION 'Y_L_RFSCR_PIPLHU_PBO'
+        CHANGING
+          resource         = is_resource
+          ordim_confirm    = ls_ordim_confirm
+          tt_ordim_confirm = et_ordim_confirm_plhu
+          wme_verif        = cs_wme_verif
+          dlv_head_eew     = es_eew_h
+        EXCEPTIONS
+          error_message    = 1.
+
+
+      IF sy-subrc NE 0.
+        ev_error_flag = 'X'.
+        CONTINUE.
+      ENDIF.
+      APPEND ls_ordim_confirm TO lt_temp_ordim_confirm.
+      lv_count = lv_count + 1.
+
+    ENDLOOP.
+
+    IF lt_temp_ordim_confirm IS NOT INITIAL.
+      REFRESH et_ordim_confirm_plhu.
+      DELETE ADJACENT DUPLICATES FROM lt_temp_ordim_confirm COMPARING tanum.
+      APPEND LINES OF lt_temp_ordim_confirm TO et_ordim_confirm_plhu.
+      REFRESH lt_temp_ordim_confirm.
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->GET_WO_BY_QUEUE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IR_QUEUE                       TYPE        RSELOPTION
+* | [--->] IV_LGNUM                       TYPE        /SCWM/DE_RF_LGNUM
+* | [--->] IR_SEL_TYPE                    TYPE        RSELOPTION
+* | [--->] IR_RSRC                        TYPE        RSELOPTION
+* | [--->] IV_RSRC_TYPE                   TYPE        /SCWM/DE_RSRC_TYPE
+* | [<---] ET_QUEUE_WHO                   TYPE        TT_QUEUE_WHO
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_wo_by_queue.
+
+
+    DATA:
+          lr_status TYPE rseloption,
+          ls_status LIKE LINE OF lr_status.
+
+
+
+*Status
+    ls_status-sign = 'I'.
+    ls_status-option = 'EQ'.
+    ls_status-low = ''.
+    APPEND ls_status TO lr_status.
+
+    ls_status-sign = 'I'.
+    ls_status-option = 'EQ'.
+    ls_status-low = 'D'.
+    APPEND ls_status TO lr_status.
+
+
+
+
+    SELECT who
+           queue
+           rsrc FROM /scwm/wo_rsrc_ty
+           INTO TABLE et_queue_who
+           WHERE lgnum EQ iv_lgnum
+           AND status IN lr_status " ('','D')
+           AND rsrc IN ir_rsrc "(space,sy-uname)
+           AND queue IN ir_queue
+           AND sel_type IN ir_sel_type
+           AND rsrc_type eq iv_rsrc_type.
+
+    IF sy-subrc EQ 0.
+      SORT et_queue_who BY who.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->GET_WO_INFO
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_WHO                         TYPE        ANY
+* | [<---] ES_PICK_WO_H                   TYPE        TY_PICK_WO_H
+* | [<---] ET_ORDIM_CONFIRM               TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ET_ALL_TASKS_RF                TYPE        /SCWM/TT_RF_ORDIM_CONFIRM
+* | [<---] ES_EEW_H                       TYPE        YLODLV_HEAD_EEW
+* | [<---] ES_MESSAGE                     TYPE        TY_MESSAGETEXT
+* | [<---] ET_PICK_HUS                    TYPE        /SCWM/TT_RF_PICK_HUS
+* | [<-->] CS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_wo_info.
+
+
+    DATA: ls_selection          TYPE  /scwm/s_rf_selection,
+          ls_ordim_confirm      TYPE  /scwm/s_rf_ordim_confirm,
+          ls_who                TYPE  /scwm/s_who_int,
+*          lt_pick_hus           TYPE  /scwm/tt_rf_pick_hus,
+          lt_ordim_confirm      TYPE  /scwm/tt_rf_ordim_confirm,
+          lt_ordim_confirm_mtto TYPE  /scwm/tt_rf_ordim_confirm,
+          ls_wme_verif          TYPE  /scwm/s_wme_verif,
+          ls_rsrc_type          TYPE  /scwm/s_trsrc_typ,
+          ls_rf_pick_hus        TYPE  /scwm/s_rf_pick_hus,
+          ls_nestpt             TYPE  /scwm/s_rf_nested,
+          ls_dlv_head_eew       TYPE  ylodlv_head_eew,
+          lt_nested_hu          TYPE  /scwm/tt_rf_nested_hu,
+          ls_pick_hus           TYPE  /scwm/s_rf_pick_hus,
+          ls_mat_global         TYPE  /scwm/s_material_global,
+          ls_temp_pick_hus_l    LIKE LINE OF et_pick_hus,
+          lt_ordim_confirm_plhu TYPE  /scwm/tt_rf_ordim_confirm,
+          lt_ordim_confirm_plmt TYPE  /scwm/tt_rf_ordim_confirm.
+
+    DATA:lt_sernr      TYPE  /scwm/tt_rf_sernr,
+         lt_sernr_diff TYPE  /scwm/tt_rf_sernr,
+         ls_sn         TYPE  /scwm/s_rf_sn,
+         lt_sernr_lsck TYPE  /scwm/tt_rf_sernr.
+
+
+    DATA: lv_state TYPE /scwm/de_state,
+          lv_who   TYPE /scwm/de_who,
+          lv_check TYPE char1,
+          lv_hu    TYPE /scwm/de_rf_huident.
+
+
+    DATA:lt_source_open_tasks TYPE  /scwm/tt_ordim_o,
+         lt_source_conf_tasks TYPE  /scwm/tt_ordim_c.
+
+
+*WO Conversion
+    CALL FUNCTION 'CONVERSION_EXIT_ALPH0_INPUT'
+      EXPORTING
+        input  = iv_who
+      IMPORTING
+        output = ls_selection-who.
+
+
+*rf setup
+    CALL METHOD /scwm/cl_rf_bll_srvc=>set_ltrans_simu
+      EXPORTING
+        iv_ltrans = 'PIBWHO'.
+
+    /scwm/cl_rf_bll_srvc=>ss_rf_dynamic-fcode = 'ENTER'.
+
+
+*--------------------------------------------------------------------* Get WO Info from RF FM
+    CALL FUNCTION '/SCWM/RF_PICK_PIBUSR_PAI'
+      CHANGING
+        selection        = ls_selection
+        resource         = cs_resource
+        ordim_confirm    = ls_ordim_confirm
+        who              = ls_who
+        t_rf_pick_hus    = et_pick_hus
+        tt_ordim_confirm = lt_ordim_confirm
+        wme_verif        = ls_wme_verif
+      EXCEPTIONS
+        error_message    = 1.
+
+    IF sy-subrc NE 0 OR sy-msgno EQ '574'.
+
+      IF sy-msgno EQ '574'.
+        sy-msgno = '056'.
+      ENDIF.
+
+
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = 'E'.
+
+
+      es_message = gs_message.
+      RETURN.
+    ENDIF.
+
+
+*--------------------------------------------------------------------* Get all confirmed and open tasks for WO
+
+
+
+    CALL FUNCTION '/SCWM/TO_READ_WHO'
+      EXPORTING
+        iv_lgnum     = cs_resource-lgnum
+        iv_who       = ls_selection-who
+      IMPORTING
+        et_ordim_o   = lt_source_open_tasks
+        et_ordim_c   = lt_source_conf_tasks
+      EXCEPTIONS
+        wrong_input  = 1
+        not_found    = 2
+        foreign_lock = 3
+        error        = 4
+        OTHERS       = 5.
+
+
+    IF sy-subrc NE 0.
+      CALL METHOD me->prepare_message
+        EXPORTING
+          iv_msgid = sy-msgid
+          iv_msgno = sy-msgno
+          iv_msgv1 = sy-msgv1
+          iv_msgv2 = sy-msgv2
+          iv_msgv3 = sy-msgv3
+          iv_msgv4 = sy-msgv4
+          iv_msgty = sy-msgty.
+
+
+      es_message = gs_message.
+      RETURN.
+    ENDIF.
+
+**--------------------------------------------------------------------*Get Picking WT's RF data
+    CALL METHOD me->get_picking_wt
+      EXPORTING
+        it_source_open_tasks  = lt_source_open_tasks
+        is_resource           = cs_resource
+        is_who                = ls_who
+        is_selection          = ls_selection
+      IMPORTING
+        et_ordim_confirm_cpmt = et_all_tasks_rf "(Includes Combined WT RF data)
+        et_ordim_confirm      = lt_ordim_confirm_mtto
+        es_eew_h              = es_eew_h
+      CHANGING
+        cs_wme_verif          = ls_wme_verif
+        ct_pick_hus           = et_pick_hus.
+
+**--------------------------------------------------------------------*Get Staging WT's Rf Data
+    CALL METHOD me->get_staging_wt
+      EXPORTING
+        is_who                = ls_who
+        it_source_open_tasks  = lt_source_open_tasks
+        is_resource           = cs_resource
+      IMPORTING
+        ev_error_flag         = lv_check
+        et_ordim_confirm_plhu = lt_ordim_confirm_plhu
+        et_ordim_confirm_plmt = lt_ordim_confirm_plmt
+        es_eew_h              = es_eew_h
+      CHANGING
+        cs_wme_verif          = ls_wme_verif
+        ct_pick_hus           = et_pick_hus.
+
+
+
+
+    MOVE-CORRESPONDING: ls_who TO es_pick_wo_h,
+                        ls_wme_verif TO es_pick_wo_h.
+
+    APPEND LINES OF lt_ordim_confirm_mtto TO et_ordim_confirm.
+    APPEND LINES OF lt_ordim_confirm_plmt TO et_ordim_confirm.
+    APPEND LINES OF lt_ordim_confirm_plhu TO et_ordim_confirm.
+
+    SORT lt_ordim_confirm BY tanum.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->GET_WT_RF_STATE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [--->] IS_ORDIM_CONFIRM               TYPE        /SCWM/S_RF_ORDIM_CONFIRM
+* | [<---] EV_STATE                       TYPE        /SCWM/DE_STATE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_wt_rf_state.
+    CALL FUNCTION '/SCWM/RF_PICK_SET_STATE'
+      CHANGING
+        resource      = is_resource
+        ordim_confirm = is_ordim_confirm
+      EXCEPTIONS
+        error_message = 1.
+
+    CALL METHOD /scwm/cl_rf_bll_srvc=>get_state
+      RECEIVING
+        rv_state = ev_state.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->PREPARE_MESSAGE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_MSGID                       TYPE        SY-MSGID(optional)
+* | [--->] IV_MSGNO                       TYPE        SY-MSGNO(optional)
+* | [--->] IV_MSGV1                       TYPE        SY-MSGV1(optional)
+* | [--->] IV_MSGV2                       TYPE        SY-MSGV2(optional)
+* | [--->] IV_MSGV3                       TYPE        SY-MSGV3(optional)
+* | [--->] IV_MSGV4                       TYPE        SY-MSGV4(optional)
+* | [--->] IV_MSGTY                       TYPE        SYST_MSGTY(optional)
+* | [--->] IR_ERROR                       TYPE REF TO CX_ROOT(optional)
+* | [<---] ES_MESSAGE                     TYPE        TY_MESSAGETEXT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD prepare_message.
+
+    DATA: lv_text TYPE string.
+
+    CLEAR gs_message.
+
+
+
+    IF ir_error IS SUPPLIED.
+      ir_error->if_message~get_text(
+        RECEIVING
+          result = lv_text ).
+
+      gs_message-type = 'E'.
+      gs_message-message = lv_text .
+
+    ELSE.
+      CALL FUNCTION 'FORMAT_MESSAGE'
+        EXPORTING
+          id        = iv_msgid
+          lang      = sy-langu
+          no        = iv_msgno
+          v1        = iv_msgv1
+          v2        = iv_msgv2
+          v3        = iv_msgv3
+          v4        = iv_msgv4
+        IMPORTING
+          msg       = lv_text
+        EXCEPTIONS
+          not_found = 1
+          OTHERS    = 2.
+
+      gs_message-message = lv_text.
+
+      IF iv_msgty EQ 'A' OR
+        iv_msgty EQ 'E'.
+        gs_message-type = 'E'.
+      ELSE.
+        gs_message-type = iv_msgty.
+      ENDIF.
+
+    ENDIF.
+
+    es_message = gs_message.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->SPLIT_WO_ONBACK
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_LGNUM                       TYPE        /SCWM/LGNUM
+* | [--->] IV_WHO                         TYPE        /SCWM/DE_WHO
+* | [--->] IS_RESOURCE                    TYPE        /SCWM/S_RSRC
+* | [--->] IV_SPLIT_ONLY                  TYPE        CHAR1(optional)
+* | [--->] IV_UNASSIGN_ONLY               TYPE        CHAR1(optional)
+* | [<-->] CS_MESSAGE                     TYPE        TY_MESSAGETEXT(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD split_wo_onback.
+    DATA:
+
+      lt_source_open_tasks TYPE  /scwm/tt_ordim_o,
+      lt_source_conf_tasks TYPE  /scwm/tt_ordim_c,
+      ls_who               TYPE  /scwm/s_who_int,
+      ls_temp_pick_o       LIKE LINE OF lt_source_open_tasks,
+      lt_to                TYPE  /scwm/tt_tanum,
+      lv_wcr               TYPE /scwm/de_wcr,
+      lt_bapiret           TYPE bapirettab,
+      ls_bapiret           LIKE LINE OF lt_bapiret,
+      lt_who               TYPE /scwm/tt_who_int,
+      lv_who_msg           TYPE sy-msgv1.
+
+
+
+    CLEAR:cs_message.
+
+    CALL FUNCTION '/SCWM/TO_READ_WHO'
+      EXPORTING
+        iv_lgnum     = iv_lgnum
+        iv_who       = iv_who
+      IMPORTING
+        et_ordim_o   = lt_source_open_tasks
+        et_ordim_c   = lt_source_conf_tasks
+      EXCEPTIONS
+        wrong_input  = 1
+        not_found    = 2
+        foreign_lock = 3
+        error        = 4
+        OTHERS       = 5.
+
+
+*--------------------------------------------------------------------*SPLIT WO (Send to Pool)
+    IF lt_source_conf_tasks IS NOT INITIAL AND iv_unassign_only IS INITIAL.
+
+      LOOP AT lt_source_open_tasks INTO ls_temp_pick_o.
+        APPEND ls_temp_pick_o-tanum TO lt_to.
+        CLEAR: ls_temp_pick_o .
+      ENDLOOP.
+
+      TRY.
+          CALL FUNCTION '/SCWM/WHO_SELECT'
+            EXPORTING
+              iv_lgnum = iv_lgnum
+              iv_who   = iv_who
+            IMPORTING
+              es_who   = ls_who.
+
+        CATCH /scwm/cx_core.
+      ENDTRY.
+
+      IF ls_who-wcr IS NOT INITIAL.
+        lv_wcr = ls_who-wcr.
+      ENDIF.
+
+*Perform WO Split
+      CALL FUNCTION '/SCWM/WHO_SPLIT'
+        EXPORTING
+          iv_lgnum      = iv_lgnum
+          iv_who        = iv_who
+          iv_wcr        = lv_wcr
+          iv_commit     = abap_true
+          it_to         = lt_to
+        IMPORTING
+          et_bapiret    = lt_bapiret
+          et_who        = lt_who
+        EXCEPTIONS
+          error_message = 1.
+
+      IF sy-subrc NE 0.
+        READ TABLE lt_bapiret INTO ls_bapiret WITH KEY type = 'E'.
+
+        CALL METHOD me->prepare_message
+          EXPORTING
+            iv_msgid = ls_bapiret-id
+            iv_msgno = ls_bapiret-number
+            iv_msgv1 = ls_bapiret-message_v1
+            iv_msgv2 = ls_bapiret-message_v2
+            iv_msgv3 = ls_bapiret-message_v3
+            iv_msgv4 = ls_bapiret-message_v4
+            iv_msgty = ls_bapiret-type.
+
+      ELSE.
+
+        READ TABLE lt_who INTO ls_who WITH KEY status = ''.
+
+        lv_who_msg = ls_who-who.
+
+        CALL METHOD me->prepare_message
+          EXPORTING
+            iv_msgid = 'ZEWM_PICKING'
+            iv_msgno = 009
+            iv_msgv1 = lv_who_msg
+            iv_msgty = 'S'.
+
+      ENDIF.
+
+    ENDIF.
+
+
+*--------------------------------------------------------------------*Unassign resource
+    IF iv_split_only IS INITIAL AND lt_source_conf_tasks IS INITIAL.
+
+      TRY.
+          CALL FUNCTION '/SCWM/WHO_SELECT'
+            EXPORTING
+              iv_lgnum = iv_lgnum
+              iv_who   = iv_who
+            IMPORTING
+              es_who   = ls_who.
+
+        CATCH /scwm/cx_core.
+      ENDTRY.
+
+      APPEND ls_who TO lt_who.
+
+
+      CALL FUNCTION '/SCWM/RSRC_WHO_UNASSIGN'
+        EXPORTING
+          iv_clear_start = abap_true
+          is_rsrc        = is_resource
+          it_who         = lt_who
+        EXCEPTIONS
+          error_message  = 1
+          OTHERS         = 2.
+
+
+      IF sy-subrc EQ 0.
+
+        lv_who_msg = ls_who-who.
+
+        CALL METHOD me->prepare_message
+          EXPORTING
+            iv_msgid = 'ZEWM_PICKING'
+            iv_msgno = 008
+            iv_msgv1 = lv_who_msg
+            iv_msgty = 'S'.
+
+      ENDIF.
+    ENDIF.
+
+    cs_message = gs_message.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_PICKING->VERIFICATION_PROFILE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_LGNUM                       TYPE        /SCWM/LGNUM
+* | [--->] IV_WHO                         TYPE        /SCWM/DE_WHO
+* | [--->] IV_PROCTY                      TYPE        /SCWM/DE_PROCTY
+* | [--->] IV_TRART                       TYPE        /SCWM/LVS_TRART
+* | [--->] IV_ACT_TYPE                    TYPE        /SCWM/DE_ACTTY
+* | [--->] IV_AAREA                       TYPE        /SCWM/DE_AAREA
+* | [<---] ET_VER_PROFILE                 TYPE        TT_VER_PROFILE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD verification_profile.
+
+    DATA: lv_verprf      TYPE /scwm/de_verprf,
+          lt_tvprf_cnt   TYPE STANDARD TABLE OF /scwm/tvprf_cnt,
+          ls_tvprf_cnt   TYPE /scwm/tvprf_cnt,
+          ls_ver_profile LIKE LINE OF et_ver_profile,
+          lr_aarea       TYPE rseloption,
+          ls_aarea       LIKE LINE OF lr_aarea.
+
+
+    ls_aarea-sign = 'I'.
+    ls_aarea-option = 'EQ'.
+    ls_aarea-low = iv_aarea.
+    APPEND ls_aarea TO lr_aarea.
+    CLEAR ls_aarea.
+
+*Verfication profile ID
+
+    SELECT SINGLE verprf FROM /scwm/tvprf_det INTO
+      lv_verprf WHERE lgnum    EQ iv_lgnum
+                  AND    procty EQ iv_procty
+                  AND    trart EQ iv_trart
+                  AND    act_type EQ iv_act_type
+                  AND    aarea IN lr_aarea.
+
+
+
+    IF sy-subrc NE 0 AND lv_verprf IS INITIAL.
+      SELECT SINGLE verprf FROM /scwm/tvprf_det INTO
+        lv_verprf WHERE lgnum    EQ iv_lgnum
+                    AND    procty EQ iv_procty
+                    AND    trart EQ iv_trart
+                    AND    act_type EQ iv_act_type.
+    ENDIF.
+
+    IF sy-subrc EQ 0 AND lv_verprf IS NOT INITIAL.
+*Fields for Verification profile.
+      SELECT * FROM /scwm/tvprf_cnt INTO TABLE lt_tvprf_cnt
+        WHERE lgnum EQ iv_lgnum
+        AND verprf EQ lv_verprf.
+
+      CHECK sy-subrc EQ 0.
+
+      LOOP AT lt_tvprf_cnt INTO ls_tvprf_cnt.
+
+
+        MOVE-CORRESPONDING ls_tvprf_cnt TO ls_ver_profile.
+        ls_ver_profile-who = iv_who.
+
+        CONCATENATE ls_ver_profile-who ls_ver_profile-valid_obj INTO ls_ver_profile-key.
+
+        APPEND ls_ver_profile TO et_ver_profile.
+        CLEAR ls_ver_profile.
+      ENDLOOP.
+
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
